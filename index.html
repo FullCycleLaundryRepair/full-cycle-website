@@ -477,16 +477,17 @@
   .portal-field input{font:inherit;font-size:16px;color:var(--ink);background:var(--surface-2);border:1px solid var(--line-strong);border-radius:10px;padding:12px 14px;min-height:50px;width:100%}
   .portal-field input::placeholder{color:var(--ink-3)}
   .portal-form .btn{width:100%;min-height:52px;font-size:16.5px}
-  /* Sign-in error — shown on this page, in the sign-in box itself,
-     when the property / username or the password doesn't match:
-     the card's border turns red and the tinted wash inside the
-     box turns from the usual green tint to a red wash, and both
-     fields get the same red border. Nothing navigates away to a
-     separate page to deliver that news. Typing again clears it. */
-  .portal-card.is-login-error{border:2px solid var(--danger);background:var(--danger-soft)}
-  .portal-card.is-login-error::before{background:var(--danger)}
-  .portal-card.is-login-error .portal-field input{border:2px solid var(--danger);background:var(--surface)}
-  .portal-card.is-login-error .portal-field input:focus{outline:2px solid var(--danger);outline-offset:1px}
+  /* Sign-in error — shown on this page, in the sign-in form
+     itself, when the property / username or the password doesn't
+     match: ONLY the incorrect field is marked — its interior
+     washes red and its border turns red. The card around the
+     form keeps its normal surface and border; the whole area
+     does NOT wash out in red, and no other field (including the
+     Forgot password box in the same card) is touched. Nothing
+     navigates away to a separate page to deliver that news.
+     Typing in a marked field clears its mark. */
+  .portal-field input.is-field-error{border:2px solid var(--danger);background:var(--danger-soft)}
+  .portal-field input.is-field-error:focus{outline:2px solid var(--danger);outline-offset:1px}
   .db-msg.is-error{color:var(--danger)}
   .portal-nfc{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);display:flex;gap:12px;align-items:flex-start}
   .portal-nfc .fact-icon{width:34px;height:34px}
@@ -1283,9 +1284,11 @@
           <form class="portal-form" id="portalForm" method="post" action="https://script.google.com/macros/s/AKfycbzO6T7kJUEjv9XoM9D9RdFfD1D_cIXA3v8DGqAJ40c4Okpyj0eULr-CM1SETf_4NftQ/exec" target="_blank" rel="noopener">
             <input type="hidden" name="action" value="propertyLogin" />
             <input type="hidden" id="portalSlug" name="slug" value="" />
+            <input type="hidden" id="portalEmail" name="email" value="" />
+            <input type="hidden" id="portalIdentifier" name="identifier" value="" />
             <div class="portal-field">
-              <label for="portalProperty">Property</label>
-              <input id="portalProperty" name="property" type="text" autocomplete="organization" placeholder="Your property name" />
+              <label for="portalProperty">Property name or email</label>
+              <input id="portalProperty" name="property" type="text" autocomplete="username" placeholder="Your property name or email" />
             </div>
             <div class="portal-field">
               <label for="portalPassword">Password</label>
@@ -1337,38 +1340,31 @@
 
   </div>
 
-  <!-- ============ RESET PASSWORD (reached only from a reset email link) ============ -->
+  <!-- ============ RESET PASSWORD (reached from a reset email link, or #reset to preview) ============ -->
   <div class="view" id="view-reset" role="tabpanel" aria-label="Reset password" hidden>
 
     <section>
       <div class="wrap-narrow">
         <div class="sec-head">
           <h2>Reset <em>password</em></h2>
-          <p>From the link in your reset email.</p>
         </div>
         <div class="portal-card">
-          <h3>Set a new password</h3>
-          <p class="portal-sub">Choose a new password below.</p>
           <div id="resetInvalid" hidden>
-            <p class="pw-note"><strong>This link has expired or already been used.</strong> Request a new one from “Forgot password?” on the sign-in page.</p>
+            <p class="pw-note"><strong>This link has expired or already been used.</strong></p>
             <p style="margin:14px 0 0"><button class="btn btn-teal" type="button" data-goto="portal">Back to sign in</button></p>
           </div>
-          <form class="portal-form" id="resetForm" novalidate>
+          <form class="portal-form" id="resetForm" style="margin-top:0" novalidate>
             <div class="portal-field">
               <label for="resetNew">New password</label>
               <input id="resetNew" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
             </div>
             <div class="portal-field">
-              <label for="resetConfirm">New password again</label>
-              <input id="resetConfirm" type="password" autocomplete="new-password" placeholder="Type the new password again" />
+              <label for="resetConfirm">Confirm new password</label>
+              <input id="resetConfirm" type="password" autocomplete="new-password" />
             </div>
-            <button class="btn btn-teal" type="submit">Set new password</button>
+            <button class="btn btn-teal" type="submit">Reset password</button>
             <p class="db-msg pw-msg" id="resetMsg" role="status" aria-live="polite"></p>
           </form>
-          <div id="resetDone" hidden>
-            <p class="pw-note"><strong>Saved</strong> — sign in with your new password.</p>
-            <p style="margin:14px 0 0"><button class="btn btn-teal" type="button" data-goto="portal">Back to sign in</button></p>
-          </div>
         </div>
       </div>
     </section>
@@ -2511,17 +2507,45 @@
     });
   }
   // Property sign-in check — verified HERE, on this page, before
-  // anything opens. The backend's property login is asked with
-  // format=json (the same probe pattern as the master check
-  // above): a JSON ok:true counts as a match, a JSON ok:false
-  // counts as no match. If the backend answers with an HTML page
-  // instead of JSON, a page that asks for a password again is
-  // its login page coming back — no match — and a page without
-  // one is the property page itself — a match. done receives
-  // 'ok', 'no', or 'error' (no usable answer within 30 seconds,
-  // same generous window as the master check). Nothing entered
-  // here is stored in this page; the password goes only to the
+  // anything opens. The login box accepts EITHER the property
+  // name OR the email on file, and either works: a value with
+  // an "@" is sent as the email / identifier (with no slug
+  // derived from it — slugifying an email would produce a slug
+  // that matches nothing), and any other value is sent as the
+  // property name with its slug, exactly as before. The backend
+  // resolves an email to that property's record the same way
+  // it resolves a property name. The backend's property login
+  // is asked with format=json (the same probe pattern as the
+  // master check above): a JSON ok:true counts as a match, a
+  // JSON ok:false counts as no match. If the backend answers
+  // with an HTML page instead of JSON, a page that asks for a
+  // password again is its login page coming back — no match —
+  // and a page without one is the property page itself — a
+  // match. done receives 'ok', 'no', or 'error' (no usable
+  // answer within 30 seconds, same generous window as the
+  // master check). When the backend's answer names the fault —
+  // an error / message field in its JSON, or wording in an HTML
+  // answer — done instead receives 'no-password' (the backend
+  // blamed the password) or 'no-user' (it blamed the property
+  // name / email), so the sign-in form can mark just that one
+  // field. A bare ok:false with no reason stays plain 'no':
+  // the backend's generic answer does not say which field was
+  // wrong, and this page does not guess. Nothing entered here
+  // is stored in this page; the password goes only to the
   // backend, exactly as the form post it replaces did.
+  function fcLoginFault(detail){
+    var d = String(detail || '').toLowerCase();
+    if(!d){ return 'no'; }
+    if(d.indexOf('not found') > -1 || d.indexOf('no such') > -1
+      || d.indexOf('unknown property') > -1 || d.indexOf('unknown email') > -1
+      || d.indexOf('unknown user') > -1 || d.indexOf('no property') > -1
+      || d.indexOf('no account') > -1){ return 'no-user'; }
+    if(d.indexOf('password') > -1){ return 'no-password'; }
+    if(d.indexOf('propert') > -1 || d.indexOf('email') > -1
+      || d.indexOf('identifier') > -1 || d.indexOf('username') > -1
+      || d.indexOf('account') > -1){ return 'no-user'; }
+    return 'no';
+  }
   function fcCheckPropertyLogin(slug, property, pw, done){
     var settled = false;
     function finish(result){
@@ -2531,11 +2555,18 @@
     }
     setTimeout(function(){ finish('error'); }, 30000);
     if(typeof fetch !== 'function'){ finish('error'); return; }
+    var identifier = String(property || '').trim();
+    var isEmail = identifier.indexOf('@') > -1;
     var params = new URLSearchParams();
     params.set('format', 'json');
     params.set('action', 'propertyLogin');
-    params.set('slug', slug);
-    params.set('property', property);
+    params.set('identifier', identifier);
+    params.set('property', identifier);
+    if(isEmail){
+      params.set('email', identifier);
+    } else if(slug){
+      params.set('slug', slug);
+    }
     params.set('password', pw);
     fetch(FC_BACKEND_URL, { method:'POST', body: params })
       .then(function(r){ return r.text(); })
@@ -2545,14 +2576,34 @@
         if(t.charAt(0) !== '<'){
           var data = null;
           try { data = JSON.parse(t); } catch(e){ data = null; }
-          if(data && typeof data.ok !== 'undefined'){ finish(data.ok ? 'ok' : 'no'); return; }
+          if(data && typeof data.ok !== 'undefined'){
+            if(data.ok){ finish('ok'); return; }
+            finish(fcLoginFault([data.error, data.message, data.reason, data.code].join(' ')));
+            return;
+          }
           finish('error');
           return;
         }
         var lower = t.toLowerCase();
         if(lower.indexOf('type="password"') > -1 || lower.indexOf("type='password'") > -1
           || lower.indexOf('incorrect') > -1 || lower.indexOf('isn\u2019t right') > -1
-          || lower.indexOf("isn't right") > -1){ finish('no'); return; }
+          || lower.indexOf("isn't right") > -1){
+          // An HTML answer that names the fault in words (e.g.
+          // "that password isn't right" / "property not found")
+          // says which field to mark; the generic login page
+          // coming back does not — its boilerplate mentions both
+          // fields — and stays plain 'no'.
+          var fault = 'no';
+          if(lower.indexOf('property not found') > -1 || lower.indexOf('no such property') > -1
+            || lower.indexOf('email not found') > -1 || lower.indexOf('account not found') > -1){
+            fault = 'no-user';
+          } else if(lower.indexOf('password isn\u2019t right') > -1 || lower.indexOf("password isn't right") > -1
+            || lower.indexOf('wrong password') > -1 || lower.indexOf('incorrect password') > -1){
+            fault = 'no-password';
+          }
+          finish(fault);
+          return;
+        }
         finish('ok');
       })
       .catch(function(){ finish('error'); });
@@ -2562,9 +2613,11 @@
   // Portal login — ONE form, two sign-ins, both verified HERE
   // on this page against the Sheet backend before anything
   // opens, so a wrong property / username or a wrong password
-  // is reported right in this sign-in box (its border turns red
-  // and its green wash turns to a red wash — see
-  // .portal-card.is-login-error) instead of on a separate page:
+  // is reported right in this sign-in form instead of on a
+  // separate page: only the incorrect field is marked — its
+  // interior washes red and its border turns red (see
+  // input.is-field-error) — while the card around the form
+  // keeps its normal look; the whole area does not wash red:
   //  • Master sign-in (owner): every submit is first tried as a
   //    master sign-in, verified ONLY by the Sheet backend
   //    server-side — the page asks the backend's list endpoint
@@ -2586,10 +2639,15 @@
   //    machine history, its past work orders, and a work order
   //    form whose submissions land in the WorkOrders tab — in a
   //    new tab. A mismatch stays on this page with the red
-  //    error box; nothing opens. The slug is derived from the
-  //    property name the manager typed (the same slugify the
-  //    database uses for login page slugs; typing the slug
-  //    itself also works).
+  //    error box; nothing opens. The manager can type EITHER
+  //    the property name OR the email on file — either works.
+  //    For a property name, the slug is derived from what was
+  //    typed (the same slugify the database uses for login page
+  //    slugs; typing the slug itself also works). For an email,
+  //    no slug is derived; the value is sent as email /
+  //    identifier instead, in both the check here and the form
+  //    post that follows, so the backend resolves it to that
+  //    property's record by the email on file.
   // Every submit is held (preventDefault) while those backend
   // checks run. Nothing entered here is stored in this page; a
   // password goes only to the backend.
@@ -2600,23 +2658,40 @@
     var portalPropEl = document.getElementById('portalProperty');
     var portalPwEl = document.getElementById('portalPassword');
     var portalStatusEl = document.getElementById('portalStatus');
+    // Per-field error marks: only the incorrect field's box
+    // gets the red interior wash + red border (input.is-field-
+    // error). The card itself is never painted. `fields` lists
+    // exactly which inputs to mark — one field when the fault
+    // is known (a blank field, or the backend naming the
+    // password or the property/email), or both sign-in fields
+    // when the backend's answer is generic and does not say
+    // which one was wrong.
+    function portalMarkFields(fields){
+      [portalPropEl, portalPwEl].forEach(function(el){
+        if(el){ el.classList.toggle('is-field-error', !!el && fields.indexOf(el) > -1); }
+      });
+    }
     function portalClearLoginError(){
-      if(portalCard){ portalCard.classList.remove('is-login-error'); }
+      portalMarkFields([]);
       if(portalStatusEl){ portalStatusEl.classList.remove('is-error'); }
     }
-    function portalShowLoginError(msg){
-      if(portalCard){ portalCard.classList.add('is-login-error'); }
+    function portalShowLoginError(msg, fields){
+      portalMarkFields(fields || []);
       if(portalStatusEl){
         portalStatusEl.classList.add('is-error');
         portalStatusEl.innerHTML = '<strong>' + msg + '</strong>';
       }
     }
-    // Typing again after a failed sign-in clears the red box.
+    // Typing again in a marked field clears that field's mark;
+    // once no field is marked, the error message goes too.
     [portalPropEl, portalPwEl].forEach(function(el){
       if(el){ el.addEventListener('input', function(){
-        if(portalCard && portalCard.classList.contains('is-login-error')){
-          portalClearLoginError();
-          if(portalStatusEl){ portalStatusEl.innerHTML = ''; }
+        if(el.classList.contains('is-field-error')){
+          el.classList.remove('is-field-error');
+          var anyMarked = [portalPropEl, portalPwEl].some(function(o){ return o && o.classList.contains('is-field-error'); });
+          if(!anyMarked){
+            if(portalStatusEl){ portalStatusEl.classList.remove('is-error'); portalStatusEl.innerHTML = ''; }
+          }
         }
       }); }
     });
@@ -2631,17 +2706,31 @@
       var pwVal = pwEl ? pwEl.value : '';
       portalClearLoginError();
       if(!propVal || !pwVal){
-        portalShowLoginError('Enter your property and password.');
+        // Only the blank box (or boxes) is marked — a filled-in
+        // field is not painted for being next to an empty one.
+        var missing = [];
+        if(!propVal && propEl){ missing.push(propEl); }
+        if(!pwVal && pwEl){ missing.push(pwEl); }
+        portalShowLoginError('Enter your property name or email and password.', missing);
         if(!propVal && propEl){ propEl.focus(); } else if(pwEl){ pwEl.focus(); }
         return;
       }
-      var slugVal = propVal.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      var isEmailVal = propVal.indexOf('@') > -1;
+      var slugVal = isEmailVal ? '' : propVal.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
       var backendPwEl = document.getElementById('backendPasswordInput');
       function openPropertyPage(){
         // Confirmed match only: the checks above never touched
         // the hidden backend password field, so there is nothing
         // to restore — just post to the property login as before.
+        // Either login works on this post too: a property name
+        // carries its slug, an email carries the email /
+        // identifier fields (and no slug) for the backend to
+        // resolve to the same property.
         if(slugEl){ slugEl.value = slugVal; }
+        var emailEl = document.getElementById('portalEmail');
+        if(emailEl){ emailEl.value = isEmailVal ? propVal : ''; }
+        var identifierEl = document.getElementById('portalIdentifier');
+        if(identifierEl){ identifierEl.value = propVal; }
         if(statusEl){ statusEl.innerHTML = '<strong>Opening your property page…</strong>'; }
         portalForm.submit();
       }
@@ -2649,8 +2738,25 @@
         fcCheckPropertyLogin(slugVal, propVal, pwVal, function(propResult){
           portalCheckRunning = false;
           if(propResult === 'ok'){ openPropertyPage(); return; }
+          if(propResult === 'no-password'){
+            // The backend blamed the password: only the
+            // password box is marked.
+            portalShowLoginError('That password isn\u2019t right. Check it and try again.', pwEl ? [pwEl] : []);
+            if(pwEl){ pwEl.select(); pwEl.focus(); }
+            return;
+          }
+          if(propResult === 'no-user'){
+            // The backend blamed the login: only the property
+            // name / email box is marked.
+            portalShowLoginError('That property name or email isn\u2019t right. Check it and try again.', propEl ? [propEl] : []);
+            if(propEl){ propEl.select(); propEl.focus(); }
+            return;
+          }
           if(propResult === 'no'){
-            portalShowLoginError('That property or password isn\u2019t right. Check them and try again.');
+            // Generic backend rejection — it does not say which
+            // field was wrong, so the two sign-in boxes are
+            // marked individually; the card itself stays as-is.
+            portalShowLoginError('That property name, email, or password isn\u2019t right. Check them and try again.', [propEl, pwEl].filter(Boolean));
             if(pwEl){ pwEl.select(); pwEl.focus(); }
             return;
           }
@@ -2706,7 +2812,7 @@
   if(portalScanBtn){
     if(!('NDEFReader' in window)){
       portalScanBtn.hidden = true;
-      portalScanSay('Web NFC is not available on this phone or browser, so a tag can\u2019t be scanned here. Tags can only be scanned from a phone with Web NFC (Chrome on Android) — you can still type your property name above.');
+      portalScanSay('Web NFC is not available on this phone or browser, so a tag can\u2019t be scanned here. Tags can only be scanned from a phone with Web NFC (Chrome on Android) — you can still type your property name or email above.');
     } else {
       portalScanBtn.addEventListener('click', function(){
         portalScanSay('Ready to scan — hold the phone against the NFC tag and keep it still…');
@@ -2726,7 +2832,7 @@
                 }
               }
             } catch(e){}
-            if(!val){ portalScanSay('That tag was read but carried no property link. Type your property name above instead.'); return; }
+            if(!val){ portalScanSay('That tag was read but carried no property link. Type your property name or email above instead.'); return; }
             // The tag carries a link destination (e.g.
             // /portal/<slug> or /portal/<slug>/work-order?...).
             // Fill in only the property from it — the slug when
@@ -2817,14 +2923,22 @@
   var masterLoginMsg = document.getElementById('masterLoginMsg');
   var masterLoginGate = document.getElementById('masterLoginGate');
   var masterLockBtn = document.getElementById('masterLockBtn');
-  // Same sign-in error box as Portal: a wrong username or
-  // password paints this gate's box red (border + red wash)
-  // right here; typing again clears it.
-  function masterGateError(on){
-    if(masterLoginGate){ masterLoginGate.classList.toggle('is-login-error', !!on); }
+  // Same per-field sign-in error as Portal: only the incorrect
+  // field's box is marked — red interior wash + red border
+  // (input.is-field-error) — right here; the gate card itself is
+  // never painted. Typing in a marked field clears its mark.
+  // On this gate the backend verifies the password alone (the
+  // username is a label and is not checked — see the gate note
+  // above), so a backend rejection marks the password box; a
+  // blank box is marked for being blank.
+  function masterGateError(fields){
+    var list = fields || [];
+    [masterUsernameInput, masterLoginPasswordInput].forEach(function(el){
+      if(el){ el.classList.toggle('is-field-error', list.indexOf(el) > -1); }
+    });
   }
   [masterUsernameInput, masterLoginPasswordInput].forEach(function(el){
-    if(el){ el.addEventListener('input', function(){ masterGateError(false); }); }
+    if(el){ el.addEventListener('input', function(){ el.classList.remove('is-field-error'); }); }
   });
   var realMasterTabOpener = masterTabOpener;
   function applyMasterGate(){
@@ -2956,21 +3070,26 @@
       if(gateCheckRunning){ return; } // a check is already running
       var userVal = masterUsernameInput ? masterUsernameInput.value.trim().toLowerCase() : '';
       var pwVal = masterLoginPasswordInput ? masterLoginPasswordInput.value : '';
-      function reject(msg, paintBox){
+      function reject(msg, fields){
         gateCheckRunning = false;
         masterUnlocked = false;
         var backendPw = document.getElementById('backendPasswordInput');
         if(backendPw){ backendPw.value = ''; }
         applyMasterGate();
-        // Wrong username or password paints the sign-in box red
-        // (border + red wash) on this page; a couldn't-reach
-        // failure is not a wrong login, so it leaves the box as-is.
-        masterGateError(paintBox !== false);
+        // Only the incorrect field's box is marked (red interior
+        // wash + red border) on this page; a couldn't-reach
+        // failure is not a wrong login, so it marks nothing.
+        masterGateError(fields || []);
         if(masterLoginMsg){ masterLoginMsg.textContent = msg; }
-        if(masterLoginPasswordInput){ masterLoginPasswordInput.select(); masterLoginPasswordInput.focus(); }
+        var target = (fields && fields.length) ? fields[0] : masterLoginPasswordInput;
+        if(target){ if(target.select){ target.select(); } target.focus(); }
       }
       if(!userVal || !pwVal){
-        reject('Enter your username and password.');
+        // Only the blank box (or boxes) is marked.
+        var missing = [];
+        if(!userVal && masterUsernameInput){ missing.push(masterUsernameInput); }
+        if(!pwVal && masterLoginPasswordInput){ missing.push(masterLoginPasswordInput); }
+        reject('Enter your username and password.', missing);
         return;
       }
       // No credential is checked in this page — no copy and no
@@ -3006,10 +3125,12 @@
           return;
         }
         if(result === 'no'){
-          reject('That username or password isn’t right. Check them and try again.');
+          // The backend checked the password alone on this gate,
+          // so the password box is the incorrect field.
+          reject('That password isn’t right. Check it and try again.', masterLoginPasswordInput ? [masterLoginPasswordInput] : []);
           return;
         }
-        reject('Couldn’t reach the database to check that sign-in. Check your connection and try again.', false);
+        reject('Couldn’t reach the database to check that sign-in. Check your connection and try again.');
       });
     });
   }
@@ -3101,11 +3222,11 @@
   }
   function fcPwValidateNew(newPw, confirmPw, msgEl){
     if(!newPw || newPw.length < 8){
-      fcPwSetMsg(msgEl, 'Not saved — your new password needs at least 8 characters.', true);
+      fcPwSetMsg(msgEl, 'Password must be at least 8 characters.', true);
       return false;
     }
     if(newPw !== confirmPw){
-      fcPwSetMsg(msgEl, 'Not saved — the new password and its confirmation don\u2019t match.', true);
+      fcPwSetMsg(msgEl, 'Passwords don\u2019t match.', true);
       return false;
     }
     return true;
@@ -3175,26 +3296,31 @@
     }
   })();
 
-  // Reset view — opened only by a reset email link. The link's
-  // code is read from the URL into memory only: it is never
-  // written into the page, never put in a field, and never shown.
-  // Opening the link does NOT sign anyone in and does not touch
-  // the trusted-device token; only a successful resetPassword
-  // answer (ok:true) counts as the password being set, and a
-  // master reset forgets this device's trusted sign-in, since
-  // that token was derived from the old password.
-  var fcReset = { token:'', scope:'' };
+  // Reset view — opened by a reset email link, or by #reset
+  // alone to preview the page (no token, so a preview submit
+  // cannot reset anything). The link's code is read from the
+  // URL into memory only: it is never written into the page,
+  // never put in a field, and never shown. Opening the link
+  // does NOT sign anyone in and does not touch the trusted-
+  // device token; only a successful resetPassword answer
+  // (ok:true) counts as the password being set, and a master
+  // reset forgets this device's trusted sign-in, since that
+  // token was derived from the old password. On success the
+  // page goes straight back to the sign-in (Portal) view.
+  var fcReset = { token:'', scope:'', preview:false };
   function fcParseResetLink(){
-    var found = { token:'', scope:'' };
+    var found = { token:'', scope:'', preview:false };
     function grab(params){
       if(!params){ return; }
       var t = params.get('reset') || params.get('reset_token') || params.get('resetToken') || params.get('token') || '';
       if(t && !found.token){ found.token = t; }
       var s = params.get('scope') || params.get('account') || '';
       if(s && !found.scope){ found.scope = String(s).toLowerCase() === 'master' ? 'master' : 'manager'; }
+      if(String(params.get('view') || '').toLowerCase() === 'reset'){ found.preview = true; }
     }
     try { grab(new URLSearchParams(window.location.search || '')); } catch(e){}
     var h = String(window.location.hash || '').replace(/^#/, '');
+    if(h === 'reset' || h === 'reset-preview'){ found.preview = true; }
     if(h && h.indexOf('reset') === 0){
       var rest = h.slice('reset'.length).replace(/^[\/=?&]+/, '');
       if(rest){
@@ -3209,19 +3335,18 @@
         }
       }
     }
+    if(found.token){ found.preview = false; }
     return found;
   }
   function fcOpenResetView(){
     var parsed = fcParseResetLink();
-    if(!parsed.token){ return false; }
+    if(!parsed.token && !parsed.preview){ return false; }
     fcReset = parsed;
     var form = document.getElementById('resetForm');
     var invalid = document.getElementById('resetInvalid');
-    var done = document.getElementById('resetDone');
     var msgEl = document.getElementById('resetMsg');
     if(form){ form.hidden = false; }
     if(invalid){ invalid.hidden = true; }
-    if(done){ done.hidden = true; }
     fcPwSetMsg(msgEl, '', false);
     showView('reset');
     return true;
@@ -3232,7 +3357,6 @@
     var confEl = document.getElementById('resetConfirm');
     var msgEl = document.getElementById('resetMsg');
     var invalid = document.getElementById('resetInvalid');
-    var done = document.getElementById('resetDone');
     if(form){
       form.addEventListener('submit', function(e){
         e.preventDefault();
@@ -3248,20 +3372,27 @@
         fcPwPost('resetPassword', { token: fcReset.token, scope: fcReset.scope, new_password: nw }).then(function(data){
           if(data && data.ok){
             // The code is used up: drop it from memory so this
-            // page cannot submit it a second time.
+            // page cannot submit it a second time, then go
+            // straight back to the sign-in page.
             var wasMaster = fcReset.scope === 'master';
-            fcReset = { token:'', scope:'' };
+            fcReset = { token:'', scope:'', preview:false };
             if(wasMaster){ fcTrustForget(); }
             if(newEl){ newEl.value = ''; }
             if(confEl){ confEl.value = ''; }
-            if(form){ form.hidden = true; }
-            if(done){ done.hidden = false; }
+            showView('portal');
+            var statusEl = document.getElementById('portalStatus');
+            if(statusEl){
+              statusEl.classList.remove('is-error');
+              statusEl.textContent = 'Password updated. Sign in.';
+            }
+            var loginEl = document.getElementById('portalProperty');
+            if(loginEl){ loginEl.focus(); }
             return;
           }
           if(data){
-            fcPwSetMsg(msgEl, 'Not saved — this link has expired or already been used. Request a new one via “Forgot password?”', true);
+            fcPwSetMsg(msgEl, 'This link has expired or already been used.', true);
           } else {
-            fcPwSetMsg(msgEl, 'Not saved — try again later.', true);
+            fcPwSetMsg(msgEl, 'Couldn\u2019t reset. Try again later.', true);
           }
         });
       });
