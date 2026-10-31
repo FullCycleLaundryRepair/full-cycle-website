@@ -477,6 +477,17 @@
   .portal-field input{font:inherit;font-size:16px;color:var(--ink);background:var(--surface-2);border:1px solid var(--line-strong);border-radius:10px;padding:12px 14px;min-height:50px;width:100%}
   .portal-field input::placeholder{color:var(--ink-3)}
   .portal-form .btn{width:100%;min-height:52px;font-size:16.5px}
+  /* Sign-in error — shown on this page, in the sign-in box itself,
+     when the property / username or the password doesn't match:
+     the card's border turns red and the tinted wash inside the
+     box turns from the usual green tint to a red wash, and both
+     fields get the same red border. Nothing navigates away to a
+     separate page to deliver that news. Typing again clears it. */
+  .portal-card.is-login-error{border:2px solid var(--danger);background:var(--danger-soft)}
+  .portal-card.is-login-error::before{background:var(--danger)}
+  .portal-card.is-login-error .portal-field input{border:2px solid var(--danger);background:var(--surface)}
+  .portal-card.is-login-error .portal-field input:focus{outline:2px solid var(--danger);outline-offset:1px}
+  .db-msg.is-error{color:var(--danger)}
   .portal-nfc{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);display:flex;gap:12px;align-items:flex-start}
   .portal-nfc .fact-icon{width:34px;height:34px}
   .portal-nfc .fact-icon svg{width:18px;height:18px}
@@ -518,6 +529,26 @@
   .master-trust-status p strong{color:var(--ink)}
   .db-trust-row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:10px 12px;margin-bottom:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;font-size:14px;color:var(--ink-2)}
   .db-trust-row[hidden]{display:none}
+  /* Forgot password — the only way to set a new password,
+     shared by the Portal sign-in card, the Master sign-in gate,
+     and the standalone reset view. The forgot link is a quiet
+     text button under Sign in; the panel it opens is an inset
+     box in the same card, so nothing navigates away. */
+  .pw-link-row{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;justify-content:flex-start;margin-top:12px}
+  .pw-text-btn{appearance:none;background:none;border:none;font:inherit;font-size:15px;font-weight:700;color:var(--teal);cursor:pointer;padding:8px 4px;min-height:40px;text-decoration:underline;text-underline-offset:3px;text-align:left}
+  .pw-text-btn:hover{color:var(--ink)}
+  .pw-panel{margin-top:16px;padding-top:16px;border-top:1px solid var(--line);display:grid;gap:10px}
+  .pw-panel[hidden]{display:none}
+  .pw-panel h4{font-family:"Barlow Condensed",sans-serif;font-size:21px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin:0}
+  .pw-note{margin:0;color:var(--ink-2);font-size:14.5px;line-height:1.45}
+  .pw-note strong{color:var(--ink)}
+  .pw-form{margin-top:2px}
+  .pw-msg{margin:0}
+  .pw-msg.is-error{color:var(--danger)}
+  .db-account-row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:10px 12px;margin-bottom:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;font-size:14px;color:var(--ink-2)}
+  .db-account-row strong{color:var(--ink)}
+  #view-reset section{padding-top:16px;padding-bottom:36px}
+  #view-reset .sec-head{margin-bottom:12px}
   .master-back-link{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:15px;margin-top:16px}
   /* Slim signed-in bar above the database card, shown only after
      the gate opens: carries the live backend status text (moved
@@ -582,6 +613,20 @@
   .prop-add-note textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;padding:10px 12px;min-height:64px;width:100%;min-width:0;resize:vertical;line-height:1.45}
   .prop-add-note small{color:var(--ink-3);font-size:13px;line-height:1.35}
   .prop-add-note .db-mini-btn{justify-self:start}
+  /* Property work order form — the signed-in property page's own
+     form. Everything already on file for the property (name,
+     address, manager email) is filled in automatically as
+     read-only fields at the top of the form and rides with the
+     submitted work order; the manager only fills in the three
+     fields below it: building number, which machine, and a
+     description of the issue. */
+  .prop-wo-form{gap:10px}
+  .prop-wo-title{font-family:"Barlow Condensed",sans-serif;font-size:21px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:1.1}
+  .prop-wo-note{margin:0;color:var(--ink-2);font-size:14.5px;line-height:1.45}
+  .prop-wo-note strong{color:var(--ink)}
+  .prop-wo-form input[type="text"],.prop-wo-form select{font:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;padding:10px 12px;min-height:48px;width:100%;min-width:0}
+  .prop-wo-form input[readonly]{background:var(--bg-soft);color:var(--ink-2);border-color:var(--line)}
+  .prop-wo-form .db-mini-btn{min-height:48px;padding:10px 18px;font-size:15.5px}
   @media(max-width:480px){ .prop-detail-card{padding:16px} }
   /* Master view tabs — Database (adding forms only) and Properties
      (read-only display only) are two panels inside the one Master
@@ -1232,9 +1277,9 @@
           <h2>Manager <em>Portal</em></h2>
           <p>For property managers with Full Cycle commercial service.</p>
         </div>
-        <div class="portal-card">
+        <div class="portal-card" id="portalLoginCard">
           <h3>Sign in</h3>
-          <p class="portal-sub">Sign in with your property’s login. Owner? Use this same form with your master login — it opens the master database instead.</p>
+          <p class="portal-sub">Property and master logins both sign in here.</p>
           <form class="portal-form" id="portalForm" method="post" action="https://script.google.com/macros/s/AKfycbzO6T7kJUEjv9XoM9D9RdFfD1D_cIXA3v8DGqAJ40c4Okpyj0eULr-CM1SETf_4NftQ/exec" target="_blank" rel="noopener">
             <input type="hidden" name="action" value="propertyLogin" />
             <input type="hidden" id="portalSlug" name="slug" value="" />
@@ -1247,8 +1292,27 @@
               <input id="portalPassword" name="password" type="password" autocomplete="current-password" placeholder="Your property password" />
             </div>
             <button class="btn btn-teal" type="submit">Sign in</button>
-            <p class="db-msg" id="portalStatus" role="status" aria-live="polite"></p>
+            <p class="db-msg" id="portalStatus" role="alert" aria-live="polite"></p>
+            <div class="pw-link-row">
+              <button class="pw-text-btn" type="button" id="portalForgotLink" aria-expanded="false" aria-controls="portalForgotPanel">Forgot password?</button>
+            </div>
           </form>
+          <!-- Forgot password is the only password flow — it also
+               covers changing your password. One flow for everyone:
+               the backend works out from the login alone whether
+               it is a manager or the owner / admin account. -->
+          <div class="pw-panel" id="portalForgotPanel" hidden>
+            <h4>Forgot password</h4>
+            <p class="pw-note">Enter your login and we’ll email you a link to set a new password.</p>
+            <form class="portal-form pw-form" id="portalForgotForm" novalidate>
+              <div class="portal-field">
+                <label for="portalForgotId" id="portalForgotIdLabel">Property name or email</label>
+                <input id="portalForgotId" type="text" autocomplete="username" placeholder="Your property name or the email on file" />
+              </div>
+              <button class="btn btn-teal" type="submit">Email me a reset link</button>
+              <p class="db-msg pw-msg" id="portalForgotMsg" role="status" aria-live="polite"></p>
+            </form>
+          </div>
           <div class="portal-perks">
             <div class="portal-perk">
               <span class="fact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/></svg></span>
@@ -1266,6 +1330,44 @@
               <button class="btn btn-teal" id="portalScanBtn" type="button">Scan a tag</button>
               <p class="db-msg" id="portalScanMsg" role="status" aria-live="polite"></p>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ============ RESET PASSWORD (reached only from a reset email link) ============ -->
+  <div class="view" id="view-reset" role="tabpanel" aria-label="Reset password" hidden>
+
+    <section>
+      <div class="wrap-narrow">
+        <div class="sec-head">
+          <h2>Reset <em>password</em></h2>
+          <p>From the link in your reset email.</p>
+        </div>
+        <div class="portal-card">
+          <h3>Set a new password</h3>
+          <p class="portal-sub">Choose a new password below.</p>
+          <div id="resetInvalid" hidden>
+            <p class="pw-note"><strong>This link has expired or already been used.</strong> Request a new one from “Forgot password?” on the sign-in page.</p>
+            <p style="margin:14px 0 0"><button class="btn btn-teal" type="button" data-goto="portal">Back to sign in</button></p>
+          </div>
+          <form class="portal-form" id="resetForm" novalidate>
+            <div class="portal-field">
+              <label for="resetNew">New password</label>
+              <input id="resetNew" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
+            </div>
+            <div class="portal-field">
+              <label for="resetConfirm">New password again</label>
+              <input id="resetConfirm" type="password" autocomplete="new-password" placeholder="Type the new password again" />
+            </div>
+            <button class="btn btn-teal" type="submit">Set new password</button>
+            <p class="db-msg pw-msg" id="resetMsg" role="status" aria-live="polite"></p>
+          </form>
+          <div id="resetDone" hidden>
+            <p class="pw-note"><strong>Saved</strong> — sign in with your new password.</p>
+            <p style="margin:14px 0 0"><button class="btn btn-teal" type="button" data-goto="portal">Back to sign in</button></p>
           </div>
         </div>
       </div>
@@ -1298,7 +1400,23 @@
             <label class="master-trust"><input type="checkbox" id="masterTrustDevice" /> Trust this device — sign me in automatically next time on this device</label>
             <button class="btn btn-teal" type="submit">Sign in</button>
             <p class="master-login-msg" id="masterLoginMsg" role="alert" aria-live="polite"></p>
+            <div class="pw-link-row">
+              <button class="pw-text-btn" type="button" id="masterForgotLink" aria-expanded="false" aria-controls="masterForgotPanel">Forgot password?</button>
+            </div>
           </form>
+          <!-- Forgot password (master) — same single flow as Portal. -->
+          <div class="pw-panel" id="masterForgotPanel" hidden>
+            <h4>Forgot password</h4>
+            <p class="pw-note">Enter your email and we’ll send you a link to set a new password.</p>
+            <form class="portal-form pw-form" id="masterForgotForm" novalidate>
+              <div class="portal-field">
+                <label for="masterForgotEmail">Master email</label>
+                <input id="masterForgotEmail" type="email" autocomplete="username" placeholder="Email on file for the master login" />
+              </div>
+              <button class="btn btn-teal" type="submit">Email me a reset link</button>
+              <p class="db-msg pw-msg" id="masterForgotMsg" role="status" aria-live="polite"></p>
+            </form>
+          </div>
           <div class="master-trust-status" id="masterTrustStatus" hidden>
             <p><strong>This device is trusted.</strong> It signs in to the master database automatically — until you forget this device below, or the master password changes.</p>
             <button class="db-mini-btn" id="masterForgetBtnGate" type="button">Forget this device</button>
@@ -1340,6 +1458,12 @@
            <div class="db-trust-row" id="dbTrustRow" hidden>
              <span>Signed in on a trusted device — no password was typed this time.</span>
              <button class="db-mini-btn" id="masterForgetBtnBar" type="button">Forget this device</button>
+           </div>
+           <!-- Signed-in account row (master). To change the
+                password, use Forgot password on the sign-in page. -->
+           <div class="db-account-row" id="dbAccountRow">
+             <span><strong>Master account</strong> — signed in</span>
+             <span>To change your password, use Forgot password at sign-in.</span>
            </div>
            <div class="db-tab-panel" id="dbTabDatabase">
             <!-- Database tiles — always visible at the top of the
@@ -2386,25 +2510,62 @@
       fcCheckMasterToken(token, done);
     });
   }
+  // Property sign-in check — verified HERE, on this page, before
+  // anything opens. The backend's property login is asked with
+  // format=json (the same probe pattern as the master check
+  // above): a JSON ok:true counts as a match, a JSON ok:false
+  // counts as no match. If the backend answers with an HTML page
+  // instead of JSON, a page that asks for a password again is
+  // its login page coming back — no match — and a page without
+  // one is the property page itself — a match. done receives
+  // 'ok', 'no', or 'error' (no usable answer within 30 seconds,
+  // same generous window as the master check). Nothing entered
+  // here is stored in this page; the password goes only to the
+  // backend, exactly as the form post it replaces did.
+  function fcCheckPropertyLogin(slug, property, pw, done){
+    var settled = false;
+    function finish(result){
+      if(settled){ return; }
+      settled = true;
+      done(result);
+    }
+    setTimeout(function(){ finish('error'); }, 30000);
+    if(typeof fetch !== 'function'){ finish('error'); return; }
+    var params = new URLSearchParams();
+    params.set('format', 'json');
+    params.set('action', 'propertyLogin');
+    params.set('slug', slug);
+    params.set('property', property);
+    params.set('password', pw);
+    fetch(FC_BACKEND_URL, { method:'POST', body: params })
+      .then(function(r){ return r.text(); })
+      .then(function(text){
+        var t = String(text == null ? '' : text).trim();
+        if(!t){ finish('error'); return; }
+        if(t.charAt(0) !== '<'){
+          var data = null;
+          try { data = JSON.parse(t); } catch(e){ data = null; }
+          if(data && typeof data.ok !== 'undefined'){ finish(data.ok ? 'ok' : 'no'); return; }
+          finish('error');
+          return;
+        }
+        var lower = t.toLowerCase();
+        if(lower.indexOf('type="password"') > -1 || lower.indexOf("type='password'") > -1
+          || lower.indexOf('incorrect') > -1 || lower.indexOf('isn\u2019t right') > -1
+          || lower.indexOf("isn't right") > -1){ finish('no'); return; }
+        finish('ok');
+      })
+      .catch(function(){ finish('error'); });
+  }
   var gateCheckRunning = false;
 
-  // Portal login — ONE form, two sign-ins, both against the
-  // Sheet backend:
-  //  • Property sign-in (managers): the form posts the property's
-  //    slug and the password the manager typed to the backend's
-  //    property login (action=propertyLogin), which checks the
-  //    password against that property's record in the Sheet. On a
-  //    match the backend returns the property's own page — its
-  //    machines and machine history, its past work orders, and a
-  //    work order form whose submissions land in the WorkOrders
-  //    tab — in a new tab. On a mismatch the backend shows its
-  //    login page again, so this page never claims a sign-in the
-  //    backend did not confirm. The slug is derived from the
-  //    property name the manager typed (the same slugify the
-  //    database uses for login page slugs; typing the slug itself
-  //    also works).
-  //  • Master sign-in (owner): there is no separate master login
-  //    page to move to any more. Every submit is first tried as a
+  // Portal login — ONE form, two sign-ins, both verified HERE
+  // on this page against the Sheet backend before anything
+  // opens, so a wrong property / username or a wrong password
+  // is reported right in this sign-in box (its border turns red
+  // and its green wash turns to a red wash — see
+  // .portal-card.is-login-error) instead of on a separate page:
+  //  • Master sign-in (owner): every submit is first tried as a
   //    master sign-in, verified ONLY by the Sheet backend
   //    server-side — the page asks the backend's list endpoint
   //    directly with the token derived from the typed password
@@ -2413,62 +2574,102 @@
   //    password; this page ships no copy and no hash of either
   //    master credential, and the username is not checked in
   //    the page at all). If the backend accepts, the master
-  //    database unlocks and opens (see unlockMaster below). If
-  //    the backend does not accept the password as the master
-  //    password — the normal case for a manager's own property
-  //    password — or cannot be reached to check, the submit
-  //    simply continues as the property sign-in below, so
-  //    managers are never blocked by the master check.
-  // Every submit is held (preventDefault) just long enough to
-  // make that backend master check; a property sign-in then goes
-  // ahead through form.submit(), which posts to the backend
-  // exactly as the un-held submit did, new tab and all. Nothing
-  // entered here is stored in this page; a password goes only to
-  // the backend.
+  //    database unlocks and opens (see unlockMaster below).
+  //  • Property sign-in (managers): if the password is not the
+  //    master password — the normal case for a manager's own
+  //    property password — the property login is checked here
+  //    too (see fcCheckPropertyLogin above): the backend checks
+  //    the password against that property's record in the Sheet.
+  //    Only a confirmed match goes ahead through form.submit(),
+  //    which posts to the backend exactly as the un-held submit
+  //    did and opens the property's own page — its machines and
+  //    machine history, its past work orders, and a work order
+  //    form whose submissions land in the WorkOrders tab — in a
+  //    new tab. A mismatch stays on this page with the red
+  //    error box; nothing opens. The slug is derived from the
+  //    property name the manager typed (the same slugify the
+  //    database uses for login page slugs; typing the slug
+  //    itself also works).
+  // Every submit is held (preventDefault) while those backend
+  // checks run. Nothing entered here is stored in this page; a
+  // password goes only to the backend.
   var portalCheckRunning = false;
   var portalForm = document.getElementById('portalForm');
   if(portalForm){
+    var portalCard = document.getElementById('portalLoginCard');
+    var portalPropEl = document.getElementById('portalProperty');
+    var portalPwEl = document.getElementById('portalPassword');
+    var portalStatusEl = document.getElementById('portalStatus');
+    function portalClearLoginError(){
+      if(portalCard){ portalCard.classList.remove('is-login-error'); }
+      if(portalStatusEl){ portalStatusEl.classList.remove('is-error'); }
+    }
+    function portalShowLoginError(msg){
+      if(portalCard){ portalCard.classList.add('is-login-error'); }
+      if(portalStatusEl){
+        portalStatusEl.classList.add('is-error');
+        portalStatusEl.innerHTML = '<strong>' + msg + '</strong>';
+      }
+    }
+    // Typing again after a failed sign-in clears the red box.
+    [portalPropEl, portalPwEl].forEach(function(el){
+      if(el){ el.addEventListener('input', function(){
+        if(portalCard && portalCard.classList.contains('is-login-error')){
+          portalClearLoginError();
+          if(portalStatusEl){ portalStatusEl.innerHTML = ''; }
+        }
+      }); }
+    });
     portalForm.addEventListener('submit', function(e){
       e.preventDefault();
-      if(portalCheckRunning){ return; } // a master check is already running
-      var propEl = document.getElementById('portalProperty');
-      var pwEl = document.getElementById('portalPassword');
+      if(portalCheckRunning){ return; } // a sign-in check is already running
+      var propEl = portalPropEl;
+      var pwEl = portalPwEl;
       var slugEl = document.getElementById('portalSlug');
-      var statusEl = document.getElementById('portalStatus');
+      var statusEl = portalStatusEl;
       var propVal = propEl ? propEl.value.trim() : '';
       var pwVal = pwEl ? pwEl.value : '';
+      portalClearLoginError();
       if(!propVal || !pwVal){
-        if(statusEl){ statusEl.innerHTML = '<strong>Enter your property and password.</strong>'; }
+        portalShowLoginError('Enter your property and password.');
         if(!propVal && propEl){ propEl.focus(); } else if(pwEl){ pwEl.focus(); }
         return;
       }
+      var slugVal = propVal.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
       var backendPwEl = document.getElementById('backendPasswordInput');
-      function proceedToProperty(unverified){
-        // Not a master sign-in: the check never touched the
-        // hidden backend password field, so there is nothing to
-        // restore — just post to the property login as before.
-        if(slugEl){
-          slugEl.value = propVal.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-        }
-        if(statusEl){
-          statusEl.innerHTML = unverified
-            ? '<strong>Opening your property page…</strong> The database didn’t answer to check a master sign-in, so this went ahead as a property sign-in. If your password isn’t right, you’ll be asked for it again there.'
-            : '<strong>Opening your property page…</strong> If your password isn’t right, you’ll be asked for it again there.';
-        }
+      function openPropertyPage(){
+        // Confirmed match only: the checks above never touched
+        // the hidden backend password field, so there is nothing
+        // to restore — just post to the property login as before.
+        if(slugEl){ slugEl.value = slugVal; }
+        if(statusEl){ statusEl.innerHTML = '<strong>Opening your property page…</strong>'; }
         portalForm.submit();
+      }
+      function checkProperty(masterResult){
+        fcCheckPropertyLogin(slugVal, propVal, pwVal, function(propResult){
+          portalCheckRunning = false;
+          if(propResult === 'ok'){ openPropertyPage(); return; }
+          if(propResult === 'no'){
+            portalShowLoginError('That property or password isn\u2019t right. Check them and try again.');
+            if(pwEl){ pwEl.select(); pwEl.focus(); }
+            return;
+          }
+          if(statusEl){
+            statusEl.classList.add('is-error');
+            statusEl.innerHTML = '<strong>Couldn\u2019t reach the database to check that sign-in.</strong> Check your connection and try again.';
+          }
+        });
       }
       // Master check first, server-side only (see
       // fcCheckMasterPassword above): the backend's own JSON
       // answer decides. Only an ok answer opens the master
-      // database; a rejection is the normal case for a manager's
-      // own property password and continues as the property
-      // sign-in, and so does an unreachable backend — with the
-      // status line saying which of the two happened.
+      // database; anything else continues to the property check
+      // above, which makes the final call on this page.
       if(statusEl){ statusEl.innerHTML = '<strong>Checking sign-in…</strong>'; }
       portalCheckRunning = true;
       fcCheckMasterPassword(pwVal, function(result){
-        portalCheckRunning = false;
         if(result === 'ok'){
+          portalCheckRunning = false;
           // Hand the verified password to the database session
           // (hidden field + change reloads the Sheet data with
           // it), then unlock and open the master database — the
@@ -2478,12 +2679,13 @@
             backendPwEl.dispatchEvent(new Event('change', { bubbles:true }));
           }
           if(pwEl){ pwEl.value = ''; }
+          portalClearLoginError();
           if(statusEl){ statusEl.innerHTML = ''; }
           unlockMaster();
           showView('master');
           return;
         }
-        proceedToProperty(result === 'error');
+        checkProperty(result);
       });
     });
   }
@@ -2613,7 +2815,17 @@
   var masterUsernameInput = document.getElementById('masterUsernameInput');
   var masterLoginPasswordInput = document.getElementById('masterLoginPasswordInput');
   var masterLoginMsg = document.getElementById('masterLoginMsg');
+  var masterLoginGate = document.getElementById('masterLoginGate');
   var masterLockBtn = document.getElementById('masterLockBtn');
+  // Same sign-in error box as Portal: a wrong username or
+  // password paints this gate's box red (border + red wash)
+  // right here; typing again clears it.
+  function masterGateError(on){
+    if(masterLoginGate){ masterLoginGate.classList.toggle('is-login-error', !!on); }
+  }
+  [masterUsernameInput, masterLoginPasswordInput].forEach(function(el){
+    if(el){ el.addEventListener('input', function(){ masterGateError(false); }); }
+  });
   var realMasterTabOpener = masterTabOpener;
   function applyMasterGate(){
     if(masterLoginSection){ masterLoginSection.hidden = masterUnlocked; }
@@ -2634,6 +2846,7 @@
     // Sheet calls — unlocking is only about showing the shell.
     if(masterSignInTimer){ clearInterval(masterSignInTimer); masterSignInTimer = null; }
     masterUnlocked = true;
+    masterGateError(false);
     if(masterLoginPasswordInput){ masterLoginPasswordInput.value = ''; }
     if(masterLoginMsg){ masterLoginMsg.textContent = ''; }
     applyMasterGate();
@@ -2648,6 +2861,7 @@
     if(backendTk){ backendTk.value = ''; }
     if(masterLoginPasswordInput){ masterLoginPasswordInput.value = ''; }
     if(masterLoginMsg){ masterLoginMsg.textContent = ''; }
+    masterGateError(false);
     applyMasterGate();
     window.scrollTo({ top:0, behavior:'auto' });
     if(masterUsernameInput){ masterUsernameInput.focus(); }
@@ -2742,12 +2956,16 @@
       if(gateCheckRunning){ return; } // a check is already running
       var userVal = masterUsernameInput ? masterUsernameInput.value.trim().toLowerCase() : '';
       var pwVal = masterLoginPasswordInput ? masterLoginPasswordInput.value : '';
-      function reject(msg){
+      function reject(msg, paintBox){
         gateCheckRunning = false;
         masterUnlocked = false;
         var backendPw = document.getElementById('backendPasswordInput');
         if(backendPw){ backendPw.value = ''; }
         applyMasterGate();
+        // Wrong username or password paints the sign-in box red
+        // (border + red wash) on this page; a couldn't-reach
+        // failure is not a wrong login, so it leaves the box as-is.
+        masterGateError(paintBox !== false);
         if(masterLoginMsg){ masterLoginMsg.textContent = msg; }
         if(masterLoginPasswordInput){ masterLoginPasswordInput.select(); masterLoginPasswordInput.focus(); }
       }
@@ -2762,6 +2980,7 @@
       // list answer decides — ok unlocks, a rejection stays
       // locked with a wrong-credentials message, and no usable
       // answer stays locked with a couldn't-reach message.
+      masterGateError(false);
       if(masterLoginMsg){ masterLoginMsg.textContent = 'Checking with the database…'; }
       gateCheckRunning = true;
       fcCheckMasterPassword(pwVal, function(result){
@@ -2790,7 +3009,7 @@
           reject('That username or password isn’t right. Check them and try again.');
           return;
         }
-        reject('Couldn’t reach the database to check that sign-in. Check your connection and try again.');
+        reject('Couldn’t reach the database to check that sign-in. Check your connection and try again.', false);
       });
     });
   }
@@ -2808,6 +3027,250 @@
     });
   });
   applyMasterGate();
+
+  // ---- Forgot / reset password ----
+  // Forgot password is the only way to set a new password — it
+  // also covers changing it. One flow, no role picker: sign-in
+  // pages carry a "Forgot password?" link, it asks only for the
+  // login, and the backend works out from that login whether it
+  // is a manager or the owner / admin account and emails a reset
+  // link to the email on file. A reset link lands on the Reset
+  // view and sets the new password via resetPassword.
+  function fcPwSlug(s){
+    return String(s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+  function fcPwPost(action, fields){
+    if(typeof fetch !== 'function'){ return Promise.resolve(null); }
+    var params = new URLSearchParams();
+    params.set('format', 'json');
+    params.set('action', action);
+    Object.keys(fields || {}).forEach(function(k){
+      if(fields[k] !== undefined && fields[k] !== null && fields[k] !== ''){ params.set(k, fields[k]); }
+    });
+    return fetch(FC_BACKEND_URL, { method:'POST', body: params })
+      .then(function(r){ return r.text(); })
+      .then(function(text){ return custParseJson(text); })
+      .catch(function(){ return null; });
+  }
+  function fcPwSetMsg(el, text, isError){
+    if(!el){ return; }
+    el.textContent = text;
+    el.classList.toggle('is-error', !!isError);
+  }
+  // Panel show/hide behind a link/button that carries
+  // aria-expanded + aria-controls.
+  function fcPwToggle(btn, panel){
+    if(!btn || !panel){ return; }
+    btn.addEventListener('click', function(){
+      var open = panel.hidden;
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if(open){
+        var first = panel.querySelector('input');
+        if(first){ first.focus(); }
+      }
+    });
+  }
+  // Identifier fields for the backend (scope "auto" on Portal,
+  // "master" on the Master gate).
+  function fcPwIdFields(scope, identifier){
+    var f = { scope: scope, identifier: identifier };
+    if(scope === 'master'){
+      f.email = identifier;
+    } else {
+      f.property = identifier;
+      f.slug = fcPwSlug(identifier);
+      if(identifier.indexOf('@') > -1){ f.email = identifier; }
+    }
+    return f;
+  }
+  function fcPwRequestReset(scope, identifier, msgEl, done){
+    fcPwSetMsg(msgEl, 'Sending…', false);
+    fcPwPost('requestPasswordReset', fcPwIdFields(scope, identifier)).then(function(data){
+      if(data && data.ok){
+        // Deliberately identical for every matching or
+        // non-matching login: nothing here reveals whether an
+        // account exists for that identifier.
+        fcPwSetMsg(msgEl, 'If that login matches, a reset email is on its way. Check spam if you don\u2019t see it.', false);
+        if(done){ done(true); }
+        return;
+      }
+      fcPwSetMsg(msgEl, 'Not saved — try again later.', true);
+      if(done){ done(false); }
+    });
+  }
+  function fcPwValidateNew(newPw, confirmPw, msgEl){
+    if(!newPw || newPw.length < 8){
+      fcPwSetMsg(msgEl, 'Not saved — your new password needs at least 8 characters.', true);
+      return false;
+    }
+    if(newPw !== confirmPw){
+      fcPwSetMsg(msgEl, 'Not saved — the new password and its confirmation don\u2019t match.', true);
+      return false;
+    }
+    return true;
+  }
+
+  // Portal — Forgot password? One flow, no role picker: the
+  // identifier alone is sent (scope "auto") and the backend
+  // determines whether it is the owner / admin (master) login
+  // or a property manager login, delineating owner/admin
+  // internally when it is the master login.
+  (function(){
+    var panel = document.getElementById('portalForgotPanel');
+    var link = document.getElementById('portalForgotLink');
+    fcPwToggle(link, panel);
+    var idEl = document.getElementById('portalForgotId');
+    var msgEl = document.getElementById('portalForgotMsg');
+    var form = document.getElementById('portalForgotForm');
+    if(form){
+      form.addEventListener('submit', function(e){
+        e.preventDefault();
+        var identifier = idEl ? idEl.value.trim() : '';
+        if(!identifier){
+          fcPwSetMsg(msgEl, 'Enter your property name or email first.', true);
+          if(idEl){ idEl.focus(); }
+          return;
+        }
+        fcPwRequestReset('auto', identifier, msgEl, function(ok){
+          if(ok && idEl){ idEl.value = ''; }
+        });
+      });
+    }
+    // Arriving from the Portal sign-in: if the owner typed their
+    // email in the sign-in property box, it is not reused here —
+    // the identifier is typed fresh so nothing is carried over
+    // silently. (The Property box itself is left untouched.)
+  })();
+
+  // Master gate — Forgot password? (master scope only; the email
+  // box starts from whatever is typed in the gate's Username box)
+  (function(){
+    var panel = document.getElementById('masterForgotPanel');
+    var link = document.getElementById('masterForgotLink');
+    fcPwToggle(link, panel);
+    if(link){
+      link.addEventListener('click', function(){
+        var emailEl = document.getElementById('masterForgotEmail');
+        var userEl = document.getElementById('masterUsernameInput');
+        if(emailEl && userEl && !emailEl.value && userEl.value.trim()){ emailEl.value = userEl.value.trim(); }
+      });
+    }
+    var form = document.getElementById('masterForgotForm');
+    var emailEl = document.getElementById('masterForgotEmail');
+    var msgEl = document.getElementById('masterForgotMsg');
+    if(form){
+      form.addEventListener('submit', function(e){
+        e.preventDefault();
+        var identifier = emailEl ? emailEl.value.trim() : '';
+        if(!identifier){
+          fcPwSetMsg(msgEl, 'Enter the master email first.', true);
+          if(emailEl){ emailEl.focus(); }
+          return;
+        }
+        fcPwRequestReset('master', identifier, msgEl, function(ok){
+          if(ok && emailEl){ emailEl.value = ''; }
+        });
+      });
+    }
+  })();
+
+  // Reset view — opened only by a reset email link. The link's
+  // code is read from the URL into memory only: it is never
+  // written into the page, never put in a field, and never shown.
+  // Opening the link does NOT sign anyone in and does not touch
+  // the trusted-device token; only a successful resetPassword
+  // answer (ok:true) counts as the password being set, and a
+  // master reset forgets this device's trusted sign-in, since
+  // that token was derived from the old password.
+  var fcReset = { token:'', scope:'' };
+  function fcParseResetLink(){
+    var found = { token:'', scope:'' };
+    function grab(params){
+      if(!params){ return; }
+      var t = params.get('reset') || params.get('reset_token') || params.get('resetToken') || params.get('token') || '';
+      if(t && !found.token){ found.token = t; }
+      var s = params.get('scope') || params.get('account') || '';
+      if(s && !found.scope){ found.scope = String(s).toLowerCase() === 'master' ? 'master' : 'manager'; }
+    }
+    try { grab(new URLSearchParams(window.location.search || '')); } catch(e){}
+    var h = String(window.location.hash || '').replace(/^#/, '');
+    if(h && h.indexOf('reset') === 0){
+      var rest = h.slice('reset'.length).replace(/^[\/=?&]+/, '');
+      if(rest){
+        if(rest.indexOf('=') > -1){
+          try { grab(new URLSearchParams(rest)); } catch(e){}
+        } else {
+          var parts = rest.split('&');
+          try { found.token = decodeURIComponent(parts[0] || ''); } catch(e){ found.token = parts[0] || ''; }
+          if(parts.length > 1){
+            try { grab(new URLSearchParams(parts.slice(1).join('&'))); } catch(e){}
+          }
+        }
+      }
+    }
+    return found;
+  }
+  function fcOpenResetView(){
+    var parsed = fcParseResetLink();
+    if(!parsed.token){ return false; }
+    fcReset = parsed;
+    var form = document.getElementById('resetForm');
+    var invalid = document.getElementById('resetInvalid');
+    var done = document.getElementById('resetDone');
+    var msgEl = document.getElementById('resetMsg');
+    if(form){ form.hidden = false; }
+    if(invalid){ invalid.hidden = true; }
+    if(done){ done.hidden = true; }
+    fcPwSetMsg(msgEl, '', false);
+    showView('reset');
+    return true;
+  }
+  (function(){
+    var form = document.getElementById('resetForm');
+    var newEl = document.getElementById('resetNew');
+    var confEl = document.getElementById('resetConfirm');
+    var msgEl = document.getElementById('resetMsg');
+    var invalid = document.getElementById('resetInvalid');
+    var done = document.getElementById('resetDone');
+    if(form){
+      form.addEventListener('submit', function(e){
+        e.preventDefault();
+        if(!fcReset.token){
+          if(form){ form.hidden = true; }
+          if(invalid){ invalid.hidden = false; }
+          return;
+        }
+        var nw = newEl ? newEl.value : '';
+        var cf = confEl ? confEl.value : '';
+        if(!fcPwValidateNew(nw, cf, msgEl)){ return; }
+        fcPwSetMsg(msgEl, 'Saving…', false);
+        fcPwPost('resetPassword', { token: fcReset.token, scope: fcReset.scope, new_password: nw }).then(function(data){
+          if(data && data.ok){
+            // The code is used up: drop it from memory so this
+            // page cannot submit it a second time.
+            var wasMaster = fcReset.scope === 'master';
+            fcReset = { token:'', scope:'' };
+            if(wasMaster){ fcTrustForget(); }
+            if(newEl){ newEl.value = ''; }
+            if(confEl){ confEl.value = ''; }
+            if(form){ form.hidden = true; }
+            if(done){ done.hidden = false; }
+            return;
+          }
+          if(data){
+            fcPwSetMsg(msgEl, 'Not saved — this link has expired or already been used. Request a new one via “Forgot password?”', true);
+          } else {
+            fcPwSetMsg(msgEl, 'Not saved — try again later.', true);
+          }
+        });
+      });
+    }
+    // Arriving on a reset link (page load or a hash change while
+    // the page is open) opens the Reset view directly.
+    window.addEventListener('hashchange', function(){ fcOpenResetView(); });
+    fcOpenResetView();
+  })();
 
   // ---- Work order sheet flow ----
   // The website's work order sheet is the standalone Full Cycle
@@ -4645,6 +5108,7 @@
         (w.channel ? roField('How they reached out', w.channel) : '') +
         (machineText ? roField('Machine', machineText, true) : '') +
         (w.serial ? roField('Machine serial', w.serial) : '') +
+        (w.buildingNumber ? roField('Building number', w.buildingNumber) : '') +
         roField('Issue', w.issue, true) +
         (w.symptomDetails ? roField('When it started / what it does', w.symptomDetails, true) : '') +
         (w.accessNotes ? roField('Access notes', w.accessNotes, true) : '') +
@@ -4903,10 +5367,18 @@
         '</form>' +
       '</div>';
       // Work order history for this property, from the WorkOrders
-      // records loaded from the Sheet, plus a form to add a new
-      // work order for this property. Submitting the form writes
-      // to the Sheet backend right away and reports Saved to
-      // Sheet or Not saved to Sheet under the form.
+      // records loaded from the Sheet, plus the property-specific
+      // work order form. That form is the one a signed-in property
+      // uses: every property detail already on file (name,
+      // address, manager email) is filled in automatically as
+      // read-only fields and rides with the submitted order, so
+      // the manager never re-enters anything already known — the
+      // only fields they fill in are the building number, which
+      // machine, and a description of the issue. Picking a machine
+      // also fills in that machine's building number, which stays
+      // editable. Submitting writes to the Sheet backend right
+      // away and reports Saved to Sheet or Not saved to Sheet
+      // under the form.
       var wos = workOrdersForProperty(p);
       html += '<div class="prop-machines"><h4>Work orders at this property</h4>' +
         '<p>Work orders from the Master database for this property.</p>';
@@ -4920,6 +5392,7 @@
             '<span class="db-kind">' + esc(w.status || 'Open') + '</span></div>' +
             '<dl class="prop-fields">' +
               roField('Call type', woCallKind(w) || 'Not recorded') +
+              (w.buildingNumber ? roField('Building number', w.buildingNumber) : '') +
               roField('Machine serial', w.serial) +
               roField('Date', w.created) +
               roField('Status', w.status) +
@@ -4927,22 +5400,60 @@
             '</dl>' +
           '</div>';
       });
-      var machOpts = '<option value="">No specific machine</option>' + ms.map(function(m){
-        return '<option value="' + esc(m.serialNumber || '') + '">' + esc(machDisplay(m)) + '</option>';
+      var woBuildings = [];
+      ms.forEach(function(m){
+        var b = String(m.buildingNumber || '').trim();
+        if(b && woBuildings.indexOf(b) === -1){ woBuildings.push(b); }
+      });
+      woBuildings.sort(function(a, b){ return a.localeCompare(b, undefined, { numeric:true, sensitivity:'base' }); });
+      var woBuildingOpts = woBuildings.map(function(b){ return '<option value="' + esc(b) + '"></option>'; }).join('');
+      var woBuildingPreset = woBuildings.length === 1 ? woBuildings[0] : '';
+      var machOpts = '<option value="">' + (ms.length ? 'Pick the machine…' : 'No machines on file for this property yet') + '</option>' + ms.map(function(m){
+        var label = machDisplay(m);
+        var where = [m.buildingNumber ? 'Building ' + m.buildingNumber : '', machineRoom(m)].filter(Boolean).join(' · ');
+        if(where){ label += ' — ' + where; }
+        return '<option value="' + esc(m.id) + '" data-building="' + esc(m.buildingNumber || '') + '">' + esc(label) + '</option>';
       }).join('');
       html +=
-        '<form class="prop-add-note" data-add-workorder-form style="margin-top:14px">' +
-          '<label for="prop-wo-serial">Add a work order — machine</label>' +
-          '<select id="prop-wo-serial" data-wo-serial style="font:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;padding:10px 12px;min-height:48px;width:100%">' + machOpts + '</select>' +
-          '<label for="prop-wo-issue">Issue</label>' +
-          '<textarea id="prop-wo-issue" data-wo-issue placeholder="What needs repair?" autocomplete="off"></textarea>' +
-          '<button class="db-mini-btn" type="submit">Add work order</button>' +
+        '<form class="prop-add-note prop-wo-form" data-add-workorder-form style="margin-top:14px">' +
+          '<span class="prop-wo-title">New work order</span>' +
+          '<p class="prop-wo-note"><strong>Your property info is already filled in</strong> — it comes from what we have on file for this property and goes with the work order, so you don’t have to enter any of it again.</p>' +
+          '<label for="prop-wo-propname">Property name — on file</label>' +
+          '<input type="text" id="prop-wo-propname" data-wo-auto="propertyName" value="' + esc(p.name) + '" placeholder="Not on file yet" readonly tabindex="-1" />' +
+          '<label for="prop-wo-propaddr">Property address — on file</label>' +
+          '<input type="text" id="prop-wo-propaddr" data-wo-auto="propertyAddress" value="' + esc(propertyAddressOf(p)) + '" placeholder="Not on file yet" readonly tabindex="-1" />' +
+          '<label for="prop-wo-propemail">Manager email — on file</label>' +
+          '<input type="text" id="prop-wo-propemail" data-wo-auto="managerEmail" value="' + esc(p.contact || '') + '" placeholder="Not on file yet" readonly tabindex="-1" />' +
+          '<p class="prop-wo-note">You only fill in these three:</p>' +
+          '<label for="prop-wo-building">Building number</label>' +
+          '<input type="text" id="prop-wo-building" data-wo-building list="prop-wo-buildings" value="' + esc(woBuildingPreset) + '" placeholder="e.g. 4" autocomplete="off" />' +
+          '<datalist id="prop-wo-buildings">' + woBuildingOpts + '</datalist>' +
+          '<label for="prop-wo-serial">Which machine</label>' +
+          '<select id="prop-wo-serial" data-wo-serial>' + machOpts + '</select>' +
+          '<label for="prop-wo-issue">Description of the issue</label>' +
+          '<textarea id="prop-wo-issue" data-wo-issue placeholder="Describe what’s happening — noise, leak, won’t start, error code…" autocomplete="off"></textarea>' +
+          '<button class="db-mini-btn" type="submit">Send work order</button>' +
           '<p class="db-msg" data-wo-msg role="status" aria-live="polite"></p>' +
         '</form>' +
       '</div>';
       host.innerHTML = html;
+      wirePropWorkOrderForm(host);
       wirePropAddMachineForm(host, p);
       wireDetailDeleteButtons(host, p);
+    }
+    // Property work order form — picking a machine fills in that
+    // machine's building number (the building field stays
+    // editable, so a manager can still correct it or type a
+    // building for a machine that has none on file).
+    function wirePropWorkOrderForm(host){
+      var sel = host.querySelector('[data-wo-serial]');
+      var bld = host.querySelector('[data-wo-building]');
+      if(!sel || !bld){ return; }
+      sel.addEventListener('change', function(){
+        var opt = sel.options[sel.selectedIndex];
+        var b = opt ? (opt.getAttribute('data-building') || '') : '';
+        if(b){ bld.value = b; }
+      });
     }
     function wireDetailDeleteButtons(host, p){
       function rerenderWithNotice(text){
@@ -5279,15 +5790,40 @@
         e.preventDefault();
         var p = propById(currentPropertyId);
         if(!p){ return; }
-        var issueEl = wform.querySelector('[data-wo-issue]');
-        var issue = issueEl ? issueEl.value.trim() : '';
         var msgEl = wform.querySelector('[data-wo-msg]');
-        if(!issue){ if(issueEl){ issueEl.focus(); } return; }
+        // The only three things the manager fills in: building
+        // number, which machine, and a description of the issue.
+        // Everything else on the order — property name, property
+        // address, manager email — is auto-filled here from the
+        // property record on file, never typed into the form.
+        var buildingEl = wform.querySelector('[data-wo-building]');
         var serialEl = wform.querySelector('[data-wo-serial]');
+        var issueEl = wform.querySelector('[data-wo-issue]');
+        var mach = serialEl && serialEl.value ? machById(serialEl.value) : null;
+        var building = buildingEl ? buildingEl.value.trim() : '';
+        if(!building && mach && mach.buildingNumber){ building = String(mach.buildingNumber).trim(); if(buildingEl){ buildingEl.value = building; } }
+        var issue = issueEl ? issueEl.value.trim() : '';
+        var propMachines = machinesForProperty(p);
+        var missing = [];
+        if(!building){ missing.push('the building number'); }
+        if(propMachines.length && !mach){ missing.push('which machine'); }
+        if(!issue){ missing.push('a description of the issue'); }
+        if(missing.length){
+          if(msgEl){ msgEl.textContent = 'Still needed: ' + missing.join(', ') + '. Your property info is already filled in — nothing else to enter.'; }
+          if(!building && buildingEl){ buildingEl.focus(); }
+          else if(propMachines.length && !mach && serialEl){ serialEl.focus(); }
+          else if(issueEl){ issueEl.focus(); }
+          return;
+        }
         workOrders.push({
           id: nextId('wo'), propertyId: p.id, propertySlug: p.slug || slugify(p.name),
           callKind: 'Commercial',
-          serial: serialEl ? serialEl.value : '', issue: issue,
+          propertyName: p.name || '',
+          propertyAddress: propertyAddressOf(p),
+          managerEmail: p.contact || '',
+          buildingNumber: building,
+          machineId: mach ? mach.id : '',
+          serial: mach ? (mach.serialNumber || '') : '', issue: issue,
           created: noteTimestamp(new Date()), status: 'Open', notes: ''
         });
         pendingChanges.workOrders++;
@@ -7362,6 +7898,7 @@
           propertyId: slugToId[wslug] || '',
           propertySlug: wslug,
           serial: rowVal(r, ['Machine serial', 'Serial #', 'Serial']),
+          buildingNumber: rowVal(r, ['Building number', 'Building', 'building_number']),
           issue: rowVal(r, ['Issue']),
           created: rowVal(r, ['Created', 'Date', 'Created at']),
           status: rowVal(r, ['Status', 'status']) || 'Open',
@@ -7667,6 +8204,14 @@
             // the contract → Commercial default for records that
             // predate the field).
             params.set('call_kind', r.callKind || woCallKind(r));
+            // Property-page orders carry the auto-filled property
+            // info plus the building number the manager entered,
+            // so the Sheet row holds them alongside the slug,
+            // machine serial, and issue.
+            params.set('property_name', r.propertyName || (woProp ? woProp.name : '') || '');
+            params.set('property_address', r.propertyAddress || (woProp ? propertyAddressOf(woProp) : '') || '');
+            params.set('building_number', r.buildingNumber || '');
+            params.set('manager_email', r.managerEmail || (woProp ? woProp.contact : '') || '');
             if(r.source === 'call-in' || r.callerName){
               params.set('source', 'call-in');
               params.set('caller_name', r.callerName || '');
@@ -7913,6 +8458,10 @@
       params.set('status', w.status || 'Open');
       params.set('notes', w.notes || '');
       params.set('call_kind', w.callKind || woCallKind(w));
+      params.set('property_name', w.propertyName || (pr ? pr.name : '') || '');
+      params.set('property_address', w.propertyAddress || (pr ? propertyAddressOf(pr) : '') || '');
+      params.set('building_number', w.buildingNumber || '');
+      params.set('manager_email', w.managerEmail || (pr ? pr.contact : '') || '');
       if(w.source === 'call-in' || w.callerName){
         params.set('source', 'call-in');
         params.set('caller_name', w.callerName || '');
