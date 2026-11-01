@@ -482,14 +482,32 @@
   .portal-field label{font-weight:700;font-size:14.5px;letter-spacing:.02em}
   .portal-field input{font:inherit;font-size:16px;color:var(--ink);background:var(--surface-2);border:1px solid var(--line-strong);border-radius:10px;padding:12px 14px;min-height:50px;width:100%}
   .portal-field input::placeholder{color:var(--ink-3)}
-  /* Reset password show/hide toggle — input and button share one row;
-     the input keeps its normal field styling and flexes to fill the
-     row, the toggle sits beside it at the same height. */
-  .pw-input-row{display:flex;gap:8px;align-items:stretch}
-  .pw-input-row input{flex:1 1 auto;min-width:0;width:auto}
-  .pw-toggle-btn{flex:none;appearance:none;font:inherit;font-size:14.5px;font-weight:700;color:var(--teal);background:var(--surface-2);border:1px solid var(--line-strong);border-radius:10px;padding:0 16px;min-height:50px;min-width:72px;cursor:pointer}
-  .pw-toggle-btn:hover{border-color:var(--teal)}
-  .pw-toggle-btn:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
+  /* Reset password show-password checkbox — ONE checkbox under
+     BOTH password fields (New + Confirm), directly below the
+     Confirm field and above the Reset password submit button.
+     Checking it shows both fields in plain text; unchecking
+     hides both again. There is no eyeball button on this page.
+     Styled to match the site's other checkbox (master trust):
+     a 19px box with a teal accent, label beside it. */
+  .pw-show-check{display:flex;gap:9px;align-items:center;font-size:15px;font-weight:600;line-height:1.4;cursor:pointer;color:var(--ink)}
+  .pw-show-check input{width:19px;height:19px;margin:0;flex:none;accent-color:var(--teal);cursor:pointer}
+  /* Sign-in show-password eyeball — sits INSIDE the password field,
+     at its far right edge, the way password logins usually do it.
+     The wrapper is the positioning context; the input reserves
+     room on its right so typed text (and the bullets) never run
+     under the button. The button itself is a plain transparent
+     40px tap target carrying two eye icons: the open eye while
+     the password is hidden, the crossed-out eye while it is
+     showing; the script swaps them via .is-showing. */
+  .pw-field-wrap{position:relative;display:block}
+  .pw-field-wrap>input{padding-right:52px}
+  .pw-eye-btn{position:absolute;top:50%;right:5px;transform:translateY(-50%);width:40px;height:40px;display:flex;align-items:center;justify-content:center;appearance:none;background:transparent;border:none;border-radius:8px;color:var(--ink-3);cursor:pointer;padding:0}
+  .pw-eye-btn:hover{color:var(--teal);background:var(--teal-soft)}
+  .pw-eye-btn:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
+  .pw-eye-btn svg{width:22px;height:22px;flex:none;pointer-events:none}
+  .pw-eye-btn .pw-eye-off{display:none}
+  .pw-eye-btn.is-showing .pw-eye-open{display:none}
+  .pw-eye-btn.is-showing .pw-eye-off{display:block}
   .portal-form .btn{width:100%;min-height:52px;font-size:16.5px}
   /* Multi-user property accounts — the Create account panel on
      the Portal, the shared manager property page, and the Users
@@ -577,6 +595,21 @@
   .db-account-row strong{color:var(--ink)}
   #view-reset section{padding-top:16px;padding-bottom:36px}
   #view-reset .sec-head{margin-bottom:12px}
+  /* Reset success confirmation — replaces the reset form inside
+     the same card after a successful reset, so the person sees
+     "Password reset successfully" clearly BEFORE the page returns
+     to the sign-in view. Teal success styling matches the site
+     palette (teal = go / done) and the check medallion matches
+     the .fact-icon discs used elsewhere. */
+  .reset-success[hidden]{display:none}
+  .reset-success{text-align:center;padding:10px 4px 4px;display:grid;justify-items:center;gap:0}
+  .reset-success-icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--teal);color:#fff;border:1px solid var(--teal);box-shadow:inset 0 0 0 3px rgba(255,255,255,.22);margin-bottom:14px}
+  @media (prefers-color-scheme: dark){ .reset-success-icon{color:#0a2e29} }
+  .reset-success-icon svg{width:30px;height:30px;flex:none}
+  .reset-success h3{font-size:28px;text-transform:uppercase;letter-spacing:.03em;margin:0 0 7px;color:var(--ink)}
+  .reset-success p{margin:0;color:var(--ink-2);font-size:15.5px;line-height:1.5;max-width:30em}
+  .reset-success .btn{margin-top:18px;min-width:200px}
+  .reset-success .reset-success-auto{margin-top:12px;font-size:13.5px;color:var(--ink-3)}
   .master-back-link{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:15px;margin-top:16px}
   /* Slim signed-in bar above the database card, shown only after
      the gate opens: carries the live backend status text (moved
@@ -1286,7 +1319,7 @@
         </div>
         <div class="portal-card" id="portalLoginCard">
           <h3>Sign in</h3>
-          <form class="portal-form" id="portalForm" method="post" action="https://script.google.com/macros/s/AKfycbzO6T7kJUEjv9XoM9D9RdFfD1D_cIXA3v8DGqAJ40c4Okpyj0eULr-CM1SETf_4NftQ/exec" target="_blank" rel="noopener">
+          <form class="portal-form" id="portalForm" method="post" action="https://script.google.com/macros/s/AKfycbxL7Y0eU-Pq_ZoHwXNYBSCX5WKPW0x61PaDL5H_hiakHByGiW4ja8sxIpsHeffci55i/exec" target="_blank" rel="noopener">
             <input type="hidden" name="action" value="propertyLogin" />
             <input type="hidden" id="portalSlug" name="slug" value="" />
             <input type="hidden" id="portalEmail" name="email" value="" />
@@ -1297,7 +1330,10 @@
             </div>
             <div class="portal-field">
               <label for="portalPassword">Password</label>
-              <input id="portalPassword" name="password" type="password" autocomplete="current-password" placeholder="Your password" />
+              <span class="pw-field-wrap">
+                <input id="portalPassword" name="password" type="password" autocomplete="current-password" placeholder="Your password" />
+                <button class="pw-eye-btn" type="button" data-pw-eye="portalPassword" aria-pressed="false" aria-label="Show password" title="Show password"><svg class="pw-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg><svg class="pw-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.53 13.53 0 0 0 2 12s3.5 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg></button>
+              </span>
             </div>
             <button class="btn btn-teal" type="submit">Sign in</button>
             <p class="db-msg" id="portalStatus" role="alert" aria-live="polite"></p>
@@ -1331,7 +1367,10 @@
               </div>
               <div class="portal-field">
                 <label for="portalSignupPassword">Password</label>
-                <input id="portalSignupPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters" />
+                <span class="pw-field-wrap">
+                  <input id="portalSignupPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters" />
+                  <button class="pw-eye-btn" type="button" data-pw-eye="portalSignupPassword" aria-pressed="false" aria-label="Show password" title="Show password"><svg class="pw-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg><svg class="pw-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.53 13.53 0 0 0 2 12s3.5 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg></button>
+                </span>
                 <small style="color:var(--ink-3);font-size:13px;line-height:1.35">It must be different from every other account’s password at your property — if someone there already uses it, you’ll be asked to pick a different one.</small>
               </div>
               <button class="btn btn-teal" type="submit">Create account</button>
@@ -1394,22 +1433,24 @@
           <form class="portal-form" id="resetForm" style="margin-top:0" novalidate>
             <div class="portal-field">
               <label for="resetNew">New password</label>
-              <div class="pw-input-row">
-                <input id="resetNew" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
-                <button class="pw-toggle-btn" type="button" data-pw-toggle="resetNew" aria-pressed="false" aria-label="Show new password">Show</button>
-              </div>
+              <input id="resetNew" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
             </div>
             <div class="portal-field">
               <label for="resetConfirm">Confirm new password</label>
-              <div class="pw-input-row">
-                <input id="resetConfirm" type="password" autocomplete="new-password" />
-                <button class="pw-toggle-btn" type="button" data-pw-toggle="resetConfirm" aria-pressed="false" aria-label="Show confirm new password">Show</button>
-              </div>
+              <input id="resetConfirm" type="password" autocomplete="new-password" />
             </div>
+            <label class="pw-show-check" for="resetShowPassword"><input id="resetShowPassword" type="checkbox" aria-controls="resetNew resetConfirm" /> Show password</label>
             <button class="btn btn-teal" type="submit">Reset password</button>
             <p class="pw-note">This reset changes only the password on the account the email was sent to — nobody else at the property is affected. Pick a password nobody else at your property uses: property-name sign-in tells the accounts there apart by password.</p>
             <p class="db-msg pw-msg" id="resetMsg" role="status" aria-live="polite"></p>
           </form>
+          <div class="reset-success" id="resetSuccess" hidden role="status" aria-live="polite">
+            <span class="reset-success-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+            <h3>Password reset successfully</h3>
+            <p>Your new password is set. You can sign in with it now.</p>
+            <button class="btn btn-teal" type="button" id="resetSuccessSignIn">Back to sign in</button>
+            <p class="reset-success-auto">Taking you back to sign in&hellip;</p>
+          </div>
         </div>
       </div>
     </section>
@@ -1436,7 +1477,10 @@
             </div>
             <div class="portal-field">
               <label for="masterLoginPasswordInput">Password</label>
-              <input id="masterLoginPasswordInput" name="password" type="password" autocomplete="current-password" placeholder="Your password" />
+              <span class="pw-field-wrap">
+                <input id="masterLoginPasswordInput" name="password" type="password" autocomplete="current-password" placeholder="Your password" />
+                <button class="pw-eye-btn" type="button" data-pw-eye="masterLoginPasswordInput" aria-pressed="false" aria-label="Show password" title="Show password"><svg class="pw-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg><svg class="pw-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.53 13.53 0 0 0 2 12s3.5 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg></button>
+              </span>
             </div>
             <label class="master-trust"><input type="checkbox" id="masterTrustDevice" /> Trust this device — sign me in automatically next time on this device</label>
             <button class="btn btn-teal" type="submit">Sign in</button>
@@ -1490,9 +1534,12 @@
         <div class="db-wrap" id="masterDb">
           <!-- Signed-in bar: live Sheet backend status plus Lock.
                This slim bar replaces the old orange Database backend
-               banner; the master password itself now lives in the
-               hidden field below, filled from the sign-in form, so
-               the Sheet backend calls keep working unchanged. -->
+               banner; the session token the backend returned at
+               master sign-in lives in the hidden token field below
+               (in memory only — the password itself is never
+               stored), so the Sheet backend calls use it as their
+               token. The hidden password field is kept only as an
+               unused legacy placeholder and stays empty. -->
           <input id="backendPasswordInput" type="hidden" />
           <input id="backendMasterTokenInput" type="hidden" />
           <div class="db-card">
@@ -2537,32 +2584,70 @@
   }
 
   // Direct master check — shared by the Portal sign-in form and
-  // the Master sign-in gate. The Sheet backend's master token is
-  // the SHA-256 hex of 'MASTER:' + the master password (that is
-  // how the backend itself defines it in Code.gs), so the check
-  // derives that token from the typed password and asks the
-  // backend's list endpoint directly, then reads the JSON answer
-  // itself: ok:true means the backend accepted the password
-  // server-side. Nothing is decided by watching status text
-  // elsewhere on the page, and no copy or hash of any credential
-  // ships in this page — the hash is computed from what was just
-  // typed, only when it is typed. done receives 'ok' (backend
-  // accepted), 'no' (backend answered but rejected), or 'error'
-  // (no usable answer within 30 seconds — a cold Sheet backend
-  // can be slow, so the window is generous).
-  var FC_BACKEND_URL = 'https://script.google.com/macros/s/AKfycbzO6T7kJUEjv9XoM9D9RdFfD1D_cIXA3v8DGqAJ40c4Okpyj0eULr-CM1SETf_4NftQ/exec';
-  function fcMasterToken(pw){
-    if(!window.crypto || !crypto.subtle || !crypto.subtle.digest || typeof TextEncoder !== 'function'){
-      return Promise.resolve(null);
+  // the Master sign-in gate (backend v20). The check POSTs the
+  // typed password to the backend with action=checkMasterLogin
+  // and identifier 'master'; the backend verifies it server-side
+  // and, on success, answers ok:true with role 'master' and a
+  // session token (sessionToken). That session token — never the
+  // password, and never a token derived from the password — is
+  // what this page keeps, in memory only (plus the hidden token
+  // field the database code reads), and sends as the token on
+  // every master list and master write call for the session.
+  // The password itself is never stored anywhere and is never
+  // sent as a list token. Nothing is decided by watching status
+  // text elsewhere on the page. done receives ('ok',
+  // sessionToken), ('no') when the backend answered but
+  // rejected the sign-in, or ('error') when there was no usable
+  // answer within 30 seconds — a cold Sheet backend can be slow,
+  // so the window is generous.
+  var FC_BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxL7Y0eU-Pq_ZoHwXNYBSCX5WKPW0x61PaDL5H_hiakHByGiW4ja8sxIpsHeffci55i/exec';
+  var fcMasterSessionToken = '';
+  // Keep the current session token in memory and mirror it into
+  // the database's hidden token field (firing change so the
+  // database reloads its data with it). Passing '' clears it.
+  function fcSetMasterSessionToken(token){
+    fcMasterSessionToken = token || '';
+    var tf = document.getElementById('backendMasterTokenInput');
+    if(tf){
+      tf.value = fcMasterSessionToken;
+      tf.dispatchEvent(new Event('change', { bubbles:true }));
     }
-    var data = new TextEncoder().encode('MASTER:' + pw);
-    return crypto.subtle.digest('SHA-256', data).then(function(buf){
-      var bytes = new Uint8Array(buf);
-      var hex = '';
-      for(var i = 0; i < bytes.length; i++){ hex += ('0' + bytes[i].toString(16)).slice(-2); }
-      return hex;
-    }).catch(function(){ return null; });
   }
+  function fcCheckMasterLogin(pw, done){
+    var settled = false;
+    function finish(result, sessionToken){
+      if(settled){ return; }
+      settled = true;
+      done(result, sessionToken || '');
+    }
+    setTimeout(function(){ finish('error'); }, 30000);
+    if(typeof fetch !== 'function'){ finish('error'); return; }
+    if(!pw){ finish('error'); return; }
+    var params = new URLSearchParams();
+    params.set('format', 'json');
+    params.set('action', 'checkMasterLogin');
+    params.set('identifier', 'master');
+    params.set('password', pw);
+    fetch(FC_BACKEND_URL, { method:'POST', body: params })
+      .then(function(r){ return r.text(); })
+      .then(function(text){
+        var t = String(text == null ? '' : text).trim();
+        var data = null;
+        if(t && t.charAt(0) !== '<'){ try { data = JSON.parse(t); } catch(e){ data = null; } }
+        if(!data){ finish('error'); return; }
+        if(data.ok && data.role === 'master' && data.sessionToken){ finish('ok', data.sessionToken); return; }
+        if(data.ok){ finish('error'); return; }
+        finish('no');
+      })
+      .catch(function(){ finish('error'); });
+  }
+  // Validate a session token (trusted-device sign-in only): the
+  // token is offered to the backend's list endpoint and only its
+  // ok:true answer counts. Session tokens issued before a
+  // password reset are revoked server-side, and tokens stored by
+  // the old password-derived flow are rejected the same way —
+  // either way the caller forgets the stored token and asks for
+  // the password again.
   function fcCheckMasterToken(token, done){
     var settled = false;
     function finish(result){
@@ -2583,12 +2668,6 @@
         finish(data.ok ? 'ok' : 'no');
       })
       .catch(function(){ finish('error'); });
-  }
-  function fcCheckMasterPassword(pw, done){
-    fcMasterToken(pw).then(function(token){
-      if(token === null){ done('error'); return; }
-      fcCheckMasterToken(token, done);
-    });
   }
   // ---- Multi-user property accounts ----
   // One property, many accounts: an owner, office staff, a
@@ -3086,14 +3165,17 @@
   // keeps its normal look; the whole area does not wash red:
   //  • Master sign-in (owner): every submit is first tried as a
   //    master sign-in, verified ONLY by the Sheet backend
-  //    server-side — the page asks the backend's list endpoint
-  //    directly with the token derived from the typed password
-  //    (see fcCheckMasterPassword above) and only its ok:true
-  //    JSON answer counts (the backend holds the master
-  //    password; this page ships no copy and no hash of either
-  //    master credential, and the username is not checked in
-  //    the page at all). If the backend accepts, the master
-  //    database unlocks and opens (see unlockMaster below).
+  //    server-side — the page POSTs the typed password to the
+  //    backend's checkMasterLogin action with identifier
+  //    'master' (see fcCheckMasterLogin above) and only its
+  //    ok:true answer with role 'master' counts; the session
+  //    token it returns is kept in memory for the database's
+  //    data loading (the backend holds the master password;
+  //    this page ships no copy and no hash of either master
+  //    credential, never stores the password, and the username
+  //    is not checked in the page at all). If the backend
+  //    accepts, the master database unlocks and opens (see
+  //    unlockMaster below).
   //  • Property sign-in (managers): if the password is not the
   //    master password — the normal case for a manager's own
   //    property password — the property login is checked here
@@ -3183,11 +3265,11 @@
       }
       var isEmailVal = propVal.indexOf('@') > -1;
       var slugVal = isEmailVal ? '' : propVal.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-      var backendPwEl = document.getElementById('backendPasswordInput');
       function openPropertyPage(){
         // Confirmed match only: the checks above never touched
-        // the hidden backend password field, so there is nothing
-        // to restore — just post to the property login as before.
+        // the hidden master session-token field, so there is
+        // nothing to restore — just post to the property login
+        // as before.
         // Either login works on this post too: a property name
         // carries its slug, an email carries the email /
         // identifier fields (and no slug) for the backend to
@@ -3259,23 +3341,23 @@
         });
       }
       // Master check first, server-side only (see
-      // fcCheckMasterPassword above): the backend's own JSON
-      // answer decides. Only an ok answer opens the master
-      // database; anything else continues to the property check
-      // above, which makes the final call on this page.
+      // fcCheckMasterLogin above): the backend's own JSON
+      // answer decides. Only an ok answer with role 'master'
+      // opens the master database; anything else continues to
+      // the property check above, which makes the final call
+      // on this page.
       if(statusEl){ statusEl.innerHTML = '<strong>Checking sign-in…</strong>'; }
       portalCheckRunning = true;
-      fcCheckMasterPassword(pwVal, function(result){
+      fcCheckMasterLogin(pwVal, function(result, sessionToken){
         if(result === 'ok'){
           portalCheckRunning = false;
-          // Hand the verified password to the database session
-          // (hidden field + change reloads the Sheet data with
-          // it), then unlock and open the master database — the
-          // six Database tiles.
-          if(backendPwEl){
-            backendPwEl.value = pwVal;
-            backendPwEl.dispatchEvent(new Event('change', { bubbles:true }));
-          }
+          // Keep the returned session token in memory for the
+          // database session (fcSetMasterSessionToken mirrors
+          // it into the hidden token field, whose change reloads
+          // the Sheet data with it) — the password itself is
+          // never stored — then unlock and open the master
+          // database — the six Database tiles.
+          fcSetMasterSessionToken(sessionToken);
           if(pwEl){ pwEl.value = ''; }
           portalClearLoginError();
           if(statusEl){ statusEl.innerHTML = ''; }
@@ -3454,14 +3536,14 @@
   // held in this page in any form — no copy and no hash of the
   // username or the password ships in the source. The username
   // (the owner's personal email) is only a label on the form and
-  // is not checked here at all; the password — his test password,
-  // which is also the Sheet backend's master password — is NEVER
-  // checked in this page either: the Sheet backend verifies it
-  // server-side, asked directly through fcCheckMasterPassword —
-  // the shell unlocks only when the backend's own list call
-  // answers ok:true for that password, stays locked when the
-  // backend rejects it, and stays locked with an explanation
-  // when the backend cannot be reached to check.
+  // is not checked here at all; the password is NEVER checked
+  // in this page either: the Sheet backend verifies it
+  // server-side, asked directly through fcCheckMasterLogin —
+  // the shell unlocks only when the backend's checkMasterLogin
+  // answer is ok:true with role 'master' (and its session token
+  // is kept in memory for the session's data loading), stays
+  // locked when the backend rejects it, and stays locked with
+  // an explanation when the backend cannot be reached to check.
   // The gate is per page load only — locking, or reloading the
   // page, returns the Master view to the sign-in page. The one
   // exception is a trusted device (see the Trusted device block
@@ -3508,10 +3590,11 @@
     if(realMasterTabOpener){ realMasterTabOpener(which); }
   };
   function unlockMaster(){
-    // The backend has already verified the password (its list
-    // call answered ok:true to the direct check) and the hidden
-    // backendPasswordInput already holds it for the session's
-    // Sheet calls — unlocking is only about showing the shell.
+    // The backend has already verified the sign-in (its
+    // checkMasterLogin call answered ok:true with role
+    // 'master') and the session token it returned is already
+    // held in memory for the session's Sheet calls — unlocking
+    // is only about showing the shell.
     if(masterSignInTimer){ clearInterval(masterSignInTimer); masterSignInTimer = null; }
     masterUnlocked = true;
     masterGateError(false);
@@ -3523,6 +3606,7 @@
   function lockMaster(){
     if(masterSignInTimer){ clearInterval(masterSignInTimer); masterSignInTimer = null; }
     masterUnlocked = false;
+    fcMasterSessionToken = '';
     var backendPw = document.getElementById('backendPasswordInput');
     if(backendPw){ backendPw.value = ''; }
     var backendTk = document.getElementById('backendMasterTokenInput');
@@ -3540,17 +3624,19 @@
   // browser remembers the device and signs him straight into the
   // master database next time, with no password typed. What is
   // stored (in this browser's local storage, on this device
-  // only) is the derived master token — the SHA-256 hash the
-  // backend itself defines — never the password. The sign-in is
-  // still verified by the Sheet backend every time: the stored
-  // token is checked against the backend's list endpoint, and
-  // only its ok:true answer unlocks. A token the backend rejects
-  // (e.g. because the master password changed — a new password
-  // means a new token, which ends the trust on its own) is
-  // forgotten automatically. Revoking by hand: "Forget this
-  // device" on the gate (when signed out) or at the top of the
-  // database (when signed in) clears the stored token; Lock
-  // alone does not — Lock is per-session, Forget is the revoke.
+  // only) is the session token the backend returned from
+  // checkMasterLogin — never the password, and never a token
+  // derived from the password. The sign-in is still verified by
+  // the Sheet backend every time: the stored session token is
+  // checked against the backend's list endpoint, and only its
+  // ok:true answer unlocks. A token the backend rejects — an
+  // old token stored by the earlier password-derived flow, or a
+  // session revoked server-side by a password reset — is
+  // forgotten automatically and the password is asked for
+  // again. Revoking by hand: "Forget this device" on the gate
+  // (when signed out) or at the top of the database (when signed
+  // in) clears the stored token; Lock alone does not — Lock is
+  // per-session, Forget is the revoke.
   // This is master-only on purpose: property manager and
   // customer logins never read or write the trusted token and
   // still require their password every time, and an NFC coin
@@ -3565,6 +3651,7 @@
   }
   function fcTrustForget(){
     try { window.localStorage.removeItem(FC_TRUST_KEY); } catch(e){}
+    fcMasterSessionToken = '';
     var tf = document.getElementById('backendMasterTokenInput');
     if(tf){ tf.value = ''; }
     refreshTrustUi();
@@ -3586,11 +3673,7 @@
     fcCheckMasterToken(token, function(result){
       trustCheckRunning = false;
       if(result === 'ok'){
-        var tf = document.getElementById('backendMasterTokenInput');
-        if(tf){
-          tf.value = token;
-          tf.dispatchEvent(new Event('change', { bubbles:true }));
-        }
+        fcSetMasterSessionToken(token);
         if(masterLoginMsg){ masterLoginMsg.textContent = ''; }
         unlockMaster();
         return;
@@ -3627,6 +3710,9 @@
       function reject(msg, fields){
         gateCheckRunning = false;
         masterUnlocked = false;
+        fcMasterSessionToken = '';
+        var backendTk = document.getElementById('backendMasterTokenInput');
+        if(backendTk){ backendTk.value = ''; }
         var backendPw = document.getElementById('backendPasswordInput');
         if(backendPw){ backendPw.value = ''; }
         applyMasterGate();
@@ -3649,30 +3735,30 @@
       // No credential is checked in this page — no copy and no
       // hash of the username or password is shipped here. The
       // password check is the Sheet backend's alone, asked
-      // directly (see fcCheckMasterPassword above): its JSON
-      // list answer decides — ok unlocks, a rejection stays
-      // locked with a wrong-credentials message, and no usable
-      // answer stays locked with a couldn't-reach message.
+      // directly (see fcCheckMasterLogin above): its JSON
+      // checkMasterLogin answer decides — ok with role 'master'
+      // unlocks, a rejection stays locked with a
+      // wrong-credentials message, and no usable answer stays
+      // locked with a couldn't-reach message.
       masterGateError(false);
       if(masterLoginMsg){ masterLoginMsg.textContent = 'Checking with the database…'; }
       gateCheckRunning = true;
-      fcCheckMasterPassword(pwVal, function(result){
+      fcCheckMasterLogin(pwVal, function(result, sessionToken){
         gateCheckRunning = false;
         if(result === 'ok'){
-          // Hand the verified password to the database session
-          // (hidden field + change reloads the Sheet data with
-          // it), then unlock.
-          var backendPw = document.getElementById('backendPasswordInput');
-          if(backendPw){
-            backendPw.value = pwVal;
-            backendPw.dispatchEvent(new Event('change', { bubbles:true }));
-          }
+          // Keep the returned session token in memory for the
+          // database session (fcSetMasterSessionToken mirrors
+          // it into the hidden token field, whose change reloads
+          // the Sheet data with it) — the password itself is
+          // never stored — then unlock.
+          fcSetMasterSessionToken(sessionToken);
           // Trusted device opt-in (master only, this form only):
           // if the box was ticked, remember this device with the
-          // derived master token — never the password itself.
+          // session token the backend just returned — never the
+          // password, and never a token derived from it.
           var trustBox = document.getElementById('masterTrustDevice');
           if(trustBox && trustBox.checked){
-            fcMasterToken(pwVal).then(function(t){ if(t){ fcTrustStore(t); } });
+            if(sessionToken){ fcTrustStore(sessionToken); }
             trustBox.checked = false;
           }
           unlockMaster();
@@ -3815,14 +3901,24 @@
         });
       });
     }
-    // Arriving from the Portal sign-in: if the owner typed their
-    // email in the sign-in property box, it is not reused here —
-    // the identifier is typed fresh so nothing is carried over
-    // silently. (The Property box itself is left untouched.)
+    // Arriving from the Portal sign-in: the Forgot email box is
+    // autofilled from the sign-in identifier ONLY when that
+    // identifier contains an @ — i.e. it is an email. A property
+    // name (no @) leaves the Forgot box empty, so a reset is
+    // never aimed from a property name alone. (The Property box
+    // itself is left untouched.)
+    if(link){
+      link.addEventListener('click', function(){
+        var propEl = document.getElementById('portalProperty');
+        var v = propEl ? propEl.value.trim() : '';
+        if(idEl && !idEl.value && v.indexOf('@') > -1){ idEl.value = v; }
+      });
+    }
   })();
 
   // Master gate — Forgot password? (master scope only; the email
-  // box starts from whatever is typed in the gate's Username box)
+  // box is autofilled from the gate's Username box only when
+  // that identifier contains an @ — otherwise it stays empty)
   (function(){
     var panel = document.getElementById('masterForgotPanel');
     var link = document.getElementById('masterForgotLink');
@@ -3831,7 +3927,8 @@
       link.addEventListener('click', function(){
         var emailEl = document.getElementById('masterForgotEmail');
         var userEl = document.getElementById('masterUsernameInput');
-        if(emailEl && userEl && !emailEl.value && userEl.value.trim()){ emailEl.value = userEl.value.trim(); }
+        var v = userEl ? userEl.value.trim() : '';
+        if(emailEl && !emailEl.value && v.indexOf('@') > -1){ emailEl.value = v; }
       });
     }
     var form = document.getElementById('masterForgotForm');
@@ -3861,9 +3958,14 @@
   // does NOT sign anyone in and does not touch the trusted-
   // device token; only a successful resetPassword answer
   // (ok:true) counts as the password being set, and a master
-  // reset forgets this device's trusted sign-in, since that
-  // token was derived from the old password. On success the
-  // page goes straight back to the sign-in (Portal) view.
+  // reset forgets this device's trusted sign-in: the backend
+  // revokes the old session server-side on a reset, so the
+  // stored session token stops working and the next sign-in
+  // asks for the new password. On success the
+  // Reset view first shows a clear "Password reset
+  // successfully" confirmation in place of the form, and only
+  // then returns to the sign-in (Portal) view — automatically
+  // after a few seconds, or right away from its button.
   var fcReset = { token:'', scope:'', preview:false };
   function fcParseResetLink(){
     var found = { token:'', scope:'', preview:false };
@@ -3901,9 +4003,11 @@
     fcReset = parsed;
     var form = document.getElementById('resetForm');
     var invalid = document.getElementById('resetInvalid');
+    var success = document.getElementById('resetSuccess');
     var msgEl = document.getElementById('resetMsg');
     if(form){ form.hidden = false; }
     if(invalid){ invalid.hidden = true; }
+    if(success){ success.hidden = true; }
     fcPwSetMsg(msgEl, '', false);
     showView('reset');
     return true;
@@ -3914,21 +4018,20 @@
     var confEl = document.getElementById('resetConfirm');
     var msgEl = document.getElementById('resetMsg');
     var invalid = document.getElementById('resetInvalid');
-    // Show/hide toggles — each button flips only its own field
-    // between password (bullets) and text, and swaps its label.
-    var toggleBtns = form ? form.querySelectorAll('[data-pw-toggle]') : [];
-    Array.prototype.forEach.call(toggleBtns, function(btn){
-      btn.addEventListener('click', function(){
-        var field = document.getElementById(btn.getAttribute('data-pw-toggle'));
-        if(!field){ return; }
-        var showing = field.type === 'text';
-        field.type = showing ? 'password' : 'text';
-        btn.textContent = showing ? 'Show' : 'Hide';
-        btn.setAttribute('aria-pressed', showing ? 'false' : 'true');
-        btn.setAttribute('aria-label', (showing ? 'Show ' : 'Hide ') + (field.id === 'resetConfirm' ? 'confirm new password' : 'new password'));
-        field.focus();
+    // Show password checkbox — ONE checkbox under the Confirm
+    // field controls BOTH fields together: checked shows both
+    // in plain text, unchecked hides both as password bullets.
+    var showCheckbox = document.getElementById('resetShowPassword');
+    function fcResetSetShowing(showing){
+      if(newEl){ newEl.type = showing ? 'text' : 'password'; }
+      if(confEl){ confEl.type = showing ? 'text' : 'password'; }
+      if(showCheckbox){ showCheckbox.checked = !!showing; }
+    }
+    if(showCheckbox){
+      showCheckbox.addEventListener('change', function(){
+        fcResetSetShowing(showCheckbox.checked);
       });
-    });
+    }
     // Confirm mismatch marking — only the Confirm box is marked,
     // with the same per-field red style as the sign-in boxes
     // (input.is-field-error); the New password box is never marked
@@ -3940,6 +4043,17 @@
     }
     if(newEl){ newEl.addEventListener('input', fcResetSyncMatchMark); }
     if(confEl){ confEl.addEventListener('input', fcResetSyncMatchMark); }
+    // Success confirmation's "Back to sign in" button — bound
+    // once here; a successful submit stores its return-to-sign-in
+    // action in fcResetSuccessGo for this button (and its timer)
+    // to run.
+    var fcResetSuccessGo = null;
+    var successBtn = document.getElementById('resetSuccessSignIn');
+    if(successBtn){
+      successBtn.addEventListener('click', function(){
+        if(fcResetSuccessGo){ fcResetSuccessGo(); }
+      });
+    }
     if(form){
       form.addEventListener('submit', function(e){
         e.preventDefault();
@@ -3956,21 +4070,44 @@
         fcPwPost('resetPassword', { token: fcReset.token, scope: fcReset.scope, new_password: nw }).then(function(data){
           if(data && data.ok){
             // The code is used up: drop it from memory so this
-            // page cannot submit it a second time, then go
-            // straight back to the sign-in page.
+            // page cannot submit it a second time. Then show the
+            // "Password reset successfully" confirmation in place
+            // of the form FIRST, and return to the sign-in page
+            // only after it has been seen — automatically after
+            // a few seconds, or immediately from its button.
             var wasMaster = fcReset.scope === 'master';
             fcReset = { token:'', scope:'', preview:false };
             if(wasMaster){ fcTrustForget(); }
             if(newEl){ newEl.value = ''; }
             if(confEl){ confEl.value = ''; confEl.classList.remove('is-field-error'); }
-            showView('portal');
-            var statusEl = document.getElementById('portalStatus');
-            if(statusEl){
-              statusEl.classList.remove('is-error');
-              statusEl.textContent = 'Password updated. Sign in.';
+            fcResetSetShowing(false);
+            fcPwSetMsg(msgEl, '', false);
+            var successEl = document.getElementById('resetSuccess');
+            var goTimer = null;
+            function goToSignIn(){
+              if(goTimer){ clearTimeout(goTimer); goTimer = null; }
+              fcResetSuccessGo = null;
+              if(successEl){ successEl.hidden = true; }
+              if(form){ form.hidden = false; }
+              showView('portal');
+              var statusEl = document.getElementById('portalStatus');
+              if(statusEl){
+                statusEl.classList.remove('is-error');
+                statusEl.textContent = 'Password reset successfully — sign in with your new password.';
+              }
+              var loginEl = document.getElementById('portalProperty');
+              if(loginEl){ loginEl.focus(); }
             }
-            var loginEl = document.getElementById('portalProperty');
-            if(loginEl){ loginEl.focus(); }
+            if(form){ form.hidden = true; }
+            if(invalid){ invalid.hidden = true; }
+            if(successEl){
+              fcResetSuccessGo = goToSignIn;
+              successEl.hidden = false;
+              if(successBtn){ successBtn.focus(); }
+              goTimer = setTimeout(goToSignIn, 3500);
+            } else {
+              goToSignIn();
+            }
             return;
           }
           if(data){
@@ -3985,6 +4122,31 @@
     // the page is open) opens the Reset view directly.
     window.addEventListener('hashchange', function(){ fcOpenResetView(); });
     fcOpenResetView();
+  })();
+
+  // ---- Sign-in show-password eyeballs ----
+  // Each .pw-eye-btn sits inside its password field at the far
+  // right (see .pw-field-wrap in the styles) and flips ONLY its
+  // own field between password (bullets) and text. The button
+  // swaps its icon with it: open eye while the password is
+  // hidden, crossed-out eye while it is showing. Tapping it
+  // never submits the form (type="button") and focus returns to
+  // the field so typing can continue.
+  (function(){
+    var eyeBtns = document.querySelectorAll('[data-pw-eye]');
+    Array.prototype.forEach.call(eyeBtns, function(btn){
+      btn.addEventListener('click', function(){
+        var field = document.getElementById(btn.getAttribute('data-pw-eye'));
+        if(!field){ return; }
+        var showing = field.type === 'text';
+        field.type = showing ? 'password' : 'text';
+        btn.classList.toggle('is-showing', !showing);
+        btn.setAttribute('aria-pressed', showing ? 'false' : 'true');
+        btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+        btn.setAttribute('title', showing ? 'Show password' : 'Hide password');
+        field.focus();
+      });
+    });
   })();
 
   // ---- Work order sheet flow ----
@@ -8558,15 +8720,17 @@
 
     // ---- Sheet backend (Apps Script web app + Google Sheet) ----
     // This tab is wired to the Full Cycle Master Database Sheet
-    // through the deployed Apps Script web app (Version 6), using
+    // through the deployed Apps Script web app (backend v20), using
     // the JSON API the script defines: GET ?format=json&action=list
     // returns the Properties, Machines, and WorkOrders rows, and
     // form-param POSTs with format=json and action=addProperty /
     // addMachine append new rows while action=updateProperty /
-    // updateMachine update rows already in the Sheet. The owner
-    // signs in with on the Master sign-in page; it is kept in a hidden
-    // field in memory for this session
-    // only and is never stored in this page. On load the tab reads
+    // updateMachine update rows already in the Sheet. Master
+    // sign-in (see fcCheckMasterLogin) returns a session token
+    // from the backend; that token — never the password — is kept
+    // in a hidden field in memory for this session only and is
+    // sent as the token on every master list and master write
+    // call below. On load the tab reads
     // the Sheet; Submit pushes every new (non-sample) property and
     // machine, plus updates for records loaded from the Sheet that
     // were edited here. Records loaded from the Sheet are marked
@@ -8578,29 +8742,20 @@
     // the backend could not be reached and nothing was saved to
     // the Sheet; the in-memory records remain as the fallback
     // display, never silently and never labelled saved.
-    var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbzO6T7kJUEjv9XoM9D9RdFfD1D_cIXA3v8DGqAJ40c4Okpyj0eULr-CM1SETf_4NftQ/exec';
+    var BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxL7Y0eU-Pq_ZoHwXNYBSCX5WKPW0x61PaDL5H_hiakHByGiW4ja8sxIpsHeffci55i/exec';
     var backendState = 'checking';
     var backendPasswordEl = document.getElementById('backendPasswordInput');
     var backendTokenEl = document.getElementById('backendMasterTokenInput');
-    function backendPassword(){ return backendPasswordEl ? backendPasswordEl.value : ''; }
     function backendCredential(){
-      // Trusted-device session: the hidden token field holds the
-      // already-derived master token (verified by the backend at
-      // auto sign-in), so it is used as the credential directly —
-      // there is no password in the page to hash in that case.
-      if(backendTokenEl && backendTokenEl.value){ return Promise.resolve(backendTokenEl.value); }
-      var pw = backendPassword();
-      if(!pw){ return Promise.resolve(''); }
-      if(!window.crypto || !crypto.subtle || !crypto.subtle.digest || typeof TextEncoder !== 'function'){
-        return Promise.resolve(null);
-      }
-      var data = new TextEncoder().encode('MASTER:' + pw);
-      return crypto.subtle.digest('SHA-256', data).then(function(buf){
-        var bytes = new Uint8Array(buf);
-        var hex = '';
-        for(var i = 0; i < bytes.length; i++){ hex += ('0' + bytes[i].toString(16)).slice(-2); }
-        return hex;
-      }).catch(function(){ return null; });
+      // The credential for every master list and master write
+      // call is the session token the backend returned from
+      // checkMasterLogin at sign-in (or the same session token
+      // restored by a trusted-device sign-in), held in the hidden
+      // token field in memory only. There is no password in the
+      // page to send or derive a token from: an empty field means
+      // no master session, and the callers treat '' as "not
+      // signed in".
+      return Promise.resolve(backendTokenEl ? backendTokenEl.value : '');
     }
     function setBackendStatus(t){
       var el = document.getElementById('backendStatus');
@@ -8812,7 +8967,7 @@
           }
           if(!data.ok){
             backendState = 'auth';
-            setBackendStatus('The Sheet backend is live but asks for your master password before it will share data. Sign in with your master login in the Portal sign-in form to connect; until then, records stay on this page only.');
+            setBackendStatus('The Sheet backend is live but did not accept the master session token before it will share data. Sign in with your master login in the Portal sign-in form to connect; until then, records stay on this page only.');
             return;
           }
           backendState = 'live';
@@ -8947,7 +9102,7 @@
               return { ok:false, state:'html', count:0 };
             }
             backendState = 'auth';
-            setBackendStatus('Backend could not be reached — the Sheet backend rejected the master password (or no master password was entered), so the Sheet could not be checked. Check your Master sign-in and tap Submit again.');
+            setBackendStatus('Backend could not be reached — the Sheet backend rejected the master session token (or there is no master sign-in in this session), so the Sheet could not be checked. Check your Master sign-in and tap Submit again.');
             return { ok:false, state:'auth', count:0 };
           })
           .catch(function(){
@@ -9005,7 +9160,7 @@
               setBackendStatus('Backend could not be reached — the deployed script answered with a web page, not data, so the Sheet write did not go through. ' + (okCount ? okCount + ' record' + (okCount === 1 ? ' was' : 's were') + ' confirmed written before the failure; the rest were not saved and stay pending.' : 'Nothing was saved to the Sheet; the records are still on this page only.'));
               resolve({ ok:false, state:'html', count:okCount, contacts:contactResults });
             } else if(failState === 'auth'){
-              setBackendStatus('Backend could not be reached — the Sheet backend rejected the master password (or no master password was entered), so the Sheet write did not go through. ' + (okCount ? okCount + ' record' + (okCount === 1 ? ' was' : 's were') + ' confirmed written before the failure; the rest were not saved and stay pending.' : 'Nothing was saved to the Sheet; check your Master sign-in and tap Submit again.'));
+              setBackendStatus('Backend could not be reached — the Sheet backend rejected the master session token (or there is no master sign-in in this session), so the Sheet write did not go through. ' + (okCount ? okCount + ' record' + (okCount === 1 ? ' was' : 's were') + ' confirmed written before the failure; the rest were not saved and stay pending.' : 'Nothing was saved to the Sheet; check your Master sign-in and tap Submit again.'));
               resolve({ ok:false, state:'auth', count:okCount, contacts:contactResults });
             } else {
               setBackendStatus('Backend could not be reached — the Sheet backend did not answer, so the Sheet write did not go through. ' + (okCount ? okCount + ' record' + (okCount === 1 ? ' was' : 's were') + ' confirmed written before the failure; the rest were not saved and stay pending.' : 'Nothing was saved to the Sheet; the records are still on this page only.'));
@@ -9370,23 +9525,13 @@
           .catch(function(){ done(false, { state:'error' }); });
       });
     }
-    if(backendPasswordEl){
-      backendPasswordEl.addEventListener('change', function(){ loadFromBackend(); });
-      // Also reload as the password is typed (debounced), so the
-      // Sheet's properties, machines, and work orders appear as
-      // soon as the full password is in — no need to tap away
-      // first. The password itself stays in this field only, in
-      // memory for the session; only its SHA-256 hash is sent.
-      var backendPwTimer = null;
-      backendPasswordEl.addEventListener('input', function(){
-        if(backendPwTimer){ clearTimeout(backendPwTimer); }
-        backendPwTimer = setTimeout(function(){ backendPwTimer = null; loadFromBackend(); }, 700);
-      });
-    }
     if(backendTokenEl){
-      // A trusted-device auto sign-in drops the verified master
-      // token into this field and fires change — reload the Sheet
-      // data with it, exactly as a typed password would.
+      // A master sign-in (typed password, checked through
+      // checkMasterLogin, or a trusted-device auto sign-in) drops
+      // the session token the backend returned into this field
+      // and fires change — reload the Sheet data with it. The
+      // password itself never enters this field and is never
+      // stored anywhere in the page.
       backendTokenEl.addEventListener('change', function(){ loadFromBackend(); });
     }
 
