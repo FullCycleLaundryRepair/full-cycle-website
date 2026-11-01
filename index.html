@@ -265,15 +265,18 @@
   .hero h1{font-size:clamp(42px,8vw,68px);font-weight:700;text-transform:uppercase}
   .hero h1 .copper{color:#f09a4a}
   .hero-sub{font-size:19px;color:#d8d2c4;max-width:32em;margin:14px 0 0}
-  /* Hero price row: the $125 TOTAL block is centered vertically
-     against the explanation text beside it (align-items:center), so
-     it sits in the vertical middle of the row even when that text
-     wraps taller than the price on narrow screens. */
-  .hero-price{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:22px}
+  /* Hero price: the $125 TOTAL stays the large figure, with the
+     pricing equation set smaller directly underneath it — this is
+     the only place the equation appears on Home. A quiet note line
+     (parts extra / only-pay-$50) sits below the equation. */
+  .hero-price{display:flex;flex-direction:column;align-items:flex-start;gap:7px;margin-top:22px}
   .hero-price .big{font-family:"Barlow Condensed",sans-serif;font-size:54px;font-weight:700;line-height:1;color:#fff}
   .hero-price .big small{font-size:20px;color:#f09a4a;letter-spacing:.12em}
-  .hero-price p{margin:0;color:#c9cfc6;font-size:15.5px;flex:1 1 220px}
-  .hero-price p strong{color:#fff}
+  .hero-equation{display:flex;flex-wrap:wrap;align-items:center;gap:2px 7px;margin:0;color:#c9cfc6;font-size:16px;line-height:1.35}
+  .hero-equation strong{color:#fff;font-weight:700}
+  .hero-equation .op{color:#f09a4a;font-weight:700}
+  .hero-price-note{margin:0;color:#c9cfc6;font-size:15.5px;line-height:1.45}
+  .parts-choice-note{margin:0}
   .hero-ctas{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px;overflow:hidden}
   .hero-ctas .btn{flex:1 1 180px}
   /* Large hero logo removed — hero copy now uses the full width, capped for readability */
@@ -369,8 +372,9 @@
   .refurb{margin-top:14px;background:linear-gradient(135deg,#e07f2e,#c05e1a);color:#fff;border-radius:var(--radius);padding:24px}
   .refurb h3{font-size:clamp(24px,4vw,30px);text-transform:uppercase}
   .refurb p{margin:7px 0 0;font-size:16px;max-width:44em;color:#ffeedd}
-  .refurb .pill{display:inline-block;margin-top:12px;background:#161006;color:#fff;font-weight:700;letter-spacing:.05em;padding:8px 15px;border-radius:999px;font-size:14px;text-transform:uppercase}
+  .refurb .pill{display:inline-block;max-width:100%;margin-top:12px;background:#161006;color:#fff;font-weight:700;letter-spacing:.04em;padding:11px 28px;border-radius:999px;font-size:13px;line-height:1.45;text-align:center;text-transform:uppercase;text-wrap:balance;vertical-align:top}
   .refurb .pill em{font-style:normal;color:#f09a4a}
+  @media(max-width:360px){ .refurb .pill{padding:10px 24px;font-size:12.5px} }
 
   /* FAQ */
   .faq-item{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:9px;overflow:hidden}
@@ -478,7 +482,28 @@
   .portal-field label{font-weight:700;font-size:14.5px;letter-spacing:.02em}
   .portal-field input{font:inherit;font-size:16px;color:var(--ink);background:var(--surface-2);border:1px solid var(--line-strong);border-radius:10px;padding:12px 14px;min-height:50px;width:100%}
   .portal-field input::placeholder{color:var(--ink-3)}
+  /* Reset password show/hide toggle — input and button share one row;
+     the input keeps its normal field styling and flexes to fill the
+     row, the toggle sits beside it at the same height. */
+  .pw-input-row{display:flex;gap:8px;align-items:stretch}
+  .pw-input-row input{flex:1 1 auto;min-width:0;width:auto}
+  .pw-toggle-btn{flex:none;appearance:none;font:inherit;font-size:14.5px;font-weight:700;color:var(--teal);background:var(--surface-2);border:1px solid var(--line-strong);border-radius:10px;padding:0 16px;min-height:50px;min-width:72px;cursor:pointer}
+  .pw-toggle-btn:hover{border-color:var(--teal)}
+  .pw-toggle-btn:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
   .portal-form .btn{width:100%;min-height:52px;font-size:16.5px}
+  /* Multi-user property accounts — the Create account panel on
+     the Portal, the shared manager property page, and the Users
+     list in Master all reuse the portal / database styling; the
+     few rules below are the pieces those views add. No list of a
+     property's users is ever rendered on the public sign-in page:
+     these user rows appear only inside the Master database,
+     behind the master sign-in. */
+  .user-list{display:grid;gap:8px;margin:0 0 14px}
+  .user-row{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14.5px;min-width:0}
+  .user-row .user-email{font-weight:700;color:var(--ink);overflow-wrap:anywhere;min-width:0}
+  .user-row .user-state{color:var(--ink-2);font-size:13.5px;white-space:nowrap}
+  .mgr-signout-row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:14.5px;color:var(--ink-2)}
+  .mgr-signout-row strong{color:var(--ink);overflow-wrap:anywhere}
   /* Sign-in error — shown on this page, in the sign-in form
      itself, when the property / username or the password doesn't
      match: ONLY the incorrect field is marked — its interior
@@ -1031,10 +1056,11 @@
         <div class="hero-copy">
           <p class="hero-eyebrow">Local &amp; Independent</p>
           <h1>Washer &amp; Dryer<br /><span class="copper">Repair</span></h1>
-          <p class="hero-sub">One local tech, flat pricing, no hourly billing. Evenings and weekends — we come when you’re home.</p>
+          <p class="hero-sub">We are a local, independent company with flat pricing and no hourly billing. Evenings and weekends — we come when you’re home.</p>
           <div class="hero-price">
             <div class="big">$125 <small>TOTAL</small></div>
-            <p><strong>$50 diagnosis + $75 labor.</strong> Parts extra. Decide not to repair? You only pay the $50.</p>
+            <p class="hero-equation" aria-label="$50 diagnosis plus $75 labor equals $125 total"><span><strong>$50</strong> diagnosis</span><span class="op" aria-hidden="true">+</span><span><strong>$75</strong> labor</span><span class="op" aria-hidden="true">=</span><span><strong>$125</strong> total</span></p>
+            <p class="hero-price-note">Parts extra. Decide not to repair? You only pay the $50 diagnosis fee.</p>
           </div>
         </div>
       </div>
@@ -1065,31 +1091,9 @@
       </div>
     </div>
 
-    <section id="pricing">
+    <section class="tight" id="parts-choice">
       <div class="wrap">
-        <div class="sec-head">
-          <h2>Flat pricing — <em>that’s it</em></h2>
-        </div>
-        <div class="price-math">
-          <div class="price-box">
-            <div class="amt"><em>$50</em></div>
-            <h3>Diagnosis</h3>
-            <p>Due upon diagnosis.</p>
-          </div>
-          <div class="price-op" aria-hidden="true">+</div>
-          <div class="price-box">
-            <div class="amt"><em>$75</em></div>
-            <h3>Repair labor</h3>
-            <p>Due when the repair is complete.</p>
-          </div>
-          <div class="price-op" aria-hidden="true">=</div>
-          <div class="price-box result">
-            <div class="amt">$125</div>
-            <h3>Total labor</h3>
-            <p>+ parts</p>
-          </div>
-        </div>
-        <p class="plain-note"><strong>Parts — your choice:</strong><br />
+        <p class="plain-note parts-choice-note"><strong>Parts — your choice:</strong><br />
           <strong>We order it</strong> — pay the part cost upfront at diagnosis, together with the $50 diagnostic fee in one transaction.<br />
           <strong>You order it</strong> — order from the exact link we send, then book the repair when it arrives.<br />
           Either way, the $75 labor is due when the repair is complete.</p>
@@ -1232,11 +1236,11 @@
         <div class="about-grid">
           <div class="about-card">
             <h3>Hours</h3>
-            <p><strong>Mon–Fri 5–8pm<br />Sat–Sun 10am–5pm</strong><br />Evenings and weekends — we come when you’re home.</p>
+            <p><strong>8 AM - 8 PM daily</strong><br />Evenings and weekends — we come when you’re home.</p>
           </div>
           <div class="about-card">
             <h3>Service area</h3>
-            <p><strong>Oxford • Lake Orion • Auburn Hills • Pontiac • Lapeer</strong> &amp; surrounding areas. We come to you.</p>
+            <p><strong><span aria-label="Oxford"><span aria-hidden="true"><span style="color:#4A90D9">O</span><span style="color:#6E9BB6">x</span><span style="color:#92A694">f</span><span style="color:#B7B171">o</span><span style="color:#DBBC4F">r</span><span style="color:#FFC72C">d</span></span></span> • <span aria-label="Lake Orion"><span aria-hidden="true"><span style="color:#4CBB17">L</span><span style="color:#62C434">a</span><span style="color:#79CC51">k</span><span style="color:#8FD46E">e</span> <span style="color:#A6DD8B">O</span><span style="color:#BCE6A8">r</span><span style="color:#D2EEC5">i</span><span style="color:#E9F6E2">o</span><span style="color:#FFFFFF">n</span></span></span> • <span aria-label="Auburn Hills"><span aria-hidden="true"><span style="color:#A259D9">A</span><span style="color:#AB64C8">u</span><span style="color:#B56FB6">b</span><span style="color:#BE7AA5">u</span><span style="color:#C78594">r</span><span style="color:#D09082">n</span> <span style="color:#DA9B71">H</span><span style="color:#E3A660">i</span><span style="color:#ECB14F">l</span><span style="color:#F6BC3D">l</span><span style="color:#FFC72C">s</span></span></span> • <span aria-label="Pontiac"><span aria-hidden="true"><span style="color:#A259D9">P</span><span style="color:#A76AD5">o</span><span style="color:#AC7BD1">n</span><span style="color:#B18CCC">t</span><span style="color:#B69EC8">i</span><span style="color:#BBAFC4">a</span><span style="color:#C0C0C0">c</span></span></span> • <span aria-label="Lapeer"><span aria-hidden="true"><span style="color:#4A90D9">L</span><span style="color:#4A99B2">a</span><span style="color:#4BA18B">p</span><span style="color:#4BAA65">e</span><span style="color:#4CB23E">e</span><span style="color:#4CBB17">r</span></span></span></strong> &amp; surrounding areas. We come to you.</p>
           </div>
           <div class="about-card">
             <h3>How we work</h3>
@@ -1282,7 +1286,6 @@
         </div>
         <div class="portal-card" id="portalLoginCard">
           <h3>Sign in</h3>
-          <p class="portal-sub">Property and master logins both sign in here.</p>
           <form class="portal-form" id="portalForm" method="post" action="https://script.google.com/macros/s/AKfycbzO6T7kJUEjv9XoM9D9RdFfD1D_cIXA3v8DGqAJ40c4Okpyj0eULr-CM1SETf_4NftQ/exec" target="_blank" rel="noopener">
             <input type="hidden" name="action" value="propertyLogin" />
             <input type="hidden" id="portalSlug" name="slug" value="" />
@@ -1294,25 +1297,58 @@
             </div>
             <div class="portal-field">
               <label for="portalPassword">Password</label>
-              <input id="portalPassword" name="password" type="password" autocomplete="current-password" placeholder="Your property password" />
+              <input id="portalPassword" name="password" type="password" autocomplete="current-password" placeholder="Your password" />
             </div>
             <button class="btn btn-teal" type="submit">Sign in</button>
             <p class="db-msg" id="portalStatus" role="alert" aria-live="polite"></p>
+            <p class="pw-note">Sign in with your email <strong>or</strong> your property name. More than one person at a property can have an account — your password is the one tied to your account, and it is how sign-in tells the accounts at a property apart. Everyone at a property lands on the same property page.</p>
             <div class="pw-link-row">
               <button class="pw-text-btn" type="button" id="portalForgotLink" aria-expanded="false" aria-controls="portalForgotPanel">Forgot password?</button>
+              <button class="pw-text-btn" type="button" id="portalSignupLink" aria-expanded="false" aria-controls="portalSignupPanel">Create an account</button>
             </div>
           </form>
+          <!-- Create an account — the initial sign-up for a
+               property user: email, property, and password, one
+               record per person. Passwords must be unique within
+               the same property (enforced in the sign-up handler
+               below and re-checked by the backend): if another
+               account at that property already uses the password,
+               the sign-up is rejected and a different one must be
+               picked, because property-name sign-in tells people
+               apart by password alone. No list of a property's
+               users is shown here or anywhere on this page. -->
+          <div class="pw-panel" id="portalSignupPanel" hidden>
+            <h4>Create an account</h4>
+            <p class="pw-note">For people at a property with Full Cycle commercial service — an owner, office staff, a property manager, maintenance. Each person gets their own account under the property.</p>
+            <form class="portal-form pw-form" id="portalSignupForm" novalidate>
+              <div class="portal-field">
+                <label for="portalSignupEmail">Email</label>
+                <input id="portalSignupEmail" type="email" autocomplete="email" placeholder="Your email" />
+              </div>
+              <div class="portal-field">
+                <label for="portalSignupProperty">Property</label>
+                <input id="portalSignupProperty" type="text" autocomplete="organization" placeholder="Your property name" />
+              </div>
+              <div class="portal-field">
+                <label for="portalSignupPassword">Password</label>
+                <input id="portalSignupPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters" />
+                <small style="color:var(--ink-3);font-size:13px;line-height:1.35">It must be different from every other account’s password at your property — if someone there already uses it, you’ll be asked to pick a different one.</small>
+              </div>
+              <button class="btn btn-teal" type="submit">Create account</button>
+              <p class="db-msg pw-msg" id="portalSignupMsg" role="status" aria-live="polite"></p>
+            </form>
+          </div>
           <!-- Forgot password is the only password flow — it also
                covers changing your password. One flow for everyone:
                the backend works out from the login alone whether
                it is a manager or the owner / admin account. -->
           <div class="pw-panel" id="portalForgotPanel" hidden>
             <h4>Forgot password</h4>
-            <p class="pw-note">Enter your login and we’ll email you a link to set a new password.</p>
+            <p class="pw-note">Enter <strong>your email</strong> and we’ll email you a link to set a new password. A property name alone can’t reset a password — more than one person at a property can have an account, and the email is what picks yours. Only your password resets; everyone else at your property keeps theirs.</p>
             <form class="portal-form pw-form" id="portalForgotForm" novalidate>
               <div class="portal-field">
-                <label for="portalForgotId" id="portalForgotIdLabel">Property name or email</label>
-                <input id="portalForgotId" type="text" autocomplete="username" placeholder="Your property name or the email on file" />
+                <label for="portalForgotId" id="portalForgotIdLabel">Email</label>
+                <input id="portalForgotId" type="email" autocomplete="email" placeholder="The email on your account" />
               </div>
               <button class="btn btn-teal" type="submit">Email me a reset link</button>
               <p class="db-msg pw-msg" id="portalForgotMsg" role="status" aria-live="polite"></p>
@@ -1358,13 +1394,20 @@
           <form class="portal-form" id="resetForm" style="margin-top:0" novalidate>
             <div class="portal-field">
               <label for="resetNew">New password</label>
-              <input id="resetNew" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
+              <div class="pw-input-row">
+                <input id="resetNew" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
+                <button class="pw-toggle-btn" type="button" data-pw-toggle="resetNew" aria-pressed="false" aria-label="Show new password">Show</button>
+              </div>
             </div>
             <div class="portal-field">
               <label for="resetConfirm">Confirm new password</label>
-              <input id="resetConfirm" type="password" autocomplete="new-password" />
+              <div class="pw-input-row">
+                <input id="resetConfirm" type="password" autocomplete="new-password" />
+                <button class="pw-toggle-btn" type="button" data-pw-toggle="resetConfirm" aria-pressed="false" aria-label="Show confirm new password">Show</button>
+              </div>
             </div>
             <button class="btn btn-teal" type="submit">Reset password</button>
+            <p class="pw-note">This reset changes only the password on the account the email was sent to — nobody else at the property is affected. Pick a password nobody else at your property uses: property-name sign-in tells the accounts there apart by password.</p>
             <p class="db-msg pw-msg" id="resetMsg" role="status" aria-live="polite"></p>
           </form>
         </div>
@@ -1537,6 +1580,25 @@
                       <input id="editPropPasswordInput" type="text" autocomplete="off" />
                     </div>
                   </form>
+                  <h5>Users at this property</h5>
+                  <p>Each person at this property — owner, office, property manager, maintenance — gets their own login: their email and their own password. They can sign in with that email or with the property name; the password tells the accounts apart, so a password already used by another user at this property is rejected. Every user lands on the same property page: history read-only, work order submission only. This list shows only here, in Master — never on the public sign-in page.</p>
+                  <div class="user-list" id="editPropUsersList"></div>
+                  <form class="db-form two-col" id="editAddUserForm" novalidate>
+                    <div class="db-field">
+                      <label for="editAddUserEmailInput">User email</label>
+                      <input id="editAddUserEmailInput" type="email" autocomplete="off" placeholder="person@example.com" />
+                    </div>
+                    <div class="db-field">
+                      <label for="editAddUserPasswordInput">User password</label>
+                      <input id="editAddUserPasswordInput" type="text" autocomplete="off" placeholder="At least 6 characters" />
+                    </div>
+                    <div class="db-field full">
+                      <div class="db-form-actions">
+                        <button class="btn btn-teal" type="submit">Add user to this property</button>
+                      </div>
+                      <p class="db-msg" id="editAddUserMsg" role="status" aria-live="polite"></p>
+                    </div>
+                  </form>
                   <div class="db-form-actions" style="margin-top:14px">
                     <button class="btn btn-ghost" id="editDeactivateBtn" type="button">Deactivate this property</button>
                   </div>
@@ -1703,6 +1765,7 @@
                 <div class="db-field">
                   <label for="propPasswordInput">Property password</label>
                   <input id="propPasswordInput" type="text" autocomplete="off" />
+                  <small>Individual users, each with their own email and password, are added per property under Editing a property → Users at this property.</small>
                 </div>
                 <div class="db-field full">
                   <div class="db-form-actions">
@@ -2100,6 +2163,25 @@
 
   </div>
 
+  <!-- ============ MANAGER PROPERTY PAGE (no tab; reached only by a
+       property user's sign-in in the Portal) ============
+       The one page every account at a property lands on, whichever
+       person signed in and whether they used their email or the
+       property name: the property's machines and work order
+       history, read-only, plus the property work order form
+       (building number, which machine, description of the issue —
+       everything else is already on file). No editing, no other
+       property, and no list of the property's other users. -->
+  <div class="view" id="view-managerproperty" role="tabpanel" aria-label="Your property" hidden>
+
+    <section>
+      <div class="wrap-narrow">
+        <div id="managerPropertyHost"></div>
+      </div>
+    </section>
+
+  </div>
+
   <!-- ============ CUSTOMER REQUEST — the work order sheet (no tab; reached by the header's online work order bar and by the #request link James texts to a caller). This is the standalone work order form implemented as the website's own sheet, under the website's header — no Portal sign-in, no property login slug, and no Master / admin content appears in this view. Submitting posts the work order to the Sheet backend (backend v7, submitCallInWorkOrder), so it lands in the Master Database Sheet and the business inbox without retyping. ============ -->
   <div class="view" id="view-request" role="tabpanel" aria-label="Request service" hidden>
 
@@ -2303,7 +2385,7 @@
     // unlocks it and opens it here; the database itself stays hidden
     // until that sign-in succeeds (see the Portal login and Master
     // sign-in gate code below).
-    var tabName = (name === 'master' || name === 'property') ? 'portal' : name;
+    var tabName = (name === 'master' || name === 'property' || name === 'managerproperty') ? 'portal' : name;
     // Master and property-detail views only: hide the site header
     // and the original sticky tab bar so the database opens directly
     // at Properties with no branding, and a property page shows only
@@ -2508,6 +2590,388 @@
       fcCheckMasterToken(token, done);
     });
   }
+  // ---- Multi-user property accounts ----
+  // One property, many accounts: an owner, office staff, a
+  // property manager, maintenance — each person has their own
+  // record { email, property, password } created at sign-up
+  // (Portal Create an account, or Master → Edit a property →
+  // Users at this property). Sign-in accepts the person's email
+  // OR the property name; with a property name, the password
+  // alone picks which account it is, which is why a password
+  // may not repeat within one property: fcAddPropertyUserRecord
+  // rejects a password another user at the same property already
+  // uses (the property's own legacy shared password counts too,
+  // unless it belongs to that same email). The same password at
+  // a DIFFERENT property is fine. An email names one account
+  // across the whole system, so a second sign-up with an email
+  // that already has an account is rejected as well.
+  // Records live in this session's store (fcSessionStore.
+  // propertyUsers) and are pushed to the Sheet backend as
+  // action=addPropertyUser; a record counts as saved only when
+  // the backend answers ok:true, exactly like every other record
+  // on this page — until then it works for sign-in on this page
+  // in this session and its messages say it was not saved to the
+  // Sheet. Passwords are never listed anywhere: the public
+  // sign-in page shows no roster at all, and even the Master
+  // users list shows emails and "Password set" only.
+  function fcUserSlug(s){
+    return String(s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+  function fcNormName(s){ return String(s || '').trim().toLowerCase(); }
+  function fcNormEmail(s){ return String(s || '').trim().toLowerCase(); }
+  function fcEnsureStore(){
+    if(!fcSessionStore){
+      fcSessionStore = { seq:100, properties:[], machines:[], tags:[], workOrders:[], propertyUsers:[] };
+    }
+    if(!fcSessionStore.propertyUsers){ fcSessionStore.propertyUsers = []; }
+    if(!fcSessionStore.properties){ fcSessionStore.properties = []; }
+    if(!fcSessionStore.machines){ fcSessionStore.machines = []; }
+    if(!fcSessionStore.workOrders){ fcSessionStore.workOrders = []; }
+    return fcSessionStore;
+  }
+  function fcPropertyUsers(){ return fcEnsureStore().propertyUsers; }
+  function fcUserPropertyKey(u){
+    if(!u){ return ''; }
+    return u.propertySlug || fcUserSlug(u.propertyName || '');
+  }
+  function fcFindPropertyRecord(identifier){
+    var props = fcEnsureStore().properties;
+    var idf = String(identifier || '').trim();
+    if(!idf){ return null; }
+    var slug = fcUserSlug(idf);
+    var nameKey = fcNormName(idf);
+    var emailKey = fcNormEmail(idf);
+    for(var i = 0; i < props.length; i++){
+      var p = props[i];
+      if((p.slug || fcUserSlug(p.name)) === slug){ return p; }
+      if(fcNormName(p.name) === nameKey){ return p; }
+      if(emailKey && fcNormEmail(p.contact) === emailKey){ return p; }
+    }
+    return null;
+  }
+  function fcUsersForProperty(identifier){
+    var slug = fcUserSlug(identifier);
+    var nameKey = fcNormName(identifier);
+    return fcPropertyUsers().filter(function(u){
+      return fcUserPropertyKey(u) === slug || fcNormName(u.propertyName) === nameKey;
+    });
+  }
+  function fcUserByEmail(email){
+    var key = fcNormEmail(email);
+    if(!key){ return null; }
+    var users = fcPropertyUsers();
+    for(var i = 0; i < users.length; i++){
+      if(fcNormEmail(users[i].email) === key){ return users[i]; }
+    }
+    return null;
+  }
+  // Is `password` already used at the property named by
+  // `propertyIdentifier` by anyone other than `excludeEmail`?
+  // Checks the per-user records AND the property's legacy shared
+  // password (which belongs to the manager email on file).
+  function fcPasswordInUseAtProperty(propertyIdentifier, password, excludeEmail){
+    if(!password){ return false; }
+    var ex = fcNormEmail(excludeEmail);
+    var hit = fcUsersForProperty(propertyIdentifier).some(function(u){
+      return u.password === password && fcNormEmail(u.email) !== ex;
+    });
+    if(hit){ return true; }
+    var p = fcFindPropertyRecord(propertyIdentifier);
+    if(p && p.password && p.password === password && fcNormEmail(p.contact) !== ex){ return true; }
+    return false;
+  }
+  function fcAddPropertyUserRecord(input){
+    var email = String(input && input.email || '').trim();
+    var propertyName = String(input && (input.propertyName || input.property) || '').trim();
+    var password = String(input && input.password || '');
+    if(!email || email.indexOf('@') < 1 || email.indexOf('.') < 0){
+      return { ok:false, error:'Enter a valid email — it is how this person signs in and how a password reset finds their account.' };
+    }
+    if(!propertyName){
+      return { ok:false, error:'Enter the property this account belongs to.' };
+    }
+    if(!password || password.length < 6){
+      return { ok:false, error:'Password must be at least 6 characters.' };
+    }
+    if(fcUserByEmail(email)){
+      return { ok:false, error:'That email already has an account. Sign in with it, or use Forgot password — a reset goes to that email and changes only that account’s password.' };
+    }
+    if(fcPasswordInUseAtProperty(propertyName, password, email)){
+      return { ok:false, error:'That password is already used by another user at this property. Pick a different one — property-name sign-in tells the accounts at a property apart by password, so two accounts there can’t share one.' };
+    }
+    var propRec = fcFindPropertyRecord(propertyName);
+    var user = {
+      id: 'user-' + (++fcEnsureStore().seq),
+      email: email,
+      propertyName: propRec ? propRec.name : propertyName,
+      propertySlug: propRec ? (propRec.slug || fcUserSlug(propRec.name)) : fcUserSlug(propertyName),
+      propertyId: propRec ? propRec.id : '',
+      password: password,
+      _synced: false
+    };
+    fcPropertyUsers().push(user);
+    return { ok:true, user:user };
+  }
+  function fcRemovePropertyUser(user){
+    var users = fcPropertyUsers();
+    var idx = users.indexOf(user);
+    if(idx > -1){ users.splice(idx, 1); }
+  }
+  // Local sign-in check for per-user accounts. Returns
+  // { status:'ok', user } when the identifier + password pair
+  // names exactly one account, { status:'bad-password' } when
+  // the identifier names account(s) but the password matches
+  // none of them, { status:'bad-user' } when an email names no
+  // account, and { status:'none' } when no per-user account is
+  // involved at all (the caller then falls back to the backend's
+  // legacy property login, whose shared password still works).
+  function fcCheckLocalPropertyLogin(identifier, password){
+    var idf = String(identifier || '').trim();
+    if(!idf){ return { status:'none' }; }
+    if(idf.indexOf('@') > -1){
+      var byEmail = fcUserByEmail(idf);
+      if(!byEmail){
+        // No per-user account under that email — a legacy
+        // property record may still carry it as manager email.
+        var lp = fcFindPropertyRecord(idf);
+        if(lp && lp.password){
+          return lp.password === password
+            ? { status:'ok', user:{ email:idf, propertyName:lp.name, propertySlug:lp.slug || fcUserSlug(lp.name), propertyId:lp.id }, legacy:true }
+            : { status:'bad-password' };
+        }
+        return { status:'none' };
+      }
+      return byEmail.password === password
+        ? { status:'ok', user:byEmail }
+        : { status:'bad-password', user:byEmail };
+    }
+    var users = fcUsersForProperty(idf);
+    var legacyProp = fcFindPropertyRecord(idf);
+    if(!users.length && !legacyProp){ return { status:'none' }; }
+    for(var i = 0; i < users.length; i++){
+      if(users[i].password === password){ return { status:'ok', user:users[i] }; }
+    }
+    if(legacyProp && legacyProp.password && legacyProp.password === password){
+      return { status:'ok', user:{ email:legacyProp.contact || '', propertyName:legacyProp.name, propertySlug:legacyProp.slug || fcUserSlug(legacyProp.name), propertyId:legacyProp.id }, legacy:true };
+    }
+    if(users.length || legacyProp){ return { status:'bad-password' }; }
+    return { status:'none' };
+  }
+  // Push one per-user account to the Sheet backend. done(data)
+  // gets the parsed JSON answer, or null when there was no
+  // usable answer. A backend error mentioning a password already
+  // in use is a real rejection (the uniqueness rule enforced
+  // server-side); anything else is just "not confirmed".
+  function fcPostPropertyUser(user, token, done){
+    if(typeof fetch !== 'function'){ done(null); return; }
+    var params = new URLSearchParams();
+    params.set('format', 'json');
+    params.set('action', 'addPropertyUser');
+    if(token){ params.set('token', token); }
+    params.set('email', user.email || '');
+    params.set('property', user.propertyName || '');
+    params.set('slug', user.propertySlug || fcUserSlug(user.propertyName || ''));
+    params.set('password', user.password || '');
+    fetch(FC_BACKEND_URL, { method:'POST', body: params })
+      .then(function(r){ return r.text(); })
+      .then(function(text){
+        var t = String(text == null ? '' : text).trim();
+        if(!t || t.charAt(0) === '<'){ done(null); return; }
+        try { done(JSON.parse(t)); } catch(e){ done(null); }
+      })
+      .catch(function(){ done(null); });
+  }
+  function fcBackendUserErrorIsPasswordTaken(data){
+    var d = String((data && (data.error || data.message || data.reason)) || '').toLowerCase();
+    return !!d && d.indexOf('password') > -1 && (d.indexOf('already') > -1 || d.indexOf('in use') > -1 || d.indexOf('taken') > -1 || d.indexOf('duplicate') > -1 || d.indexOf('another user') > -1);
+  }
+  // ---- Shared manager property page ----
+  // Every account at a property lands here after a per-user
+  // sign-in: the same page for the owner, office, manager, and
+  // maintenance alike. Machines and work order history are
+  // read-only plain text and tables — there are no edit, add, or
+  // delete controls anywhere in this render — and the only form
+  // is the property work order form (building number, which
+  // machine, description of the issue; the property info on file
+  // rides along automatically, as on the Master property page).
+  var fcManagerSession = null; // { user, property } for this page load only
+  function fcEscHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+  function fcRenderManagerProperty(){
+    var host = document.getElementById('managerPropertyHost');
+    if(!host || !fcManagerSession){ return; }
+    var user = fcManagerSession.user;
+    var store = fcEnsureStore();
+    var p = fcFindPropertyRecord(user.propertySlug || user.propertyName || '') || fcFindPropertyRecord(user.propertyName || '');
+    var propName = p ? p.name : (user.propertyName || 'Your property');
+    var propSlug = p ? (p.slug || fcUserSlug(p.name)) : (user.propertySlug || fcUserSlug(propName));
+    var propAddress = p ? (p.address || '') : '';
+    if(p && !propAddress){
+      for(var ai = 0; ai < store.machines.length; ai++){
+        if(store.machines[ai].propertySlug === propSlug && store.machines[ai].propertyAddress){ propAddress = store.machines[ai].propertyAddress; break; }
+      }
+    }
+    var ms = store.machines.filter(function(m){
+      return (p && m.propertyId && m.propertyId === p.id) || (propSlug && m.propertySlug === propSlug);
+    });
+    var wos = store.workOrders.filter(function(w){
+      return (p && w.propertyId && w.propertyId === p.id) || (propSlug && w.propertySlug === propSlug);
+    });
+    function typeLabel(t){
+      var s = String(t || '').toLowerCase();
+      if(s.indexOf('thin') > -1){ return 'Thin twin'; }
+      if(s.indexOf('dry') > -1){ return 'Dryer'; }
+      if(s.indexOf('combo') > -1){ return 'Combo'; }
+      return 'Washer';
+    }
+    var machRows = ms.map(function(m){
+      var label = [m.brand, typeLabel(m.machineType), m.modelNumber].filter(Boolean).join(' ');
+      return '<tr><td><strong>' + fcEscHtml(label || 'Machine') + '</strong>' + (m.serialNumber ? '<span class="cell-sub">Serial ' + fcEscHtml(m.serialNumber) + '</span>' : '') + '</td>' +
+        '<td>' + fcEscHtml(m.buildingNumber ? 'Building ' + m.buildingNumber : '—') + '</td>' +
+        '<td>' + fcEscHtml(m.repairHistoryNotes || m.notes || '—') + '</td></tr>';
+    }).join('');
+    var woRows = wos.map(function(w){
+      return '<div class="db-item" style="margin-top:10px"><div class="db-item-top"><span class="db-item-title">' + fcEscHtml(w.issue || 'Work order') + '</span>' +
+        '<span class="db-kind">' + fcEscHtml(w.status || 'Open') + '</span></div>' +
+        '<p class="db-meta">' + [w.buildingNumber ? 'Building ' + w.buildingNumber : '', w.created || '', w.serial ? 'Machine serial ' + w.serial : ''].filter(Boolean).map(fcEscHtml).join(' · ') + '</p></div>';
+    }).join('');
+    var machOpts = '<option value="">' + (ms.length ? 'Pick the machine…' : 'No machines on file for this property yet') + '</option>' + ms.map(function(m){
+      var label = [m.brand, typeLabel(m.machineType), m.modelNumber].filter(Boolean).join(' ');
+      return '<option value="' + fcEscHtml(m.id) + '" data-building="' + fcEscHtml(m.buildingNumber || '') + '" data-serial="' + fcEscHtml(m.serialNumber || '') + '">' + fcEscHtml(label || 'Machine') + '</option>';
+    }).join('');
+    host.innerHTML =
+      '<div class="mgr-signout-row"><span>Signed in as <strong>' + fcEscHtml(user.email || propName) + '</strong></span>' +
+      '<button class="db-mini-btn" type="button" id="mgrSignOutBtn">Sign out</button></div>' +
+      '<div class="prop-detail-card">' +
+        '<div class="prop-detail-head"><h3>' + fcEscHtml(propName) + '</h3>' + (p && p.status ? '<span class="db-status' + (p.status === 'Active' ? ' active' : '') + '">' + fcEscHtml(p.status) + '</span>' : '') + '</div>' +
+        '<p class="prop-readonly-note">Your property page — the same page everyone with an account at this property sees. Machine history is read-only here; the only thing to fill in is a work order.</p>' +
+        '<dl class="prop-fields">' +
+          '<div class="prop-field-ro wide"><dt>Property name</dt><dd>' + fcEscHtml(propName) + '</dd></div>' +
+          '<div class="prop-field-ro wide"><dt>Property address</dt><dd>' + fcEscHtml(propAddress) + '</dd></div>' +
+        '</dl>' +
+      '</div>' +
+      '<div class="prop-machines"><h4>Machines at this property</h4><p>Read-only — machine history as it sits on file.</p>' +
+        (ms.length
+          ? '<div class="data-table-wrap"><table class="data-table" aria-label="Machines at this property"><thead><tr><th scope="col">Machine</th><th scope="col">Building</th><th scope="col">History / notes</th></tr></thead><tbody>' + machRows + '</tbody></table></div>'
+          : '<div class="db-empty">No machines on file for this property yet.</div>') +
+      '</div>' +
+      '<div class="prop-machines"><h4>Work orders at this property</h4><p>Read-only history — every work order on file for this property, from every account there.</p>' +
+        (wos.length ? woRows : '<div class="db-empty">No work orders on file for this property yet.</div>') +
+        '<form class="prop-add-note prop-wo-form" id="mgrWoForm" style="margin-top:14px">' +
+          '<span class="prop-wo-title">New work order</span>' +
+          '<p class="prop-wo-note"><strong>Your property info is already filled in</strong> — it comes from what we have on file for this property and goes with the work order, so you don’t have to enter any of it again.</p>' +
+          '<label for="mgr-wo-propname">Property name — on file</label>' +
+          '<input type="text" id="mgr-wo-propname" value="' + fcEscHtml(propName) + '" readonly tabindex="-1" />' +
+          '<label for="mgr-wo-propaddr">Property address — on file</label>' +
+          '<input type="text" id="mgr-wo-propaddr" value="' + fcEscHtml(propAddress) + '" placeholder="Not on file yet" readonly tabindex="-1" />' +
+          '<label for="mgr-wo-email">Your email — on file</label>' +
+          '<input type="text" id="mgr-wo-email" value="' + fcEscHtml(user.email || (p ? p.contact : '') || '') + '" readonly tabindex="-1" />' +
+          '<p class="prop-wo-note">You only fill in these three:</p>' +
+          '<label for="mgr-wo-building">Building number</label>' +
+          '<input type="text" id="mgr-wo-building" placeholder="e.g. 4" autocomplete="off" />' +
+          '<label for="mgr-wo-machine">Which machine</label>' +
+          '<select id="mgr-wo-machine">' + machOpts + '</select>' +
+          '<label for="mgr-wo-issue">Description of the issue</label>' +
+          '<textarea id="mgr-wo-issue" placeholder="Describe what’s happening — noise, leak, won’t start, error code…" autocomplete="off"></textarea>' +
+          '<button class="db-mini-btn" type="submit">Send work order</button>' +
+          '<p class="db-msg" id="mgrWoMsg" role="status" aria-live="polite"></p>' +
+        '</form>' +
+      '</div>';
+    var outBtn = document.getElementById('mgrSignOutBtn');
+    if(outBtn){
+      outBtn.addEventListener('click', function(){
+        fcManagerSession = null;
+        host.innerHTML = '';
+        showView('portal');
+        var st = document.getElementById('portalStatus');
+        if(st){ st.classList.remove('is-error'); st.textContent = 'Signed out.'; }
+      });
+    }
+    var woForm = document.getElementById('mgrWoForm');
+    if(woForm){
+      var machSel = document.getElementById('mgr-wo-machine');
+      var bldEl = document.getElementById('mgr-wo-building');
+      if(machSel && bldEl){
+        machSel.addEventListener('change', function(){
+          var opt = machSel.options[machSel.selectedIndex];
+          var b = opt ? (opt.getAttribute('data-building') || '') : '';
+          if(b){ bldEl.value = b; }
+        });
+      }
+      woForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        var msgEl = document.getElementById('mgrWoMsg');
+        var issueEl = document.getElementById('mgr-wo-issue');
+        var building = bldEl ? bldEl.value.trim() : '';
+        var issue = issueEl ? issueEl.value.trim() : '';
+        var opt = machSel && machSel.selectedIndex > -1 ? machSel.options[machSel.selectedIndex] : null;
+        var serial = opt ? (opt.getAttribute('data-serial') || '') : '';
+        var missing = [];
+        if(!building){ missing.push('the building number'); }
+        if(ms.length && !(machSel && machSel.value)){ missing.push('which machine'); }
+        if(!issue){ missing.push('a description of the issue'); }
+        if(missing.length){
+          if(msgEl){ msgEl.textContent = 'Still needed: ' + missing.join(', ') + '. Your property info is already filled in — nothing else to enter.'; }
+          return;
+        }
+        var now = new Date();
+        var hh = now.getHours(); var ap = hh >= 12 ? 'PM' : 'AM'; hh = hh % 12; if(hh === 0){ hh = 12; }
+        var mm = now.getMinutes(); if(mm < 10){ mm = '0' + mm; }
+        var stamp = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear() + ' ' + hh + ':' + mm + ' ' + ap;
+        var rec = {
+          id: 'wo-' + (++fcEnsureStore().seq), propertyId: p ? p.id : '', propertySlug: propSlug,
+          callKind: 'Commercial', propertyName: propName, propertyAddress: propAddress,
+          managerEmail: user.email || '', buildingNumber: building,
+          machineId: machSel ? machSel.value : '', serial: serial, issue: issue,
+          created: stamp, status: 'Open', notes: '', _synced: false
+        };
+        fcEnsureStore().workOrders.push(rec);
+        if(msgEl){ msgEl.textContent = 'Saving… — writing the work order to the Master Database Sheet.'; }
+        var params = new URLSearchParams();
+        params.set('format', 'json');
+        params.set('action', 'addWorkOrder');
+        params.set('slug', propSlug);
+        params.set('serial', serial);
+        params.set('issue', issue);
+        params.set('status', 'Open');
+        params.set('notes', '');
+        params.set('call_kind', 'Commercial');
+        params.set('property_name', propName);
+        params.set('property_address', propAddress);
+        params.set('building_number', building);
+        params.set('manager_email', user.email || '');
+        var finish = function(saved){
+          fcRenderManagerProperty();
+          var newMsg = document.getElementById('mgrWoMsg');
+          if(newMsg){
+            newMsg.textContent = saved
+              ? 'Saved to Sheet ✓ — this work order is in the Master Database Sheet.'
+              : 'Not saved to Sheet — the database didn’t confirm it, so the work order is on this page only for now. It still shows in the history above.';
+          }
+        };
+        if(typeof fetch !== 'function'){ finish(false); return; }
+        fetch(FC_BACKEND_URL, { method:'POST', body: params })
+          .then(function(r){ return r.text(); })
+          .then(function(text){
+            var t = String(text == null ? '' : text).trim();
+            var data = null;
+            if(t && t.charAt(0) !== '<'){ try { data = JSON.parse(t); } catch(err){ data = null; } }
+            if(data && data.ok){ rec._synced = true; }
+            finish(!!(data && data.ok));
+          })
+          .catch(function(){ finish(false); });
+      });
+    }
+  }
+  function fcOpenManagerProperty(user){
+    fcManagerSession = { user:user };
+    fcRenderManagerProperty();
+    showView('managerproperty');
+  }
+
   // Property sign-in check — verified HERE, on this page, before
   // anything opens. The login box accepts EITHER the property
   // name OR the email on file, and either works: a value with
@@ -2737,7 +3201,33 @@
         portalForm.submit();
       }
       function checkProperty(masterResult){
+        // Per-user accounts first: an email names one account
+        // directly, and a property name + password pair picks
+        // the one account at that property whose password it is
+        // (passwords are unique within a property — see the
+        // sign-up rule). A confirmed per-user match opens the
+        // shared manager property page right here; everyone at
+        // the property lands on that same page. A per-user
+        // password miss still falls through to the backend's
+        // legacy property login below, so the property's shared
+        // password keeps working — but if that fails too, the
+        // fault is the password, and only it is marked.
+        var local = fcCheckLocalPropertyLogin(propVal, pwVal);
+        if(local.status === 'ok' && local.user){
+          portalCheckRunning = false;
+          if(pwEl){ pwEl.value = ''; }
+          portalClearLoginError();
+          if(statusEl){ statusEl.innerHTML = ''; }
+          fcOpenManagerProperty(local.user);
+          return;
+        }
         fcCheckPropertyLogin(slugVal, propVal, pwVal, function(propResult){
+          if(propResult !== 'ok' && local.status === 'bad-password'){
+            portalCheckRunning = false;
+            portalShowLoginError('That password isn\u2019t right. Check it and try again.', pwEl ? [pwEl] : []);
+            if(pwEl){ pwEl.select(); pwEl.focus(); }
+            return;
+          }
           portalCheckRunning = false;
           if(propResult === 'ok'){ openPropertyPage(); return; }
           if(propResult === 'no-password'){
@@ -2797,6 +3287,68 @@
       });
     });
   }
+
+  // Portal Create an account — the initial sign-up for a
+  // property user: email, property, and password. The record is
+  // created by fcAddPropertyUserRecord, which enforces the
+  // rules: a valid email, an email that does not already have an
+  // account, and — the rule that makes property-name sign-in
+  // work — a password no other user at the same property
+  // already uses, rejected on the spot with the reason shown in
+  // the form. The account is then pushed to the Sheet backend
+  // (action=addPropertyUser): a backend ok:true marks it saved;
+  // a backend answer that the password is already in use at
+  // that property removes the local record and shows the same
+  // rejection; any other non-answer keeps the account working
+  // for sign-in on this page and says plainly it was not saved
+  // to the Sheet. Nothing about other users is shown here.
+  (function(){
+    var panel = document.getElementById('portalSignupPanel');
+    var link = document.getElementById('portalSignupLink');
+    fcPwToggle(link, panel);
+    var form = document.getElementById('portalSignupForm');
+    var emailEl = document.getElementById('portalSignupEmail');
+    var propEl = document.getElementById('portalSignupProperty');
+    var pwEl = document.getElementById('portalSignupPassword');
+    var msgEl = document.getElementById('portalSignupMsg');
+    if(!form){ return; }
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var res = fcAddPropertyUserRecord({
+        email: emailEl ? emailEl.value : '',
+        propertyName: propEl ? propEl.value : '',
+        password: pwEl ? pwEl.value : ''
+      });
+      if(!res.ok){
+        fcPwSetMsg(msgEl, res.error, true);
+        if(pwEl && /password/i.test(res.error)){ pwEl.select(); pwEl.focus(); }
+        else if(emailEl && /email/i.test(res.error)){ emailEl.select(); emailEl.focus(); }
+        return;
+      }
+      var user = res.user;
+      fcPwSetMsg(msgEl, 'Creating your account…', false);
+      fcPostPropertyUser(user, '', function(data){
+        if(data && data.ok){
+          user._synced = true;
+          fcPwSetMsg(msgEl, 'Account created ✓ — saved to the database. Sign in above with your email or your property name and your password.', false);
+          form.reset();
+          var loginEl = document.getElementById('portalProperty');
+          if(loginEl){ loginEl.value = user.email; loginEl.focus(); }
+          return;
+        }
+        if(data && !data.ok && fcBackendUserErrorIsPasswordTaken(data)){
+          fcRemovePropertyUser(user);
+          fcPwSetMsg(msgEl, 'That password is already used by another user at this property. Pick a different one — property-name sign-in tells the accounts at a property apart by password, so two accounts there can’t share one.', true);
+          if(pwEl){ pwEl.select(); pwEl.focus(); }
+          return;
+        }
+        fcPwSetMsg(msgEl, 'Account created — you can sign in above on this page with your email or your property name and your password. Not saved to Sheet: the database didn’t confirm it, so this account lives on this page for this session until the database accepts it.', false);
+        form.reset();
+        var loginEl2 = document.getElementById('portalProperty');
+        if(loginEl2){ loginEl2.value = user.email; loginEl2.focus(); }
+      });
+    });
+  })();
 
   // Portal NFC scan — customer side, SCAN ONLY. There is no
   // write button here and never will be: managers can only read
@@ -3195,16 +3747,15 @@
     });
   }
   // Identifier fields for the backend (scope "auto" on Portal,
-  // "master" on the Master gate).
+  // "master" on the Master gate). Both scopes are EMAIL ONLY:
+  // with more than one account per property, a property name
+  // cannot say whose password to reset, so a reset request
+  // carries the account's email alone and the backend resets
+  // only that user's password — never the property's other
+  // accounts, and never a shared property password.
   function fcPwIdFields(scope, identifier){
     var f = { scope: scope, identifier: identifier };
-    if(scope === 'master'){
-      f.email = identifier;
-    } else {
-      f.property = identifier;
-      f.slug = fcPwSlug(identifier);
-      if(identifier.indexOf('@') > -1){ f.email = identifier; }
-    }
+    f.email = identifier;
     return f;
   }
   function fcPwRequestReset(scope, identifier, msgEl, done){
@@ -3250,8 +3801,12 @@
       form.addEventListener('submit', function(e){
         e.preventDefault();
         var identifier = idEl ? idEl.value.trim() : '';
-        if(!identifier){
-          fcPwSetMsg(msgEl, 'Enter your property name or email first.', true);
+        if(!identifier || identifier.indexOf('@') < 1){
+          // Email only, on purpose: a property name names every
+          // account at the property, not one person, so it can
+          // never be enough to reset a password — resetting from
+          // it would hit the wrong person, or everybody.
+          fcPwSetMsg(msgEl, 'Enter the email on your account — a property name alone can’t reset a password, because more than one person at a property can have an account. The reset link goes to that email and changes only that account’s password.', true);
           if(idEl){ idEl.focus(); }
           return;
         }
@@ -3359,6 +3914,32 @@
     var confEl = document.getElementById('resetConfirm');
     var msgEl = document.getElementById('resetMsg');
     var invalid = document.getElementById('resetInvalid');
+    // Show/hide toggles — each button flips only its own field
+    // between password (bullets) and text, and swaps its label.
+    var toggleBtns = form ? form.querySelectorAll('[data-pw-toggle]') : [];
+    Array.prototype.forEach.call(toggleBtns, function(btn){
+      btn.addEventListener('click', function(){
+        var field = document.getElementById(btn.getAttribute('data-pw-toggle'));
+        if(!field){ return; }
+        var showing = field.type === 'text';
+        field.type = showing ? 'password' : 'text';
+        btn.textContent = showing ? 'Show' : 'Hide';
+        btn.setAttribute('aria-pressed', showing ? 'false' : 'true');
+        btn.setAttribute('aria-label', (showing ? 'Show ' : 'Hide ') + (field.id === 'resetConfirm' ? 'confirm new password' : 'new password'));
+        field.focus();
+      });
+    });
+    // Confirm mismatch marking — only the Confirm box is marked,
+    // with the same per-field red style as the sign-in boxes
+    // (input.is-field-error); the New password box is never marked
+    // for a mismatch. Checked live as either box changes, so the
+    // red clears on its own as soon as the two match again.
+    function fcResetSyncMatchMark(){
+      if(!confEl || !newEl){ return; }
+      confEl.classList.toggle('is-field-error', confEl.value !== '' && confEl.value !== newEl.value);
+    }
+    if(newEl){ newEl.addEventListener('input', fcResetSyncMatchMark); }
+    if(confEl){ confEl.addEventListener('input', fcResetSyncMatchMark); }
     if(form){
       form.addEventListener('submit', function(e){
         e.preventDefault();
@@ -3369,6 +3950,7 @@
         }
         var nw = newEl ? newEl.value : '';
         var cf = confEl ? confEl.value : '';
+        if(confEl){ confEl.classList.toggle('is-field-error', nw !== cf); }
         if(!fcPwValidateNew(nw, cf, msgEl)){ return; }
         fcPwSetMsg(msgEl, 'Saving…', false);
         fcPwPost('resetPassword', { token: fcReset.token, scope: fcReset.scope, new_password: nw }).then(function(data){
@@ -3380,7 +3962,7 @@
             fcReset = { token:'', scope:'', preview:false };
             if(wasMaster){ fcTrustForget(); }
             if(newEl){ newEl.value = ''; }
-            if(confEl){ confEl.value = ''; }
+            if(confEl){ confEl.value = ''; confEl.classList.remove('is-field-error'); }
             showView('portal');
             var statusEl = document.getElementById('portalStatus');
             if(statusEl){
@@ -4471,13 +5053,19 @@
     // or any selector until a real property is added or loaded
     // from the Sheet.
     if(!fcSessionStore){
-      fcSessionStore = { seq:100, properties:[], machines:[], tags:[], workOrders:[] };
+      fcSessionStore = { seq:100, properties:[], machines:[], tags:[], workOrders:[], propertyUsers:[] };
     }
     if(!fcSessionStore.workOrders){ fcSessionStore.workOrders = []; }
+    if(!fcSessionStore.propertyUsers){ fcSessionStore.propertyUsers = []; }
     var properties = fcSessionStore.properties;
     var machines = fcSessionStore.machines;
     var tags = fcSessionStore.tags;
     var workOrders = fcSessionStore.workOrders;
+    // Per-user property accounts (see the multi-user block in
+    // the Portal section): one record per person, read through
+    // fcPropertyUsers() so records added from the Portal sign-up
+    // and records added here in Master are the same list.
+    var propertyUsers = fcSessionStore.propertyUsers;
     function workOrdersForProperty(p){
       if(!p){ return []; }
       var slug = p.slug || slugify(p.name);
@@ -4967,6 +5555,7 @@
       renderQrOptions();
       renderWorkOrderHistory();
       renderEditPropOptions();
+      renderEditPropUsers();
 
       // Properties tab — spreadsheet only: one table row per
       // property in the database, with just the property fields
@@ -6879,6 +7468,43 @@
       var capBtn = document.getElementById('cardScanCaptureBtn');
       if(capBtn){ capBtn.addEventListener('click', function(){ if(cardOcrCapture){ cardOcrCapture(); } }); }
     }
+    // Users at the selected property — Master only. The list
+    // shows emails and "Password set" only (passwords are never
+    // displayed, here or anywhere), and the form under it adds
+    // one user with an email and a password. Adding goes through
+    // fcAddPropertyUserRecord, the same rule set as the public
+    // sign-up: the email must not already have an account, and
+    // the password must not be used by another user at THIS
+    // property (or be the property's own password, unless it
+    // belongs to that same email) — a duplicate is rejected with
+    // the reason, never added. A confirmed backend answer marks
+    // the user saved; otherwise the sticky Submit retries the
+    // write (see the addPropertyUser jobs in syncToBackend).
+    function renderEditPropUsers(){
+      var host = document.getElementById('editPropUsersList');
+      if(!host){ return; }
+      var p = propById(editPropertyId);
+      if(!p){ host.innerHTML = ''; return; }
+      var slug = p.slug || slugify(p.name);
+      var users = fcPropertyUsers().filter(function(u){
+        return fcUserPropertyKey(u) === slug || fcNormName(u.propertyName) === fcNormName(p.name);
+      });
+      // The manager email on file with the property's own
+      // password is the property's original account — show it as
+      // a user row too, so the owner sees every login that opens
+      // this property, labelled as the original one.
+      var rows = '';
+      if(p.contact){
+        var covered = users.some(function(u){ return fcNormEmail(u.email) === fcNormEmail(p.contact); });
+        if(!covered){
+          rows += '<div class="user-row"><span class="user-email">' + esc(p.contact) + '</span><span class="user-state">Original account · ' + (p.password ? 'Password set' : 'No password set') + '</span></div>';
+        }
+      }
+      rows += users.map(function(u){
+        return '<div class="user-row"><span class="user-email">' + esc(u.email) + '</span><span class="user-state">Password set' + (u._synced ? ' · Saved to Sheet' : ' · Not saved to Sheet yet') + '</span></div>';
+      }).join('');
+      host.innerHTML = rows || '<div class="db-empty">No individual users yet — add the first one below. Until then, the property’s own password is the only login.</div>';
+    }
     function fillEditPropEditor(){
       var editor = document.getElementById('editPropEditor');
       if(!editor){ return; }
@@ -6906,6 +7532,11 @@
       editor.hidden = false;
       editDirty = false;
       renderEditMachinesList();
+      renderEditPropUsers();
+      var addUserMsg = document.getElementById('editAddUserMsg');
+      if(addUserMsg){ addUserMsg.textContent = ''; }
+      var addUserForm = document.getElementById('editAddUserForm');
+      if(addUserForm){ addUserForm.reset(); }
     }
     function applyEditPropertyChanges(){
       var p = propById(editPropertyId);
@@ -7202,6 +7833,56 @@
     var editPropFormEl = document.getElementById('editPropForm');
     if(editPropFormEl){
       editPropFormEl.addEventListener('submit', function(e){ e.preventDefault(); });
+    }
+    // Add a user to the selected property (Master). Same rules
+    // as the public sign-up, enforced by fcAddPropertyUserRecord
+    // against this property: duplicate email rejected, and a
+    // password another user at this property already uses
+    // rejected — the new user is not added in either case. On a
+    // clean add, the record is pushed to the backend with the
+    // master credential right away; the message says Saved to
+    // Sheet only on an ok:true answer, and the sticky Submit
+    // retries the write while the user is unsynced.
+    var editAddUserFormEl = document.getElementById('editAddUserForm');
+    if(editAddUserFormEl){
+      editAddUserFormEl.addEventListener('submit', function(e){
+        e.preventDefault();
+        var p = propById(editPropertyId);
+        var msg = document.getElementById('editAddUserMsg');
+        if(!p){ if(msg){ msg.textContent = 'Pick a property above first.'; } return; }
+        var emailEl = document.getElementById('editAddUserEmailInput');
+        var pwEl = document.getElementById('editAddUserPasswordInput');
+        var res = fcAddPropertyUserRecord({
+          email: emailEl ? emailEl.value : '',
+          propertyName: p.name,
+          password: pwEl ? pwEl.value : ''
+        });
+        if(!res.ok){
+          if(msg){ msg.textContent = res.error; }
+          if(pwEl && /password/i.test(res.error)){ pwEl.select(); pwEl.focus(); }
+          return;
+        }
+        var user = res.user;
+        user.propertyId = p.id;
+        user.propertySlug = p.slug || slugify(p.name);
+        user.propertyName = p.name;
+        if(msg){ msg.textContent = 'Saving… — adding the user to the Master Database Sheet.'; }
+        backendCredential().then(function(cred){
+          fcPostPropertyUser(user, cred || '', function(data){
+            if(data && data.ok){
+              user._synced = true;
+              if(msg){ msg.textContent = 'Saved to Sheet ✓ — ' + user.email + ' can now sign in with that email or with “' + p.name + '” and their password. They’ll land on the same property page as everyone else there.'; }
+            } else if(data && !data.ok && fcBackendUserErrorIsPasswordTaken(data)){
+              fcRemovePropertyUser(user);
+              if(msg){ msg.textContent = 'Not saved — that password is already used by another user at this property. Pick a different one and add the user again.'; }
+            } else {
+              if(msg){ msg.textContent = 'Added on this page, but Not saved to Sheet — the database didn’t confirm it. The user can sign in on this page in this session, and Submit retries saving them to the Sheet.'; }
+            }
+            renderEditPropUsers();
+            if(editAddUserFormEl){ editAddUserFormEl.reset(); }
+          });
+        });
+      });
     }
     // Deactivate this property — writes the deactivation to the
     // Sheet backend right away and reports Saved to Sheet or Not
@@ -8063,6 +8744,34 @@
           _synced: true
         });
       });
+      // Per-user property accounts, when the backend returns
+      // them (data.propertyUsers / data.users): rows replace the
+      // synced users in the session store; users added on this
+      // page and not yet confirmed by the Sheet are kept, so a
+      // read-back never drops a pending account.
+      var backendUsers = data.propertyUsers || data.users || null;
+      if(Array.isArray(backendUsers)){
+        var mappedUsers = [];
+        backendUsers.forEach(function(r, i){
+          var uSlug = rowVal(r, ['Property slug', 'Login page slug', 'Slug', 'slug']);
+          var uProp = null;
+          props.forEach(function(p){ if((p.slug || slugify(p.name)) === uSlug){ uProp = p; } });
+          mappedUsers.push({
+            id: 'sheet-user-' + (i + 1),
+            email: rowVal(r, ['Email', 'User email', 'email']),
+            propertyName: uProp ? uProp.name : rowVal(r, ['Property name', 'Property', 'property']),
+            propertySlug: uSlug,
+            propertyId: uProp ? uProp.id : (slugToId[uSlug] || ''),
+            password: rowVal(r, ['Password', 'password']),
+            _synced: true
+          });
+        });
+        var pendingUsers = fcPropertyUsers().filter(function(u){
+          return !u._synced && !mappedUsers.some(function(m){ return fcNormEmail(m.email) === fcNormEmail(u.email); });
+        });
+        fcSessionStore.propertyUsers = mappedUsers.concat(pendingUsers);
+        propertyUsers = fcSessionStore.propertyUsers;
+      }
       properties.length = 0;
       props.forEach(function(p){ properties.push(p); });
       machines.length = 0;
@@ -8209,6 +8918,12 @@
         if(job.kind === 'addWorkOrder' && fcIsCallInWorkOrder(w)){ job.contact = fcContactPayload(w); }
         jobs.push(job);
       });
+      // Per-user property accounts added this session ride the
+      // same Submit: one addPropertyUser write per unsynced
+      // user, confirmed the same way as every other record.
+      fcPropertyUsers().forEach(function(u){
+        if(!u._synced){ jobs.push({ kind:'addPropertyUser', rec:u }); }
+      });
       if(!jobs.length){
         // Nothing to write — a save still only counts if the
         // backend answers a read, so check it before reporting.
@@ -8323,6 +9038,12 @@
             // left out entirely rather than sending an empty value
             // that could blank the password stored in the Sheet.
             if(job.kind === 'addProperty' || r.password){ params.set('password', r.password || ''); }
+          } else if(job.kind === 'addPropertyUser'){
+            params.set('action', 'addPropertyUser');
+            params.set('email', r.email || '');
+            params.set('property', r.propertyName || '');
+            params.set('slug', r.propertySlug || slugify(r.propertyName || ''));
+            params.set('password', r.password || '');
           } else if(job.kind === 'addWorkOrder' || job.kind === 'updateWorkOrder'){
             var woProp = propById(r.propertyId);
             params.set('action', job.kind);
@@ -8724,6 +9445,9 @@
         submittedAt: new Date().toISOString(),
         properties: properties.map(function(p){
           return { id: p.id, name: p.name, address: p.address || '', slug: p.slug || slugify(p.name), managerEmail: p.contact || '', status: p.status || '', password: p.password || '' };
+        }),
+        propertyUsers: fcPropertyUsers().map(function(u){
+          return { email: u.email || '', property: u.propertyName || '', slug: u.propertySlug || slugify(u.propertyName || ''), password: u.password || '' };
         }),
         machines: machines.map(function(m){
           var p = propById(m.propertyId);
