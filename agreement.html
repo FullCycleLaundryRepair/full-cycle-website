@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Service Agreement — Full Cycle Plus</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap');
+  :root {
+    color-scheme: dark;
+    --bg: #0d0d0d;
+    --surface: #171e1b;
+    --surface-alt: #1d2623;
+    --text: #eef3f1;
+    --dim: #bfcdc9;
+    --faint: #8fa39d;
+    --border: #33413d;
+    --border-strong: #46554f;
+    --field-line: #3d4b47;
+    --accent: #35917f;
+    --accent-deep: #7cc4b2;
+    --copper: #d18a4e;
+    --copper-soft: #3a2a1c;
+    --danger: #e07a6e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Barlow", system-ui, sans-serif;
+    line-height: 1.5;
+  }
+  main { max-width: 880px; margin: 0 auto; padding: 8px 12px 40px; }
+  @media (min-width: 640px) { main { padding-left: 16px; padding-right: 16px; } }
+  .header-band {
+    margin-bottom: 8px; overflow: hidden; border-radius: 8px;
+    background: #0d0d0d; text-align: center;
+  }
+  .header-band img { display: block; margin: 0 auto; height: auto; width: min(560px, 100%); }
+  .panel {
+    border-top: 6px solid var(--accent); background: var(--surface);
+    padding: 20px 16px 24px;
+  }
+  @media (min-width: 640px) { .panel { padding-left: 24px; padding-right: 24px; } }
+  h2 {
+    margin: 0 0 4px; font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  h3 {
+    margin: 20px 0 6px; font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .wo-line { margin: 0 0 16px; font-size: 17px; font-weight: 700; letter-spacing: 0.5px; }
+  .muted { color: var(--dim); font-size: 14px; }
+  .faint { color: var(--faint); font-size: 13px; }
+  .demo-note {
+    margin: 0 0 16px; padding: 10px 12px; border: 1.5px solid var(--copper);
+    border-radius: 8px; background: var(--copper-soft); color: var(--text); font-size: 14px;
+  }
+  .detail-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 16px; }
+  @media (min-width: 640px) { .detail-grid { grid-template-columns: 1fr 1fr; } }
+  .detail .k { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); }
+  .detail .v { font-size: 15.5px; }
+  table.money { width: 100%; border-collapse: collapse; font-size: 15.5px; }
+  table.money td { padding: 6px 0; border-bottom: 1px solid var(--border); }
+  table.money td:last-child { text-align: right; white-space: nowrap; }
+  table.money tr.total td { font-weight: 700; border-bottom: 0; font-size: 17px; }
+  .terms { font-size: 14.5px; color: var(--dim); }
+  .terms h3 { color: var(--text); }
+  .terms p { margin: 0 0 10px; }
+  .terms .svc-list { margin: 0 0 10px; padding-left: 20px; }
+  .terms .svc-list li { margin-bottom: 4px; }
+  button { font-family: inherit; cursor: pointer; }
+  .btn-primary {
+    border: 0; border-radius: 8px; background: var(--accent); color: #fff;
+    padding: 12px 24px; font-size: 16px; font-weight: 700;
+  }
+  .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn-ghost {
+    border: 1.5px solid var(--accent); border-radius: 8px; background: transparent;
+    color: var(--accent); padding: 10px 16px; font-size: 14.5px; font-weight: 700;
+  }
+  .sign-tile { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px; }
+  .agree-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 16px; font-weight: 600; cursor: pointer;
+  }
+  .agree-row input { width: 22px; height: 22px; margin-top: 2px; flex: none; accent-color: var(--accent); }
+  label.field-label { display: block; margin-top: 14px; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); }
+  input[type="text"] {
+    width: 100%; margin-top: 4px; padding: 10px 12px; border-radius: 8px;
+    border: 1.5px solid var(--field-line); background: #eef3f1; color: #1c2421;
+    font-family: inherit; font-size: 16px;
+  }
+  .sig-wrap {
+    margin-top: 14px; border: 1.5px solid var(--field-line); border-radius: 8px;
+    background: #fff; position: relative; overflow: hidden;
+  }
+  .sig-pad {
+    display: block; width: 100%; height: 180px;
+    touch-action: none; cursor: crosshair;
+  }
+  .sig-hint {
+    position: absolute; left: 12px; top: 8px; color: #8a9a94;
+    font-size: 14px; pointer-events: none;
+  }
+  .sig-hint.off { display: none; }
+  .sig-tools { margin-top: 8px; }
+  .missing { margin-top: 10px; font-size: 14px; color: var(--copper); font-weight: 600; }
+  .missing.ready { color: var(--accent-deep); }
+  .locked { margin-top: 20px; border: 1.5px solid var(--accent); border-radius: 8px; padding: 14px; background: var(--surface-alt); }
+  .tile { border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin: 16px 0; background: var(--surface); }
+  .tile h2 { display: flex; align-items: center; gap: 10px; }
+  .step-num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--copper); color: #fff; font-size: 16px; font-weight: 700; flex: 0 0 auto; }
+  .tile dl { display: grid; grid-template-columns: 130px 1fr; gap: 4px 10px; font-size: 15px; margin: 0; }
+  .tile dt { color: var(--faint); }
+  .tile dd { margin: 0; }
+  .tile .status { margin-top: 10px; font-size: 14px; font-weight: 600; color: var(--faint); }
+  .tile .status.done { color: var(--accent-deep); }
+  .locked img { max-width: 100%; background: #fff; border-radius: 6px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="header-band">
+    <img src="logo-v11.png" alt="Full Cycle Plus" width="1600" height="560">
+  </div>
+
+  <div class="panel" id="agreement-panel">
+    <section class="tile" id="tile-agreement">
+    <h2><span class="step-num">1</span> Service Agreement</h2>
+    <p class="wo-line" id="agree-wo">Work Order —</p>
+    <p class="demo-note" id="demo-note" style="display:none">Example shown — this agreement is not connected to a live work order yet, and signing here sends nothing. When this page opens from your appointment confirmation, it shows your real job.</p>
+
+    <div class="terms" id="agreement-terms">
+      <p><strong>FULL CYCLE SERVICE PLUS</strong><br>provided by James Black</p>
+      <p>This agreement covers only the services checked and initialed below. A service that is not checked and initialed does not apply to this visit, and no charge applies for it. Additional services can be added only by checking, initialing, and pricing them here before that work begins.</p>
+      <ul class="svc-list">
+        <li>Repair — Diagnosis $50 + Labor $75 + parts.</li>
+        <li>Vent Clean-Out — $100 standalone, or $50 with a service call.</li>
+        <li>Washer/Dryer Tune-Up — $100 + parts.</li>
+        <li>Machine Install — Custom quote, see Estimate below.</li>
+        <li>Refurbished Machine Purchase — All-in quote, see Estimate below, including installation and free haul-away of the old machine.</li>
+        <li>Haul-Away / Removal — $50 standalone, or $0 with a machine purchase.</li>
+      </ul>
+
+      <h3>1. Diagnosis</h3>
+      <p>Applies only if Repair is checked above. The diagnostic fee is $50. It covers the visit and diagnosis of the reported problem. The diagnostic fee is due upon diagnosis, and remains due whether or not the customer approves the repair. If the appliance is found to be beyond economical repair, only the diagnostic fee will apply.</p>
+
+      <h3>2. Estimate and authorization</h3>
+      <p>Before repair, install, or other custom-quoted work begins, the technician will provide a written estimate:</p>
+      <p>Parts: $__________ · Labor: $__________ · Machine price (install / refurbished purchase): $__________ · Installation: $__________ · Haul-away: $__________ · Estimated total: $__________</p>
+      <p>No work beyond the estimate will be performed without the customer's approval. If additional faults are found during the work, the technician will stop, explain the change, and get approval before continuing.</p>
+
+      <h3>3. Payment</h3>
+      <p>Accepted methods: Square (card / tap to pay) or cash.</p>
+      <p>Repair: $50 diagnostic fee, due upon diagnosis, whether or not the customer approves the repair. If Full Cycle Plus orders the part, the customer pays the part cost UPFRONT, before it is ordered — the $50 diagnostic fee and the part cost can be paid in the same transaction at diagnosis. $75 labor is due when the repair is complete. If no parts are needed, or the customer already purchased the part, the completion payment is labor only.</p>
+      <p>Vent Clean-Out, Tune-Up, and Haul-Away (standalone): Due in full when the service is complete. Tune-Up is $100 plus the cost of any parts supplied by Full Cycle Plus. Vent Clean-Out is $100 standalone, or $50 when performed with a service call. Haul-Away is $50 standalone, or $0 with a machine purchase.</p>
+      <p>Machine Install and Refurbished Machine Purchase: The amount in the Estimate above is due when the install is complete, unless the estimate states otherwise.</p>
+      <p>If an appliance is beyond economical repair, only the diagnostic fee will apply.</p>
+
+      <h3>4. Warranty</h3>
+      <p>Repair labor on the specific repair described above is warranted for 30 days from the date of service.</p>
+      <p>Tune-Up labor is warranted for 30 days from the date of service.</p>
+      <p>Machine Install workmanship (hookup and installation work performed by Full Cycle Plus) is warranted for 30 days from the date of service. Hookups are checked for leaks and proper operation before the technician leaves.</p>
+      <p>Full Cycle Plus does not warrant parts. Parts the customer purchases carry only whatever warranty the seller or manufacturer provides, and any parts claim is between the customer and the seller or manufacturer. A new machine installed by Full Cycle Plus carries only its manufacturer warranty.</p>
+      <p>Vent Clean-Out workmanship is warranted for 30 days from the date of service. The clean-out is checked on completion; if the clean-out itself was incomplete, Full Cycle Plus will redo it at no charge within the 30 days. Future lint buildup from normal use is not covered.</p>
+      <p>Refurbished machine warranty: 30 days from the date of sale, covering the machine's operation as sold. Replacement parts needed during that period are the customer's cost.</p>
+      <p>If a warranted labor issue recurs within the 30 days, Full Cycle Plus will redo the labor at no charge; any replacement part needed is the customer's cost.</p>
+      <p>The warranty covers the work performed, not unrelated failures, normal wear, or new problems in other parts of the appliance.</p>
+      <p>The warranty is void if the appliance is misused, modified, or repaired by anyone other than Full Cycle Plus during the warranty period.</p>
+
+      <h3>5. Customer responsibilities</h3>
+      <p>The customer represents and warrants that they are the legal owner of the property and appliance, or are fully authorized by the property/appliance owner to execute this agreement and permit the described work.</p>
+      <p>The customer agrees to: have an adult (18 or older) present during the visit; provide clear access to the appliance; secure pets; and make water, electric, and gas shutoffs accessible where applicable. For installs, the customer agrees to provide clear access to hookups and a clear path to move machines.</p>
+
+      <h3>6. Limitations</h3>
+      <p>Full Cycle Plus is not responsible for the failure, leakage, or breakage of home utility connections, supply lines, shut-off valves, gas lines, or electrical outlets, nor for pre-existing structural, mold, or ductwork damage.</p>
+      <p>Full Cycle Plus is not responsible for pre-existing damage, mold or mildew, or water damage caused by a pre-existing leak or condition discovered during the visit. Vent Clean-Out does not repair damaged ductwork; damage found during a clean-out will be reported, and any repair will be quoted separately. If an appliance is beyond economical repair, the technician will say so plainly and only the diagnostic fee will apply. Full Cycle Plus reserves the right to decline any job that, in the technician's judgment, cannot be completed safely, is outside our capability, or is not economically viable at our flat rates. If a diagnosis was performed before declining, only the diagnostic fee will apply.</p>
+
+      <h3>7. Rescheduling</h3>
+      <p>Please give at least 24 hours' notice by call or text to reschedule. If no one is home at the agreed appointment window, a return-visit fee may apply.</p>
+
+      <h3>8. Liability &amp; limitations</h3>
+      <p>Total liability of Full Cycle Plus under this agreement is strictly limited to the total amount paid by the customer for the specific service provided. To the fullest extent permitted by law, Full Cycle Plus shall not be liable for any indirect, incidental, consequential, or property damage (including, but not limited to, water damage, floor or wall damage, lost income, spoiled goods, or damaged clothing) resulting from or related to the services provided, pre-existing conditions, or equipment failure.</p>
+      <p>Except to the extent caused by the negligence or willful misconduct of Full Cycle Plus, Full Cycle Plus shall not be liable for any loss, damage, or claim arising from: pre-existing conditions or damage; the age, wear, or prior condition of the appliance, property, or utility connections; manufacturer defects; parts or machines supplied by the customer or a third party; failure, leakage, or breakage of home utility connections, supply lines, shut-off valves, gas lines, or electrical outlets; acts or omissions of the customer or any third party; or any other cause not directly resulting from the negligence or willful misconduct of Full Cycle Plus. This limitation applies even if Full Cycle Plus was advised of the possibility of such loss or damage.</p>
+
+      <h3>9. Assumption of risk and indemnification</h3>
+      <p>The customer acknowledges that repair work on used, older, or previously serviced appliances and on existing home utility connections carries inherent risks, including the discovery or failure of worn, brittle, corroded, or previously damaged parts and connections, and the customer assumes those risks except to the extent caused by the negligence or willful misconduct of Full Cycle Plus.</p>
+      <p>To the fullest extent permitted by law, the customer agrees to indemnify, defend, and hold harmless Full Cycle Plus, its owner, and its technicians from and against any claims, losses, damages, costs, or expenses (including reasonable attorney fees) arising from: the customer's breach of this agreement; the customer's misrepresentation about ownership, authority, or the condition of the property or appliance; pre-existing conditions or damage; parts or machines supplied by the customer or a third party; or the acts or omissions of the customer or any third party — except to the extent caused by the negligence or willful misconduct of Full Cycle Plus.</p>
+
+      <h3>10. Severability and governing law</h3>
+      <p>If any provision of this agreement is held unenforceable, the remaining provisions shall continue in full effect. This agreement is governed by the laws of the State of Michigan.</p>
+    </div>
+
+    <div class="sign-tile" id="sign-tile">
+      <label class="agree-row"><input type="checkbox" id="agree-check"> agree to all terms and conditions</label>
+      <label class="field-label" for="sig-name">Printed name — type your name to sign</label>
+      <input type="text" id="sig-name" autocomplete="name" placeholder="Type your full name">
+      <label class="field-label">Signature — sign with finger or stylus</label>
+      <div class="sig-wrap">
+        <canvas class="sig-pad" id="sig-pad" aria-label="Signature pad — sign with finger or stylus"></canvas>
+        <div class="sig-hint" id="sig-hint">Sign here</div>
+      </div>
+      <div class="sig-tools"><button type="button" class="btn-ghost" id="sig-clear">Clear</button></div>
+      <p class="missing" id="missing" role="status"></p>
+    </div>
+    </section>
+
+    <section class="tile" id="tile-appointment">
+    <h2><span class="step-num">2</span> Appointment Confirmation</h2>
+    <dl>
+      <dt>Customer</dt><dd id="appt-name">Not provided</dd>
+      <dt>Service address</dt><dd id="appt-address">Not provided</dd>
+      <dt>Appliance</dt><dd id="appt-appliance">Not provided</dd>
+      <dt>Problem</dt><dd id="appt-problem">Not provided</dd>
+      <dt>Appointment</dt><dd id="appt-when">Not provided</dd>
+    </dl>
+    <p style="margin-top:16px"><button type="button" class="btn-primary" id="confirm-appt-btn">Confirm appointment</button></p>
+    <p class="status" id="appt-status">Not confirmed</p>
+    </section>
+
+    <section class="tile" id="tile-submit">
+    <h2><span class="step-num">3</span> Submit</h2>
+    <dl>
+      <dt>Diagnostic visit</dt><dd id="receipt-diagnostic">$50</dd>
+      <dt>Total due</dt><dd id="receipt-total">$50</dd>
+    </dl>
+    <p style="margin-top:16px"><button type="button" class="btn-primary" id="submit-agreement" disabled>Submit — agree and confirm</button></p>
+    <p class="muted" id="submit-note"></p>
+    <div class="locked" id="locked" style="display:none">
+      <p style="margin:0"><strong>Confirmed ✓ — your agreement is locked.</strong></p>
+      <p class="muted" id="locked-when" style="margin:8px 0 0"></p>
+      <img id="locked-sig" alt="Your signature">
+    </div>
+    </section>
+
+  </div>
+</main>
+
+<script src="config.js"></script>
+<script src="agreement.js"></script>
+</body>
+</html>
