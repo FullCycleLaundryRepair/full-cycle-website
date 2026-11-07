@@ -26,18 +26,24 @@
 window.FCP_CONFIG = {
   // Apps Script web-app URL, e.g. 'https://script.google.com/macros/s/XXXX/exec'
   // Empty = demo/local mode (backend NOT deployed yet).
-  BACKEND_URL: '',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyl7w09du00Zniz_eUXzoITQluUjT56s3gqdnazzg5xnuOPNpFlQVZzTWx8FTfW8UNm/exec',
 
   // Script Property WO_API_KEY from the backend project. Empty = no key set.
   // Sent as `apiKey` on every call when non-empty. Never put a real key in
   // a public repo — set it here only after the backend is deployed, or
   // keep the page behind your own hosting.
-  WO_API_KEY: '',
+  WO_API_KEY: '62a7fd9be2ac78d6faeba449216fb8fd287cf08f6b941f8e',
 
   // Service area — the page serves Michigan; State defaults to MI.
   DEFAULT_STATE: 'MI',
 
-  // Pay Now page — lives alongside this page on the same GitHub site
+  // Service Agreement page — lives alongside this page on the same
+  // GitHub site (agreement.html next to index.html). The Appointment
+  // Confirmation links here (Section 1, "View and agree to service
+  // agreement") with ?workOrder=<id> only. The page shows the full
+  // agreement (Sections 1-10), pre-filled from the backend, and submits
+  // via submitAgreement (checkbox + typed name + drawn signature).
+  AGREEMENT_PAGE_URL: 'https://fullcyclelaundryrepair.github.io/full-cycle-website/agreement.html',
   // (pay.html next to index.html). Receipt emails link to it with
   // ?workOrder=<id>&stage=diagnosis|closing. Its Pay Now button opens
   // Square's secure checkout via the backend's createSquarePaymentLink.
