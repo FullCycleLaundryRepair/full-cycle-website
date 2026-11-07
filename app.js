@@ -354,12 +354,80 @@
     });
   }
 
+  // --- Repair booking (v1.9, Parts Have Arrived button) ----------------------
+  // The Parts Have Arrived message links here with ?workOrder=<id>&step=repair.
+  // In that mode the page books the repair visit on the EXISTING work order
+  // via setRepairAppointment — it must NEVER call createWorkOrder, or the
+  // customer would file a duplicate job. Only a date + 2-hour block are
+  // needed; the customer's details are already on file.
+  function parseRepairQuery(search) {
+    var s = trim(search || '');
+    try {
+      var q = new URLSearchParams(s);
+      var id = trim(q.get('workOrder'));
+      if (!id) return null;
+      return { workOrderId: id, step: trim(q.get('step')) || 'repair' };
+    } catch (e) { /* no URLSearchParams (headless test sandbox) — manual parse below */ }
+    if (s.charAt(0) === '?') s = s.slice(1);
+    var out = {};
+    s.split('&').forEach(function (pair) {
+      var i = pair.indexOf('=');
+      if (i < 0) return;
+      out[pair.slice(0, i)] = pair.slice(i + 1).replace(/\+/g, ' ').replace(/%23/g, '#').replace(/%20/g, ' ');
+    });
+    var wid = trim(out.workOrder);
+    if (!wid) return null;
+    return { workOrderId: wid, step: trim(out.step) || 'repair' };
+  }
+
+  function submitRepairAppointment(workOrderId, scheduledDate, scheduledTime) {
+    var date = trim(scheduledDate), time = trim(scheduledTime);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return Promise.resolve({ ok: false, error: 'Pick a repair date.' });
+    if (!time) return Promise.resolve({ ok: false, error: 'Pick a 2-hour time block.' });
+    var payload = { action: 'setRepairAppointment', workOrderId: trim(workOrderId), scheduledDate: date, scheduledTime: time };
+    if (!trim(CFG.BACKEND_URL)) {
+      var record = { payload: payload, savedAt: new Date().toISOString(), sentToBackend: false };
+      saveLocal(record);
+      return Promise.resolve({ ok: true, mode: 'demo', displayId: trim(workOrderId), sentToBackend: false, confirmationMessage: 'queued — ready, not sent yet', record: record });
+    }
+    var body = { action: 'setRepairAppointment', workOrderId: trim(workOrderId), scheduledDate: date, scheduledTime: time };
+    if (CFG.WO_API_KEY) body.apiKey = CFG.WO_API_KEY;
+    return global.fetch(trim(CFG.BACKEND_URL), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (!res || !res.ok) throw new Error((res && res.error) || 'Backend returned an error.');
+      var wo = res.workOrder || {};
+      return { ok: true, mode: 'live', displayId: wo.displayId || wo.id || trim(workOrderId), sentToBackend: true, confirmationMessage: 'Repair appointment set.', record: wo };
+    }).catch(function (e) {
+      return { ok: false, error: 'Could not reach the backend: ' + e.message + ' — nothing was booked. Your date and time are still on this screen; try again.' };
+    });
+  }
+
   // --- DOM wiring (browser only) --------------------------------------------
   function wirePage() {
     var $ = function (id) { return document.getElementById(id); };
     var form = $('wo-form');
     if (!form) return;
     wirePrefTiles();
+
+    /* Repair-booking mode (v1.9): ?workOrder=<id>&step=repair from the Parts
+     * Have Arrived message. Banner + heading + button say so, and submit
+     * books the repair on the EXISTING job — it never creates a new one. */
+    var repairMode = null;
+    try { repairMode = parseRepairQuery(global.location ? global.location.search : ''); } catch (e) { repairMode = null; }
+    if (repairMode) {
+      var panelH2 = document.querySelector('#create-panel h2');
+      if (panelH2) panelH2.textContent = 'Set your repair appointment';
+      var banner = document.createElement('div');
+      banner.id = 'repair-note';
+      banner.setAttribute('role', 'note');
+      banner.style.cssText = 'background:#1d2623;border-left:4px solid #35917f;padding:10px 12px;margin-bottom:16px;font-size:15px;';
+      banner.textContent = 'Booking the repair visit for Work Order ' + repairMode.workOrderId + ' — your part has arrived and your details are already on file. Just pick a date and time below.';
+      form.parentNode.insertBefore(banner, form);
+      var repairBtn = $('submit-btn');
+      if (repairBtn) repairBtn.textContent = 'Set repair appointment';
+    }
 
     var cityEl = $('city'), stateEl = $('state'), zipEl = $('zip');
     var autoZip = '';
@@ -394,6 +462,20 @@
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
       var btn = $('submit-btn'), errEl = $('form-error');
+      if (repairMode) {
+        var rDate = dateEl ? dateEl.value : '', rTime = timeEl ? timeEl.value : '';
+        if (btn) { btn.disabled = true; btn.textContent = 'Setting…'; }
+        if (errEl) errEl.textContent = '';
+        submitRepairAppointment(repairMode.workOrderId, rDate, rTime).then(function (res) {
+          if (btn) { btn.disabled = false; btn.textContent = 'Set repair appointment'; }
+          if (!res.ok) {
+            if (errEl) errEl.textContent = res.error || 'Could not book it — try again.';
+            return;
+          }
+          showConfirmation(res, { scheduledDate: rDate, scheduledTime: rTime }, true);
+        });
+        return;
+      }
       var data = {
         firstName: $('first-name').value, lastName: $('last-name').value,
         phone: $('phone').value, email: $('email').value,
@@ -432,7 +514,7 @@
     });
   }
 
-  function showConfirmation(res, data) {
+  function showConfirmation(res, data, isRepair) {
     var panel = document.getElementById('create-panel');
     var conf = document.getElementById('confirmation');
     if (panel) panel.style.display = 'none';
@@ -444,6 +526,15 @@
       if (numLine) numLine.style.display = 'block';
       set('conf-number', res.displayId);
     } else if (numLine) { numLine.style.display = 'none'; }
+    if (isRepair) {
+      var confH2 = document.querySelector('#confirmation h2');
+      if (confH2) confH2.textContent = 'Repair appointment set';
+      set('conf-code-note', 'Your repair visit is booked on this work order — no new work order was created.');
+      set('conf-sent', 'Repair appointment set for ' + (data.scheduledDate || '—') + (data.scheduledTime ? ' at ' + data.scheduledTime + '.' : '.'));
+      set('conf-agreement', 'No new agreement needed — your original agreement still stands. We\'ll confirm your repair appointment.');
+      window.scrollTo(0, 0);
+      return;
+    }
     /* v25 (James): no name / when / contact recap below the Create button —
        the confirmation keeps only the work-order number, code note, sent
        status and agreement line. The number is shown ONLY as the full
@@ -474,6 +565,8 @@
     zipToCity: zipToCity, parseTimeBlock: parseTimeBlock, TIME_BLOCKS: TIME_BLOCKS,
     dayScheduleHtml: dayScheduleHtml, computeBusyBlocks: computeBusyBlocks,
     setPrefTiles: setPrefTiles, submitWorkOrder: submitWorkOrder,
+    parseRepairQuery: parseRepairQuery,
+    submitRepairAppointment: submitRepairAppointment,
     loadSaved: loadSaved
   };
 })(typeof window !== 'undefined' ? window : globalThis);
