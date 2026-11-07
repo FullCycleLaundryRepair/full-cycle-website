@@ -1,0 +1,476 @@
+// Full Cycle Plus — Work Order Creation page logic.
+// Loaded by index.html after config.js.
+// This page is a verbatim port of the "Create a Work Order" tab of the
+// four-tab Full Cycle Plus Work Orders app (client/src/App.tsx, CreateView
+// + DayScheduleNote in ~/workspace/ts-spaces/full-cycle-plus-work-orders-app).
+// Same fields, same order, same labels and placeholders, same validation,
+// same city -> ZIP autofill, same submit button, same day-schedule note.
+// Differences from the tab, and only these: the page has no tab bar (it IS
+// the Create tab), and on success it shows a short confirmation instead of
+// opening the work-order detail (a public page has no detail view).
+// No code is issued from this page — exactly like the tab, it passes empty
+// code inputs, and the server creates the job unassigned with no code; a
+// code is generated later from the work order detail / admin side.
+// Pure functions are exposed on window.FCPCreate so they can be tested
+// headlessly; DOM wiring only runs when `document` exists.
+(function (global) {
+  'use strict';
+
+  var CFG = (global.FCP_CONFIG || {});
+
+  function trim(v) { return (v === undefined || v === null) ? '' : String(v).trim(); }
+
+  // --- City -> ZIP autofill, copied verbatim from the app's Create tab ----
+  // Typing a known city autofills the state (MI) and ZIP. Always editable.
+  // Only overwrites the ZIP while it's empty or still holding the last
+  // autofill — never stomps a ZIP typed by hand.
+  var CITY_ZIP = {
+    'waterford': '48329', 'oxford': '48371', 'auburn hills': '48326',
+    'pontiac': '48341', 'lake orion': '48362', 'clarkston': '48346',
+    'rochester': '48307', 'rochester hills': '48309', 'troy': '48083',
+    'bloomfield hills': '48304', 'west bloomfield': '48324',
+    'farmington hills': '48336', 'novi': '48375', 'holly': '48442',
+    'ortonville': '48462', 'davisburg': '48350', 'white lake': '48383',
+    'milford': '48380', 'highland': '48356', 'grand blanc': '48439',
+    'fenton': '48430', 'lapeer': '48446', 'almont': '48003',
+    'romeo': '48065', 'utica': '48317', 'shelby township': '48315',
+    'sterling heights': '48310', 'royal oak': '48067', 'birmingham': '48009',
+    'clawson': '48017', 'berkley': '48072', 'ferndale': '48220',
+    'hazel park': '48030', 'madison heights': '48071', 'southfield': '48075',
+    'livonia': '48150', 'plymouth': '48170', 'canton': '48187',
+    'northville': '48167', 'brighton': '48116', 'howell': '48843',
+    'fowlerville': '48836'
+  };
+
+  var ZIP_CITY = {};
+  Object.keys(CITY_ZIP).forEach(function (c) {
+    var z = CITY_ZIP[c];
+    if (!ZIP_CITY[z]) ZIP_CITY[z] = c.replace(/\b\w/g, function (m) { return m.toUpperCase(); });
+  });
+  // ZIP -> city name, or '' when the ZIP is not in the Michigan lookup.
+  function zipToCity(zip) { return ZIP_CITY[trim(zip)] || ''; }
+
+  // Returns { zip, state, autoZip } after a city change, given the current
+  // zip and the last autofill value. Pure version of the tab's onCityChange.
+  function cityChange(city, zip, autoZip) {
+    var hit = CITY_ZIP[trim(city).toLowerCase()];
+    if (!hit) return { zip: zip, state: null, autoZip: autoZip };
+    var nextZip = zip;
+    var nextAuto = autoZip;
+    if (!zip || zip === autoZip) { nextZip = hit; nextAuto = hit; }
+    return { zip: nextZip, state: 'MI', autoZip: nextAuto };
+  }
+
+  // --- "9:00 AM" -> minutes since midnight, or null. Verbatim from the app.
+  function parseTimeToMinutes(t) {
+    var m = trim(t).match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+    if (!m) return null;
+    var h = parseInt(m[1] || '', 10);
+    var mins = m[2] ? parseInt(m[2], 10) : 0;
+    var ap = (m[3] || '').toUpperCase();
+    if (isNaN(h) || isNaN(mins)) return null;
+    if (ap === 'PM' && h < 12) h += 12;
+    if (ap === 'AM' && h === 12) h = 0;
+    return h * 60 + mins;
+  }
+
+  // A 2-hour block ("8:00-10:00 AM") -> { start, end } minutes since
+  // midnight; a plain time ("9:00 AM") -> { start, end: start }.
+  function parseTimeBlock(t) {
+    if (!trim(t)) return null;
+    var parts = String(t).split('-');
+    /* The AM/PM designator sits on the end half ("2:00-4:00 PM") — the
+       start half inherits it, or the end inherits the start's. */
+    var apOf = function (x) { var m = String(x).match(/([AP]M)\s*$/i); return m ? m[1].toUpperCase() : ''; };
+    var startPart = parts[0], endPart = parts.length > 1 ? parts[1] : '';
+    if (!apOf(startPart) && apOf(endPart)) startPart = startPart + ' ' + apOf(endPart);
+    if (!apOf(endPart) && apOf(startPart)) endPart = endPart + ' ' + apOf(startPart);
+    var start = parseTimeToMinutes(startPart);
+    if (start === null) return null;
+    var end = endPart ? parseTimeToMinutes(endPart) : null;
+    return { start: start, end: (end !== null && end > start) ? end : start + 120 };
+  }
+
+  // ISO timestamp from the backend's CalendarApp events -> "9:00 AM".
+  function isoToTimeText(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    var h = d.getHours();
+    var ap = h >= 12 ? 'PM' : 'AM';
+    var h12 = h % 12; if (h12 === 0) h12 = 12;
+    var mm = d.getMinutes();
+    return h12 + ':' + (mm < 10 ? '0' : '') + mm + ' ' + ap;
+  }
+
+  // --- Validation ----------------------------------------------------------
+  // Mandatory: first name, last name, phone, street address, city, state,
+  // zip. Email is optional. Returns the first failing message, or ''.
+  function validateForm(d) {
+    if (!trim(d.firstName) || !trim(d.lastName)) return 'First and last name are required.';
+    if (!trim(d.phone)) return 'Phone number is required.';
+    if (!trim(d.street)) return 'Street address is required.';
+    if (!trim(d.city)) return 'City is required.';
+    if (!trim(d.state)) return 'State is required.';
+    if (!trim(d.zip)) return 'Zip is required.';
+    return '';
+  }
+
+  // --- Preferred contact method (v23: Text / Email tiles, one pick) ---
+  // Two clickable tiles; the selected tile is orange, the other fades to
+  // green. Tapping a tile picks that method. Default is Text.
+  function setPrefTiles(v) {
+    if (typeof document === 'undefined') return;
+    var e = document.getElementById('preferred-contact-email');
+    var t = document.getElementById('preferred-contact-text');
+    if (!e || !t) return;
+    if (v === 'Email') { e.className = 'contact-tile sel'; t.className = 'contact-tile'; }
+    else { t.className = 'contact-tile sel'; e.className = 'contact-tile'; }
+  }
+  function preferredContactFromDom() {
+    if (typeof document === 'undefined') return 'Text';
+    var e = document.getElementById('preferred-contact-email');
+    if (e && e.className && e.className.indexOf('sel') >= 0) return 'Email';
+    return 'Text';
+  }
+  function wirePrefTiles() {
+    if (typeof document === 'undefined') return;
+    var e = document.getElementById('preferred-contact-email');
+    var t = document.getElementById('preferred-contact-text');
+    if (e) e.addEventListener('click', function () { setPrefTiles('Email'); });
+    if (t) t.addEventListener('click', function () { setPrefTiles('Text'); });
+  }
+
+  // --- Payload for the backend createWorkOrder action ----------------------
+  // Field names match the app's api.createWorkOrder call exactly, plus
+  // `action` for the Apps Script backend (doPost dispatches on it).
+  // Code inputs are empty, exactly like the tab: no code is issued from
+  // this page — the job is created unassigned with no code.
+  function buildPayload(d) {
+    return {
+      action: 'createWorkOrder',
+      firstName: trim(d.firstName),
+      lastName: trim(d.lastName),
+      phone: trim(d.phone),
+      email: trim(d.email),
+      preferredContact: d.preferredContact === 'Email' ? 'Email' : 'Text',
+      street: trim(d.street),
+      city: trim(d.city),
+      state: trim(d.state) || CFG.DEFAULT_STATE || 'MI',
+      zip: trim(d.zip),
+      accessNotes: trim(d.accessNotes),
+      problem: trim(d.problem),
+      applianceBrand: trim(d.applianceBrand),
+      applianceModel: trim(d.applianceModel),
+      applianceSerial: '', /* v22: serial no longer collected on create; stored serials on old records are untouched */
+      scheduledDate: trim(d.scheduledDate),
+      scheduledTime: trim(d.scheduledTime),
+      codeSubtype: '',
+      codeSource: '',
+      codePropertyType: '',
+      codePriority: ''
+    };
+  }
+
+  // --- localStorage (demo mode) ---------------------------------------------
+  function loadSaved() {
+    try {
+      var raw = global.localStorage && global.localStorage.getItem(CFG.LOCAL_STORAGE_KEY || 'fcp_customer_work_orders');
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) { return []; }
+  }
+  function saveLocal(record) {
+    var all = loadSaved();
+    all.push(record);
+    try {
+      global.localStorage.setItem(CFG.LOCAL_STORAGE_KEY || 'fcp_customer_work_orders', JSON.stringify(all));
+    } catch (e) { /* storage unavailable — confirmation still shows */ }
+    return all.length;
+  }
+
+  // --- Day schedule note, verbatim logic from the tab's DayScheduleNote ----
+  // Takes the backend's getDaySchedule response (Apps Script shape:
+  // workOrders[] with scheduledTime/displayId/customerName/problem, and
+  // calendarEvents[] with ISO start/end, calendarSource 'host-side' or
+  // 'CalendarApp') plus the picked time, and returns the HTML the tab
+  // would show. Returns '' when there is nothing to show.
+  var TIME_BLOCKS = ["8:00-10:00 AM", "10:00 AM-12:00 PM", "12:00-2:00 PM", "2:00-4:00 PM", "4:00-6:00 PM", "6:00-8:00 PM"];
+  // --- Availability (PRIVACY — James, standing Nov 7, 2026) -----------------
+  // NO personal calendar or personal information ever shows up in the Plus
+  // work-order system. A scheduled date is an anonymous block of time:
+  // availability comes only from the WORK calendar + booked work orders,
+  // shown as anonymous free/busy 2-hour blocks — no titles, no details,
+  // no names. The backend may return job/event details; this page NEVER
+  // renders them. The personal calendar never collides with the business
+  // calendar: only the WORK calendar (WO_CALENDAR_ID) feeds this.
+  // Pure busy-block map for a getDaySchedule response: which 2-hour blocks
+  // are taken by booked work orders or WORK-calendar events. Free/Busy
+  // ticker (James, standing Nov 7, 2026): an event marked Free never
+  // blocks a slot. No titles, details or names are used here.
+  function computeBusyBlocks(res) {
+    var jobs = (res && res.workOrders) || [];
+    var events = ((res && res.calendarEvents) || []).map(function (ev) {
+      return {
+        startText: ev.startText || isoToTimeText(ev.start),
+        endText: ev.endText || isoToTimeText(ev.end),
+        allDay: !!ev.allDay,
+        free: !!ev.free
+      };
+    });
+    var busyBlocks = {};
+    TIME_BLOCKS.forEach(function (b) {
+      var blk = parseTimeBlock(b);
+      var busy = false;
+      jobs.forEach(function (j) {
+        var jt = parseTimeToMinutes(j.scheduledTime || '');
+        if (jt !== null && jt >= blk.start && jt < blk.end) busy = true;
+      });
+      events.forEach(function (e) {
+        if (e.free) return;
+        if (e.allDay) { busy = true; return; }
+        var s = parseTimeToMinutes(e.startText || '');
+        if (s === null) return;
+        var en = parseTimeToMinutes(e.endText || '');
+        if (en !== null ? (s < blk.end && en > blk.start) : (s >= blk.start && s < blk.end)) busy = true;
+      });
+      busyBlocks[b] = busy;
+    });
+    return busyBlocks;
+  }
+
+  // Busy blocks are not selectable (James, Nov 7, 2026): disable the
+  // time-select option for every busy block, and clear the pick if the
+  // block just picked turned out busy. Free blocks stay selectable.
+  function applyTimeOptions(res) {
+    if (typeof document === 'undefined') return;
+    var timeEl = document.getElementById('scheduled-time');
+    if (!timeEl || !res || !res.ok) return;
+    var busy = computeBusyBlocks(res);
+    for (var i = 0; i < timeEl.options.length; i++) {
+      var o = timeEl.options[i];
+      if (!o.value) continue;
+      o.disabled = !!busy[o.value];
+    }
+    if (timeEl.value && busy[timeEl.value]) timeEl.value = '';
+  }
+
+  function dayScheduleHtml(res, time) {
+    if (!res || !res.ok) return '';
+    var busyBlocks = computeBusyBlocks(res);
+    var calendarConnected = res.calendarSource === 'CalendarApp' || res.calendarSource === 'Calendar (Advanced)';
+    var anyBusy = TIME_BLOCKS.some(function (b) { return busyBlocks[b]; });
+    var html = '';
+    if (!anyBusy) {
+      html += '<span class="ok">Nothing on your calendar that day — you\'re available.</span><br>';
+    }
+    html += '<div>' + TIME_BLOCKS.map(function (b) {
+      return b + ' — ' + (busyBlocks[b] ? 'Busy' : 'Free');
+    }).join('<br>') + '</div>';
+    if (!calendarConnected) {
+      html += '<div class="muted">(Work calendar couldn\'t be read just now — showing booked work orders only.)</div>';
+    }
+    var block = parseTimeBlock(time || '');
+    if (trim(time) && block !== null) {
+      if (busyBlocks[trim(time)]) {
+        html += '<div class="clash">⚠ That time is already booked — pick another time.</div>';
+      } else {
+        html += '<div class="ok">✓ You\'re open at ' + trim(time) + '.</div>';
+      }
+    }
+    return html;
+  }
+
+  function fetchDaySchedule(dateStr) {
+    var url = trim(CFG.BACKEND_URL) + '?action=getDaySchedule&date=' + encodeURIComponent(dateStr || '');
+    if (CFG.WO_API_KEY) url += '&apiKey=' + encodeURIComponent(CFG.WO_API_KEY);
+    return global.fetch(url).then(function (r) { return r.json(); });
+  }
+
+  // --- Submit ---------------------------------------------------------------
+  // Returns a Promise resolving to a confirmation object. In demo mode the
+  // submission is saved to localStorage, marked not-sent, and NO work-order
+  // number or code is invented — the backend issues the number when the job
+  // is filed. In live mode it POSTs createWorkOrder to the backend; the
+  // backend's own displayId / creationCode / agreementToken are used as
+  // returned (creationCode is null here — no code is issued from this page).
+  // The Appointment Confirmation contact message is auto-sent by the
+  // backend right after the job is filed (v21): sendContactMessage for
+  // appointment_confirmation, by the customer's preferred contact method.
+  // Email flips to sent only after MailApp succeeds; a text comes back
+  // ready_text with the exact SMS body — James sends it from his phone,
+  // and it is never marked sent by the backend.
+  function submitWorkOrder(d) {
+    var err = validateForm(d);
+    if (err) return Promise.resolve({ ok: false, error: err });
+    var payload = buildPayload(d);
+
+    if (!trim(CFG.BACKEND_URL)) {
+      var record = { payload: payload, savedAt: new Date().toISOString(), sentToBackend: false };
+      saveLocal(record);
+      return Promise.resolve({
+        ok: true, mode: 'demo', displayId: null, creationCode: null,
+        agreementToken: null, sentToBackend: false,
+        confirmationMessage: 'queued — ready, not sent yet',
+        record: record
+      });
+    }
+
+    var body = Object.assign({}, payload);
+    if (CFG.WO_API_KEY) body.apiKey = CFG.WO_API_KEY;
+    return global.fetch(trim(CFG.BACKEND_URL), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (!res || !res.ok) throw new Error((res && res.error) || 'Backend returned an error.');
+      var wo = res.workOrder || {};
+      var result = {
+        ok: true, mode: 'live',
+        displayId: wo.displayId || wo.id || null,
+        creationCode: wo.creationCode || wo.creation_code || null,
+        agreementToken: wo.agreementToken || wo.agreement_token || null,
+        sentToBackend: true,
+        confirmationMessage: 'queued — ready, not sent yet',
+        sendStatus: null,
+        record: wo
+      };
+      /* Auto-send the appointment confirmation now, by preferred contact.
+         A failed send does NOT fail the filing — the row stays ready and
+         the app's sendDueMessages sweep retries it. */
+      var sendBody = { action: 'sendContactMessage', workOrderId: result.displayId, stage: 'appointment_confirmation' };
+      if (CFG.WO_API_KEY) sendBody.apiKey = CFG.WO_API_KEY;
+      return global.fetch(trim(CFG.BACKEND_URL), {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sendBody)
+      }).then(function (r2) { return r2.json(); }).then(function (sendRes) {
+        result.sendStatus = sendRes && sendRes.status ? sendRes.status : null;
+        if (sendRes && sendRes.status === 'sent') result.confirmationMessage = 'sent by email';
+        else if (sendRes && sendRes.status === 'ready_text') result.confirmationMessage = 'text ready — James will send it from his phone';
+        else if (sendRes && sendRes.status === 'pending_email') result.confirmationMessage = 'waiting for an email address';
+        return result;
+      }).catch(function () { return result; });
+    }).catch(function (e) {
+      return { ok: false, error: 'Could not reach the backend: ' + e.message + ' — nothing was sent. Your details are still on this screen; try again.' };
+    });
+  }
+
+  // --- DOM wiring (browser only) --------------------------------------------
+  function wirePage() {
+    var $ = function (id) { return document.getElementById(id); };
+    var form = $('wo-form');
+    if (!form) return;
+    wirePrefTiles();
+
+    var cityEl = $('city'), stateEl = $('state'), zipEl = $('zip');
+    var autoZip = '';
+    if (cityEl) cityEl.addEventListener('input', function () {
+      var r = cityChange(cityEl.value, zipEl ? zipEl.value : '', autoZip);
+      autoZip = r.autoZip;
+      if (r.state && stateEl) stateEl.value = r.state;
+      if (zipEl && r.zip !== zipEl.value) zipEl.value = r.zip;
+    });
+    var autoCity = '';
+    if (zipEl) zipEl.addEventListener('input', function () {
+      var c = zipToCity(zipEl.value);
+      if (c && cityEl && (!cityEl.value || cityEl.value === autoCity)) { cityEl.value = c; autoCity = c; }
+      if (c && stateEl) stateEl.value = 'MI';
+    });
+
+    var dateEl = $('scheduled-date'), timeEl = $('scheduled-time'), noteEl = $('day-note');
+    function refreshDayNote() {
+      if (!dateEl || !noteEl) return;
+      var d = trim(dateEl.value);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) { noteEl.innerHTML = ''; return; }
+      if (!trim(CFG.BACKEND_URL)) { noteEl.innerHTML = ''; return; }
+      noteEl.innerHTML = '<span class="muted">Checking your calendar…</span>';
+      fetchDaySchedule(d).then(function (res) {
+        noteEl.innerHTML = dayScheduleHtml(res, timeEl ? timeEl.value : '');
+        applyTimeOptions(res);
+      }).catch(function () { noteEl.innerHTML = ''; });
+    }
+    if (dateEl) dateEl.addEventListener('change', refreshDayNote);
+    if (timeEl) timeEl.addEventListener('change', refreshDayNote);
+
+    form.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var btn = $('submit-btn'), errEl = $('form-error');
+      var data = {
+        firstName: $('first-name').value, lastName: $('last-name').value,
+        phone: $('phone').value, email: $('email').value,
+        preferredContact: preferredContactFromDom(),
+        street: $('street').value, city: cityEl ? cityEl.value : '',
+        state: stateEl ? stateEl.value : '', zip: zipEl ? zipEl.value : '',
+        accessNotes: $('access-notes').value, problem: $('problem').value,
+        applianceBrand: $('appliance-brand').value,
+        applianceModel: $('appliance-model').value,
+        applianceSerial: '', /* v22: serial no longer collected */
+        scheduledDate: dateEl ? dateEl.value : '',
+        scheduledTime: timeEl ? timeEl.value : ''
+      };
+      if (btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
+      if (errEl) errEl.textContent = '';
+      submitWorkOrder(data).then(function (res) {
+        if (btn) { btn.disabled = false; btn.textContent = 'Create work order'; }
+        if (!res.ok) {
+          if (errEl) errEl.textContent = res.error || 'Could not create it — try again.';
+          return;
+        }
+        showConfirmation(res, data);
+      });
+    });
+
+    var again = $('new-request-btn');
+    if (again) again.addEventListener('click', function () {
+      $('confirmation').style.display = 'none';
+      $('create-panel').style.display = 'block';
+      form.reset();
+      setPrefTiles('Text');
+      if (stateEl) stateEl.value = CFG.DEFAULT_STATE || 'MI';
+      if (noteEl) noteEl.innerHTML = '';
+      autoZip = '';
+      window.scrollTo(0, 0);
+    });
+  }
+
+  function showConfirmation(res, data) {
+    var panel = document.getElementById('create-panel');
+    var conf = document.getElementById('confirmation');
+    if (panel) panel.style.display = 'none';
+    if (!conf) return;
+    conf.style.display = 'block';
+    var set = function (id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt; };
+    var numLine = document.getElementById('conf-number-line');
+    if (res.displayId) {
+      if (numLine) numLine.style.display = 'block';
+      set('conf-number', res.displayId);
+    } else if (numLine) { numLine.style.display = 'none'; }
+    /* v25 (James): no name / when / contact recap below the Create button —
+       the confirmation keeps only the work-order number, code note, sent
+       status and agreement line. */
+    if (res.creationCode) {
+      set('conf-code-note', 'Work-order code: ' + res.creationCode);
+    }
+    set('conf-sent', res.sentToBackend
+      ? 'Sent to Full Cycle Plus.'
+      : 'Saved on this device only — not yet sent to Full Cycle Plus.');
+    set('conf-agreement', res.agreementToken
+      ? 'Your service agreement link will come with your appointment confirmation (agreement ref: ' + res.agreementToken + ').'
+      : 'Your service agreement link will come with your appointment confirmation once the backend issues it. Appointment confirmation message: ' + res.confirmationMessage + '.');
+    window.scrollTo(0, 0);
+  }
+
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wirePage);
+    else wirePage();
+  }
+
+  global.FCPCreate = {
+    CITY_ZIP: CITY_ZIP, cityChange: cityChange,
+    parseTimeToMinutes: parseTimeToMinutes, isoToTimeText: isoToTimeText,
+    validateForm: validateForm, buildPayload: buildPayload,
+    preferredContactFromDom: preferredContactFromDom,
+    zipToCity: zipToCity, parseTimeBlock: parseTimeBlock, TIME_BLOCKS: TIME_BLOCKS,
+    dayScheduleHtml: dayScheduleHtml, computeBusyBlocks: computeBusyBlocks,
+    setPrefTiles: setPrefTiles, submitWorkOrder: submitWorkOrder,
+    loadSaved: loadSaved
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
