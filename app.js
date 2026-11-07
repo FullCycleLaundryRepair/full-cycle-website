@@ -261,7 +261,7 @@
     var anyBusy = TIME_BLOCKS.some(function (b) { return busyBlocks[b]; });
     var html = '';
     if (!anyBusy) {
-      html += '<span class="ok">Nothing on your calendar that day — you\'re available.</span><br>';
+      html += '<span class="ok">Nothing booked that day — all times are open.</span><br>';
     }
     html += '<div>' + TIME_BLOCKS.map(function (b) {
       return b + ' — ' + (busyBlocks[b] ? 'Busy' : 'Free');
@@ -318,7 +318,7 @@
     var body = Object.assign({}, payload);
     if (CFG.WO_API_KEY) body.apiKey = CFG.WO_API_KEY;
     return global.fetch(trim(CFG.BACKEND_URL), {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(body)
     }).then(function (r) { return r.json(); }).then(function (res) {
       if (!res || !res.ok) throw new Error((res && res.error) || 'Backend returned an error.');
@@ -340,7 +340,7 @@
       var sendBody = { action: 'sendContactMessage', workOrderId: result.displayId, stage: 'appointment_confirmation' };
       if (CFG.WO_API_KEY) sendBody.apiKey = CFG.WO_API_KEY;
       return global.fetch(trim(CFG.BACKEND_URL), {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(sendBody)
       }).then(function (r2) { return r2.json(); }).then(function (sendRes) {
         result.sendStatus = sendRes && sendRes.status ? sendRes.status : null;
@@ -393,7 +393,7 @@
     var body = { action: 'setRepairAppointment', workOrderId: trim(workOrderId), scheduledDate: date, scheduledTime: time };
     if (CFG.WO_API_KEY) body.apiKey = CFG.WO_API_KEY;
     return global.fetch(trim(CFG.BACKEND_URL), {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(body)
     }).then(function (r) { return r.json(); }).then(function (res) {
       if (!res || !res.ok) throw new Error((res && res.error) || 'Backend returned an error.');
@@ -402,6 +402,64 @@
     }).catch(function (e) {
       return { ok: false, error: 'Could not reach the backend: ' + e.message + ' — nothing was booked. Your date and time are still on this screen; try again.' };
     });
+  }
+
+  // --- Repair-booking autofill (v2.1, James, Nov 7) ------------------------
+  // When the customer comes back to ?workOrder=<id>&step=repair, the page
+  // shows THEIR details read-only underneath — name, address, appliance,
+  // problem, work order # — and they only pick a new date + 2-hour block.
+  // Details are never re-asked and no new work order is ever created.
+  function escHtml(v) {
+    return String(v === undefined || v === null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+  // Demo-mode example (no backend yet): Rizk, the same example the Pay Now
+  // page shows. City/state only — no street address, no gate code, no phone.
+  var RIZK_EXAMPLE = {
+    id: '#HD7X-000B', displayId: '#HD7X-000B', customerName: 'Rizk',
+    firstName: '', lastName: 'Rizk', phone: '', email: '',
+    street: '', city: 'Waterford', state: 'MI', zip: '',
+    address: 'Waterford, MI', accessNotes: '',
+    problem: 'Dryer — not heating',
+    applianceBrand: '', applianceModel: '', applianceSerial: ''
+  };
+  function fetchWorkOrder(workOrderId) {
+    if (!trim(CFG.BACKEND_URL)) return Promise.resolve(RIZK_EXAMPLE);
+    var url = trim(CFG.BACKEND_URL) + '?action=getWorkOrder&workOrderId=' + encodeURIComponent(trim(workOrderId));
+    if (CFG.WO_API_KEY) url += '&apiKey=' + encodeURIComponent(CFG.WO_API_KEY);
+    return global.fetch(url).then(function (r) { return r.json(); }).then(function (res) {
+      if (!res || !res.ok || !res.workOrder) return null;
+      return res.workOrder;
+    }).catch(function () { return null; });
+  }
+  function repairDetailsHtml(wo) {
+    if (!wo) return '';
+    var name = trim(wo.customerName) || [trim(wo.firstName), trim(wo.lastName)].join(' ').trim() || 'Not provided';
+    var addr = trim(wo.address) || [trim(wo.street), trim(wo.city), trim(wo.state), trim(wo.zip)].filter(function (x) { return x; }).join(', ') || 'Not provided';
+    var appl = [trim(wo.applianceBrand), trim(wo.applianceModel)].filter(function (x) { return x; }).join(' ') || 'Not provided';
+    var rows = [
+      ['Work order', trim(wo.displayId) || trim(wo.id) || 'Not provided'],
+      ['Name', name],
+      ['Address', addr],
+      ['Appliance', appl],
+      ['Problem', trim(wo.problem) || 'Not provided']
+    ];
+    var h = '<dl style="display:grid;grid-template-columns:130px 1fr;gap:4px 10px;font-size:15px;margin:0">';
+    rows.forEach(function (r) {
+      h += '<dt style="color:#bfcdc9">' + escHtml(r[0]) + '</dt><dd style="margin:0">' + escHtml(r[1]) + '</dd>';
+    });
+    return h + '</dl>';
+  }
+  function fillRepairInputs(wo) {
+    if (!wo || typeof document === 'undefined') return;
+    var set = function (id, v) { var el = document.getElementById(id); if (el) el.value = v || ''; };
+    set('first-name', wo.firstName); set('last-name', wo.lastName);
+    set('phone', wo.phone); set('email', wo.email);
+    set('street', wo.street); set('city', wo.city);
+    set('state', wo.state || 'MI'); set('zip', wo.zip);
+    set('access-notes', wo.accessNotes); set('problem', wo.problem);
+    set('appliance-brand', wo.applianceBrand); set('appliance-model', wo.applianceModel);
   }
 
   // --- DOM wiring (browser only) --------------------------------------------
@@ -423,10 +481,33 @@
       banner.id = 'repair-note';
       banner.setAttribute('role', 'note');
       banner.style.cssText = 'background:#1d2623;border-left:4px solid #35917f;padding:10px 12px;margin-bottom:16px;font-size:15px;';
-      banner.textContent = 'Booking the repair visit for Work Order ' + repairMode.workOrderId + ' — your part has arrived and your details are already on file. Just pick a date and time below.';
+      banner.textContent = 'Your parts have arrived. Please pick an appointment date and time.';
       form.parentNode.insertBefore(banner, form);
       var repairBtn = $('submit-btn');
       if (repairBtn) repairBtn.textContent = 'Set repair appointment';
+      /* v2.1: autofill — hide every create field except the date + time
+         picker, and show the customer's details read-only underneath.
+         They only pick a date + 2-hour block; nothing is re-asked. */
+      var grid = form.querySelector('.grid');
+      var dateEl0 = $('scheduled-date');
+      var dtWrap = dateEl0;
+      while (dtWrap && dtWrap.parentNode && dtWrap.parentNode !== grid) dtWrap = dtWrap.parentNode;
+      if (grid) {
+        var kids = grid.children || [];
+        for (var gi = 0; gi < kids.length; gi++) {
+          if (kids[gi] !== dtWrap) kids[gi].style.display = 'none';
+        }
+      }
+      var details = document.createElement('div');
+      details.id = 'repair-details';
+      details.setAttribute('aria-label', 'Your work order details');
+      details.style.cssText = 'background:#171e1b;border:1px solid #33413d;border-radius:10px;padding:12px;margin-bottom:16px;';
+      details.innerHTML = '<p style="margin:0 0 8px;color:#bfcdc9;font-size:14px">Loading your details…</p>';
+      form.parentNode.insertBefore(details, form);
+      fetchWorkOrder(repairMode.workOrderId).then(function (wo) {
+        if (wo) { details.innerHTML = repairDetailsHtml(wo); fillRepairInputs(wo); }
+        else { details.innerHTML = '<p style="margin:0;color:#bfcdc9;font-size:14px">Work order ' + escHtml(repairMode.workOrderId) + ' — pick a date and time below.</p>'; }
+      });
     }
 
     var cityEl = $('city'), stateEl = $('state'), zipEl = $('zip');
@@ -528,10 +609,19 @@
     } else if (numLine) { numLine.style.display = 'none'; }
     if (isRepair) {
       var confH2 = document.querySelector('#confirmation h2');
-      if (confH2) confH2.textContent = 'Repair appointment set';
-      set('conf-code-note', 'Your repair visit is booked on this work order — no new work order was created.');
-      set('conf-sent', 'Repair appointment set for ' + (data.scheduledDate || '—') + (data.scheduledTime ? ' at ' + data.scheduledTime + '.' : '.'));
-      set('conf-agreement', 'No new agreement needed — your original agreement still stands. We\'ll confirm your repair appointment.');
+      if (res.sentToBackend) {
+        if (confH2) confH2.textContent = 'Repair appointment set';
+        set('conf-code-note', 'Your repair visit is booked on this work order — no new work order was created.');
+        set('conf-sent', 'Repair appointment set for ' + (data.scheduledDate || '—') + (data.scheduledTime ? ' at ' + data.scheduledTime + '.' : '.'));
+        set('conf-agreement', 'No new agreement needed — your original agreement still stands. We\'ll confirm your repair appointment.');
+      } else {
+        // Demo mode (no backend wired): the pick was only saved on this
+        // device — never say it was booked or set.
+        if (confH2) confH2.textContent = 'Repair appointment picked';
+        set('conf-code-note', 'No new work order was created — this is for your existing work order.');
+        set('conf-sent', 'Saved on this device only — not yet sent to Full Cycle Plus.');
+        set('conf-agreement', 'No new agreement needed — your original agreement still stands.');
+      }
       window.scrollTo(0, 0);
       return;
     }
@@ -567,6 +657,9 @@
     setPrefTiles: setPrefTiles, submitWorkOrder: submitWorkOrder,
     parseRepairQuery: parseRepairQuery,
     submitRepairAppointment: submitRepairAppointment,
+    fetchWorkOrder: fetchWorkOrder,
+    repairDetailsHtml: repairDetailsHtml,
+    RIZK_EXAMPLE: RIZK_EXAMPLE,
     loadSaved: loadSaved
   };
 })(typeof window !== 'undefined' ? window : globalThis);

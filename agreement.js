@@ -124,7 +124,7 @@
     var opts = { method: body ? 'POST' : 'GET', headers: {} };
     var full = url + '?action=' + encodeURIComponent(action);
     if (apiKey()) full += '&apiKey=' + encodeURIComponent(apiKey());
-    if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+    if (body) { opts.headers['Content-Type'] = 'text/plain'; opts.body = JSON.stringify(body); }
     global.fetch(full, opts).then(function (r) { return r.json(); }).then(function (j) { cb(j); })
       .catch(function (e) { cb({ ok: false, error: 'BACKEND_ERROR', detail: String(e && e.message || e) }); });
   }

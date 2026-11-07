@@ -20,7 +20,9 @@
 //   closing stage   = total − already paid (the balance due)
 // In demo mode (no BACKEND_URL yet) the page shows the Rizk example
 // (#HD7X-000B, Diagnostic $50, Parts $0, Labor $0, Total $50) and
-// says clearly that it is an example and nothing has been paid.
+// says clearly that it is an example and nothing has been paid. A
+// failed load is different: it shows an error only and never renders
+// the example as if it were the customer's real work order.
 //
 // AFTER PAYMENT: the customer taps "I agree to the payment" here (or
 // in the final receipt email). That calls acceptReceipt, which is the
@@ -146,7 +148,7 @@
     var opts = { method: body ? 'POST' : 'GET', headers: {} };
     var full = url + '?action=' + encodeURIComponent(action);
     if (apiKey()) full += '&apiKey=' + encodeURIComponent(apiKey());
-    if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+    if (body) { opts.headers['Content-Type'] = 'text/plain'; opts.body = JSON.stringify(body); }
     global.fetch(full, opts).then(function (r) { return r.json(); }).then(function (j) { cb(j); })
       .catch(function (e) { cb({ ok: false, error: 'BACKEND_ERROR', detail: String(e && e.message || e) }); });
   }
@@ -187,6 +189,23 @@
     show('agree-block', stage === 'closing');
   }
 
+  // Failed load: error only — never render the demo example as if it
+  // were the customer's real work order. Details stay blank, the
+  // amount stays blank, and Pay Now stays disabled.
+  function renderLoadError(note) {
+    setText('pay-wo', 'Work Order —');
+    setText('pay-customer', '—');
+    setText('pay-problem', '—');
+    setText('pay-when', '—');
+    setText('pay-where', '—');
+    var lines = el('pay-lines');
+    if (lines) lines.innerHTML = '';
+    setText('pay-amount', '—');
+    show('demo-note', false);
+    show('agree-block', false);
+    setSquareState('error', note);
+  }
+
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
@@ -218,8 +237,7 @@
     }
 
     if (!woId) {
-      render(demoWorkOrder(stage), stage);
-      setSquareState('not-configured', 'No work order was linked to this page. Open it from the Pay Now link in your receipt email.');
+      renderLoadError('No work order was linked to this page. Open it from the Pay Now link in your receipt email.');
       return;
     }
 
@@ -230,8 +248,7 @@
     if (apiKey()) url += '&apiKey=' + encodeURIComponent(apiKey());
     global.fetch(url).then(function (r) { return r.json(); }).then(function (j) {
       if (!j || !j.ok || !j.workOrder) {
-        render(demoWorkOrder(stage), stage);
-        setSquareState('error', 'We could not load that work order. Please use the Pay Now link in your receipt email, or call (248) 429-9878.');
+        renderLoadError('We could not load that work order. Please use the Pay Now link in your receipt email, or call (248) 429-9878.');
         return;
       }
       var wo = j.workOrder;
@@ -275,8 +292,7 @@
         });
       };
     }).catch(function () {
-      render(demoWorkOrder(stage), stage);
-      setSquareState('error', 'We could not reach the payment page backend. No payment has been taken — please call (248) 429-9878.');
+      renderLoadError('We could not reach the payment page backend. No payment has been taken — please call (248) 429-9878.');
     });
   }
 
