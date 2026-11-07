@@ -37,6 +37,12 @@ window.FCP_CONFIG = {
   // Service area — the page serves Michigan; State defaults to MI.
   DEFAULT_STATE: 'MI',
 
+  // Pay Now page — lives alongside this page on the same GitHub site
+  // (pay.html next to index.html). Receipt emails link to it with
+  // ?workOrder=<id>&stage=diagnosis|closing. Its Pay Now button opens
+  // Square's secure checkout via the backend's createSquarePaymentLink.
+  PAY_PAGE_URL: 'https://fullcyclelaundryrepair.github.io/full-cycle-website/pay.html',
+
   // localStorage key for demo-mode submissions (this browser only).
   LOCAL_STORAGE_KEY: 'fcp_customer_work_orders'
 };

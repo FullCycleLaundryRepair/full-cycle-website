@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pay Now — Full Cycle Plus</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap');
+  :root {
+    color-scheme: dark;
+    --bg: #0d0d0d;
+    --surface: #171e1b;
+    --surface-alt: #1d2623;
+    --text: #eef3f1;
+    --dim: #bfcdc9;
+    --faint: #8fa39d;
+    --border: #33413d;
+    --border-strong: #46554f;
+    --field-line: #3d4b47;
+    --accent: #35917f;
+    --accent-deep: #7cc4b2;
+    --copper: #d18a4e;
+    --copper-soft: #3a2a1c;
+    --danger: #e07a6e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Barlow", system-ui, sans-serif;
+    line-height: 1.5;
+  }
+  main { max-width: 880px; margin: 0 auto; padding: 8px 12px 40px; }
+  @media (min-width: 640px) { main { padding-left: 16px; padding-right: 16px; } }
+  .header-band {
+    margin-bottom: 8px; overflow: hidden; border-radius: 8px;
+    background: #0d0d0d; text-align: center;
+  }
+  .header-band img { display: block; margin: 0 auto; height: auto; width: min(560px, 100%); }
+  .panel {
+    border-top: 6px solid var(--accent); background: var(--surface);
+    padding: 20px 16px 24px;
+  }
+  @media (min-width: 640px) { .panel { padding-left: 24px; padding-right: 24px; } }
+  h2 {
+    margin: 0 0 4px; font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .wo-line { margin: 0 0 16px; font-size: 17px; font-weight: 700; letter-spacing: 0.5px; }
+  .muted { color: var(--dim); font-size: 14px; }
+  .faint { color: var(--faint); font-size: 13px; }
+  .demo-note {
+    margin: 0 0 16px; padding: 10px 12px; border: 1.5px solid var(--copper);
+    border-radius: 8px; background: var(--copper-soft); color: var(--text); font-size: 14px;
+  }
+  .detail-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 16px; }
+  @media (min-width: 640px) { .detail-grid { grid-template-columns: 1fr 1fr; } }
+  .detail .k { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); }
+  .detail .v { font-size: 15.5px; }
+  table.money { width: 100%; border-collapse: collapse; font-size: 15.5px; }
+  table.money td { padding: 6px 0; border-bottom: 1px solid var(--border); }
+  table.money td:last-child { text-align: right; white-space: nowrap; }
+  table.money tr.total td { font-weight: 700; border-bottom: 0; font-size: 17px; }
+  .amount-big { font-size: 30px; font-weight: 700; margin: 4px 0 0; }
+  .steps { margin: 16px 0; padding-left: 20px; font-size: 14.5px; color: var(--dim); }
+  .steps li { margin-bottom: 4px; }
+  .steps strong { color: var(--text); }
+  button { font-family: inherit; cursor: pointer; }
+  .btn-primary {
+    border: 0; border-radius: 8px; background: var(--accent); color: #fff;
+    padding: 12px 24px; font-size: 16px; font-weight: 700;
+  }
+  .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn-copper {
+    border: 0; border-radius: 8px; background: var(--copper); color: #fff;
+    padding: 10px 20px; font-size: 14.5px; font-weight: 700;
+  }
+  .btn-copper:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn-ghost {
+    border: 1.5px solid var(--accent); border-radius: 8px; background: transparent;
+    color: var(--accent); padding: 10px 16px; font-size: 14.5px; font-weight: 700;
+    text-decoration: none; display: inline-block;
+  }
+  .pay-row { margin-top: 20px; }
+  .square-note { margin-top: 10px; font-size: 14px; color: var(--dim); }
+  .square-note.warn { color: var(--copper); font-weight: 600; }
+  details.terms { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 12px; }
+  details.terms summary { cursor: pointer; font-weight: 700; font-size: 14.5px; }
+  details.terms ul { font-size: 14px; color: var(--dim); padding-left: 20px; }
+  .agree-block { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px; }
+  .agree-note { margin-top: 8px; font-size: 14px; color: var(--dim); }
+  .foot-links { margin-top: 24px; font-size: 14px; }
+  .foot-links a { color: var(--accent-deep); }
+</style>
+</head>
+<body>
+<main>
+  <div class="header-band">
+    <img src="logo-v11.png" alt="Full Cycle Plus" width="1600" height="560">
+  </div>
+
+  <div class="panel" id="pay-panel">
+    <h2>Pay Now</h2>
+    <p class="wo-line" id="pay-wo">Work Order —</p>
+    <p class="demo-note" id="demo-note" style="display:none">Example shown — the payment page is not connected to a live work order yet. No payment has been taken. When this page opens from a receipt email, it shows that job's real total.</p>
+
+    <div class="detail-grid">
+      <div class="detail"><div class="k">Customer</div><div class="v" id="pay-customer">—</div></div>
+      <div class="detail"><div class="k">Problem</div><div class="v" id="pay-problem">—</div></div>
+      <div class="detail"><div class="k">Visit</div><div class="v" id="pay-when">—</div></div>
+      <div class="detail"><div class="k">Area</div><div class="v" id="pay-where">—</div></div>
+    </div>
+
+    <p><strong id="pay-stage">Closing payment</strong><br>
+    <span class="muted" id="pay-stage-desc">Final payment: repair labor $75, plus parts if needed.</span></p>
+
+    <table class="money" id="pay-lines" aria-label="Charges"></table>
+    <p class="muted" style="margin-bottom:0">Amount due now</p>
+    <p class="amount-big" id="pay-amount">$0.00</p>
+
+    <ol class="steps">
+      <li><strong>Pay Now</strong> opens Square's secure checkout — your card details go straight to Square, never to us. We never ask for your card on this page.</li>
+      <li><strong>Agree to the payment</strong> below sends a confirmation back to us.</li>
+      <li>That confirmation unlocks the Close Work Order button on our side. Closing is still done manually by us, never automatically.</li>
+    </ol>
+
+    <div class="pay-row">
+      <button type="button" class="btn-primary" id="pay-now-btn" disabled>Pay Now with Square</button>
+      <p class="square-note warn" id="square-not-configured" style="display:none">Square is not set up yet — the payment link will appear here once Square is connected. No payment has been taken.</p>
+      <p class="square-note" id="square-note"></p>
+    </div>
+
+    <div class="agree-block" id="agree-block" style="display:none">
+      <h2 style="font-size:18px">Agree to the payment</h2>
+      <p class="muted">Please confirm you agree to the payment above. That agreement sends a confirmation back to us, and that is what unlocks the Close Work Order button on our side.</p>
+      <button type="button" class="btn-copper" id="agree-btn">I agree to the payment</button>
+      <p class="agree-note" id="agree-note"></p>
+      <p class="agree-note" id="agree-done" style="display:none">Thank you — your agreement has been sent back to us.</p>
+    </div>
+
+    <details class="terms">
+      <summary>Terms and conditions</summary>
+      <ul>
+        <li>Diagnostic visit: $50, due upon diagnosis whether or not the repair is approved.</li>
+        <li>Part cost is paid upfront, before a part is ordered. No markup if you buy the part yourself.</li>
+        <li>Repair labor: $75, due when the repair is complete.</li>
+        <li>30-day labor-only warranty on repairs.</li>
+        <li>Total liability of Full Cycle Plus is limited to the total amount paid for the specific service.</li>
+        <li>Full terms are in the Service Agreement (Sections 1–10) sent with your appointment confirmation, and in the final receipt email. Governed by the laws of the State of Michigan.</li>
+      </ul>
+      <p class="faint">Full Cycle Plus · (248) 429-9878 · fullcycleplus@gmail.com</p>
+    </details>
+
+    <p class="foot-links"><a href="index.html">← Back to Create a Work Order</a><br>
+    <span class="faint">Full Cycle Plus · (248) 429-9878</span></p>
+  </div>
+</main>
+
+<script src="config.js"></script>
+<script src="pay.js"></script>
+</body>
+</html>

@@ -308,7 +308,7 @@
       var record = { payload: payload, savedAt: new Date().toISOString(), sentToBackend: false };
       saveLocal(record);
       return Promise.resolve({
-        ok: true, mode: 'demo', displayId: null, creationCode: null,
+        ok: true, mode: 'demo', displayId: null, creationCode: null, workOrderCode: null,
         agreementToken: null, sentToBackend: false,
         confirmationMessage: 'queued — ready, not sent yet',
         record: record
@@ -327,6 +327,7 @@
         ok: true, mode: 'live',
         displayId: wo.displayId || wo.id || null,
         creationCode: wo.creationCode || wo.creation_code || null,
+        workOrderCode: wo.workOrderCode || wo.work_order_code || null,
         agreementToken: wo.agreementToken || wo.agreement_token || null,
         sentToBackend: true,
         confirmationMessage: 'queued — ready, not sent yet',
@@ -445,9 +446,11 @@
     } else if (numLine) { numLine.style.display = 'none'; }
     /* v25 (James): no name / when / contact recap below the Create button —
        the confirmation keeps only the work-order number, code note, sent
-       status and agreement line. */
-    if (res.creationCode) {
-      set('conf-code-note', 'Work-order code: ' + res.creationCode);
+       status and agreement line. The number is shown ONLY as the full
+       "Work order #HD7X-000B" — never "work order code", never a bare
+       creation half. */
+    if (res.workOrderCode) {
+      set('conf-code-note', 'Work order #' + res.workOrderCode);
     }
     set('conf-sent', res.sentToBackend
       ? 'Sent to Full Cycle Plus.'

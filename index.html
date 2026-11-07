@@ -52,8 +52,8 @@
     display: block; font-size: 11.5px; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint);
   }
-  .contact-tiles { display: flex; gap: 10px; }
-  .contact-tile { flex: 1; padding: 14px; border: 2px solid rgba(53,145,127,.45); border-radius: 10px; background: rgba(53,145,127,.18); color: #8fb8ac; font-size: 16px; font-weight: 700; text-align: center; }
+  .contact-tiles { display: flex; gap: 8px; flex-wrap: wrap; }
+  .contact-tile { flex: 0 0 auto; min-width: 72px; padding: 6px 14px; border: 2px solid rgba(53,145,127,.45); border-radius: 8px; background: rgba(53,145,127,.18); color: #8fb8ac; font-size: 14px; font-weight: 700; text-align: center; } /* v26 (James): preferred-contact tiles were far too big — small compact tiles now; selected orange / other faded green unchanged */
   .contact-tile.sel { background: var(--copper); border-color: var(--copper); color: #fff; }
   input, select {
     width: 100%; border: 0; border-bottom: 1.5px solid var(--field-line);
@@ -184,10 +184,12 @@
     </form>
   </div>
 
+  <p style="margin-top:16px;font-size:14px"><a href="pay.html" style="color:#7cc4b2">Already have a work order? Pay for it here →</a></p>
+
   <div class="panel" id="confirmation" aria-live="polite">
     <h2>Work order created</h2>
     <p class="conf-line" id="conf-number-line" style="display:none">Your work-order number<br><span class="conf-number" id="conf-number">—</span></p>
-    <p class="conf-line"><span class="muted" id="conf-code-note">No work-order code is issued from this page — a code is generated later from the work order in the app.</span></p>
+    <p class="conf-line"><span class="muted" id="conf-code-note">Your work order number is issued when the job is filed — it comes with your appointment confirmation.</span></p>
     <p class="conf-line"><span class="muted" id="conf-sent">—</span></p>
     <p class="conf-line"><span class="muted" id="conf-agreement">—</span></p>
     <div class="submit-row">
