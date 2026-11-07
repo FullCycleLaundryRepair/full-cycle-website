@@ -5,17 +5,18 @@
 // workOrder=<id>).
 //
 // WHAT THIS PAGE IS: our page, our format and colors (dark #0d0d0d,
-// v11 header, Create-page coloring). THREE tiles, step by step:
+// v11 header, Create-page coloring). TWO tiles, step by step:
 //   1. Service Agreement — the full agreement (Sections 1-10), only
 //      the fields required inside a service agreement, auto-filled;
 //      checkbox "agree to all terms and conditions" + sign here.
 //   2. Appointment Confirmation — all their info: customer, service
 //      address, appliance, problem, appointment. The customer taps
-//      "Confirm appointment" to confirm it.
-//   3. Submit — receipt outline (Diagnostic $50, total due), then
-//      Submit. Enabled only once tiles 1 and 2 are done. Submit locks
-//      the snapshot + checkbox + signature + timestamp via the
-//      backend's submitAgreement, which also makes the job active.
+//      "Confirm appointment" to confirm it, then Submit (at the bottom
+//      of tile 2). Nothing is due at this stage, so there is no payment
+//      schedule on this page (James, Nov 7, 2026). Submit is enabled
+//      only once tiles 1 and 2 are done. Submit locks the snapshot +
+//      checkbox + signature + timestamp via the backend's
+//      submitAgreement, which also makes the job active.
 // Unknowns show "Not provided" — never invented. "Sole Proprietor"
 // never appears (James, Nov 7, 2026).
 //
@@ -138,12 +139,15 @@
 
   // Tile 1 shows the agreement + work order number. Tile 2 shows the
   // appointment confirmation (customer, service address, appliance,
-  // problem, appointment). Tile 3 shows the receipt outline
-  // (Diagnostic $50 + total due). Fields come from the work order
-  // (wo) when available, else from the agreement record (ag, which in
-  // demo mode is the Rizk example). Unknowns show "Not provided".
+  // problem, appointment) plus the Submit button — nothing is due at
+  // this stage, so there is no payment schedule on this page (James,
+  // Nov 7, 2026). Fields come from the work order (wo) when available,
+  // else from the agreement record's prefill (ag.prefill — the
+  // already-signed/locked path never fetches the work order), else
+  // from the agreement record itself (demo mode is the Rizk example).
+  // Unknowns show "Not provided".
   function render(ag, wo) {
-    var src = wo || ag || {};
+    var src = wo || (ag && ag.prefill) || ag || {};
     setText('agree-wo', 'Work Order ' + displayNumber(ag));
     show('demo-note', !!(ag && ag.demo));
     var name = trim(src.customerName) || [trim(src.firstName), trim(src.lastName)].join(' ').trim();
@@ -155,8 +159,6 @@
     setText('appt-problem', display(src.problem));
     var when = [trim(src.scheduledDate), trim(src.scheduledTime)].filter(function (x) { return x; }).join(' ');
     setText('appt-when', display(when));
-    setText('receipt-diagnostic', money(num(src.diagnosticCents, 5000)));
-    setText('receipt-total', money(num(src.totalCents, 5000)));
   }
 
   function init() {
@@ -311,10 +313,10 @@
     update();
 
     // Failed load: error panel only — never render the demo example,
-    // and never leave a live sign/submit path on a demo. Hides all
-    // three tiles and shows only the error.
+    // and never leave a live sign/submit path on a demo. Hides both
+    // tiles and shows only the error.
     function showLoadError(note) {
-      ['tile-agreement', 'tile-appointment', 'tile-submit'].forEach(function (id) {
+      ['tile-agreement', 'tile-appointment'].forEach(function (id) {
         var t = el(id);
         if (t) t.style.display = 'none';
       });
