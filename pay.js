@@ -104,9 +104,10 @@
   // code — those never belong on a public page.
   function demoWorkOrder(stage) {
     return {
-      id: '#1107-01',
-      displayId: '#1107-01',
+      id: 'HD7X-000B',
+      displayId: '#HD7X-000B',
       workOrderCode: 'HD7X-000B',
+      creationCode: 'HD7X',
       customerName: 'Rizk',
       problem: 'Dryer — not heating',
       city: 'Waterford', state: 'MI',
@@ -129,10 +130,20 @@
   // Display number: the work-order code (#HD7X-000B) when the job has
   // one, otherwise the record id. Never called "work order code" on
   // the page — it is just Work Order #… (James, Nov 7, 2026).
+  // Per-order display number: this order's own code when it has one
+  // (full code when assigned, creation half when unassigned). An old
+  // internal record id (#MMDD-NN style) is never visible text — if no
+  // code is known for this order, show '—' rather than the internal id.
   function displayNumber(wo) {
     if (!wo) return '—';
-    if (wo.workOrderCode) return '#' + String(wo.workOrderCode).replace(/^#/, '');
-    return wo.displayId || wo.id || '—';
+    var c = function (v) { var x = trim(v).replace(/^#/, '').toUpperCase(); return /^[A-Z0-9]{4}(-[A-Z0-9]{4})?$/.test(x) ? x : ''; };
+    var full = c(wo.workOrderCode || wo.work_order_code);
+    var half = c(wo.creationCode || wo.creation_code);
+    var pro = c(wo.proCode || wo.pro_code);
+    if (full && full.indexOf('-') >= 0) return '#' + full;
+    if ((full || half) && pro && pro.indexOf('-') < 0) return '#' + (full || half) + '-' + pro;
+    var n = full || half || c(wo.displayId) || c(wo.id);
+    return n ? '#' + n : '—';
   }
 
   function backendUrl() { return trim(CFG.BACKEND_URL); }

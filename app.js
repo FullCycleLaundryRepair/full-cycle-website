@@ -328,27 +328,34 @@
         displayId: wo.displayId || wo.id || null,
         creationCode: wo.creationCode || wo.creation_code || null,
         workOrderCode: wo.workOrderCode || wo.work_order_code || null,
+        proCode: wo.proCode || wo.pro_code || null,
         agreementToken: wo.agreementToken || wo.agreement_token || null,
         sentToBackend: true,
         confirmationMessage: 'queued — ready, not sent yet',
         sendStatus: null,
         record: wo
       };
-      /* Auto-send the appointment confirmation now, by preferred contact.
-         A failed send does NOT fail the filing — the row stays ready and
-         the app's sendDueMessages sweep retries it. */
-      var sendBody = { action: 'sendContactMessage', workOrderId: result.displayId, stage: 'appointment_confirmation' };
-      if (CFG.WO_API_KEY) sendBody.apiKey = CFG.WO_API_KEY;
-      return global.fetch(trim(CFG.BACKEND_URL), {
-        method: 'POST', headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(sendBody)
-      }).then(function (r2) { return r2.json(); }).then(function (sendRes) {
-        result.sendStatus = sendRes && sendRes.status ? sendRes.status : null;
-        if (sendRes && sendRes.status === 'sent') result.confirmationMessage = 'sent by email';
-        else if (sendRes && sendRes.status === 'ready_text') result.confirmationMessage = 'text ready — James will send it from his phone';
-        else if (sendRes && sendRes.status === 'pending_email') result.confirmationMessage = 'waiting for an email address';
-        return result;
-      }).catch(function () { return result; });
+      /* Code first: the confirmation must show the order by its code
+         from the start — fill a missing code (re-read by lookup key)
+         before the confirmation send/render below. */
+      return fillMissingCode(result, result.displayId).then(function (filled) {
+        result = filled;
+        /* Auto-send the appointment confirmation now, by preferred contact.
+           A failed send does NOT fail the filing — the row stays ready and
+           the app's sendDueMessages sweep retries it. */
+        var sendBody = { action: 'sendContactMessage', workOrderId: result.displayId, stage: 'appointment_confirmation' };
+        if (CFG.WO_API_KEY) sendBody.apiKey = CFG.WO_API_KEY;
+        return global.fetch(trim(CFG.BACKEND_URL), {
+          method: 'POST', headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(sendBody)
+        }).then(function (r2) { return r2.json(); }).then(function (sendRes) {
+          result.sendStatus = sendRes && sendRes.status ? sendRes.status : null;
+          if (sendRes && sendRes.status === 'sent') result.confirmationMessage = 'sent by email';
+          else if (sendRes && sendRes.status === 'ready_text') result.confirmationMessage = 'text ready — James will send it from his phone';
+          else if (sendRes && sendRes.status === 'pending_email') result.confirmationMessage = 'waiting for an email address';
+          return result;
+        }).catch(function () { return result; });
+      });
     }).catch(function (e) {
       return { ok: false, error: 'Could not reach the backend: ' + e.message + ' — nothing was sent. Your details are still on this screen; try again.' };
     });
@@ -388,7 +395,7 @@
     if (!trim(CFG.BACKEND_URL)) {
       var record = { payload: payload, savedAt: new Date().toISOString(), sentToBackend: false };
       saveLocal(record);
-      return Promise.resolve({ ok: true, mode: 'demo', displayId: trim(workOrderId), sentToBackend: false, confirmationMessage: 'queued — ready, not sent yet', record: record });
+      return Promise.resolve({ ok: true, mode: 'demo', displayId: trim(workOrderId), workOrderCode: codeOf(trim(workOrderId)) ? trim(workOrderId).replace(/^#/, '').toUpperCase() : null, creationCode: null, sentToBackend: false, confirmationMessage: 'queued — ready, not sent yet', record: record });
     }
     var body = { action: 'setRepairAppointment', workOrderId: trim(workOrderId), scheduledDate: date, scheduledTime: time };
     if (CFG.WO_API_KEY) body.apiKey = CFG.WO_API_KEY;
@@ -398,12 +405,75 @@
     }).then(function (r) { return r.json(); }).then(function (res) {
       if (!res || !res.ok) throw new Error((res && res.error) || 'Backend returned an error.');
       var wo = res.workOrder || {};
-      return { ok: true, mode: 'live', displayId: wo.displayId || wo.id || trim(workOrderId), sentToBackend: true, confirmationMessage: 'Repair appointment set.', record: wo };
+      var out = { ok: true, mode: 'live', displayId: wo.displayId || wo.id || trim(workOrderId), workOrderCode: wo.workOrderCode || wo.work_order_code || null, creationCode: wo.creationCode || wo.creation_code || null, proCode: wo.proCode || wo.pro_code || null, sentToBackend: true, confirmationMessage: 'Repair appointment set.', record: wo };
+      return fillMissingCode(out, out.displayId);
     }).catch(function (e) {
       return { ok: false, error: 'Could not reach the backend: ' + e.message + ' — nothing was booked. Your date and time are still on this screen; try again.' };
     });
   }
 
+
+  // --- Work-order display number (James, Nov 7, 2026) --------------------
+  // Every work order keeps its OWN code — the FORMAT (#XXXX-XXXX) is what
+  // applies everywhere, never one hard-coded code. Displayed number comes
+  // from THAT order's live data: full workOrderCode when assigned, the
+  // creation half (creationCode) only when unassigned. An old internal
+  // record id (#MMDD-NN style) is NEVER visible text — it stays a lookup
+  // key only. Returns '' when no code is known for this order.
+  function codeOf(v) {
+    var c = trim(v).replace(/^#/, '').toUpperCase();
+    return /^[A-Z0-9]{4}(-[A-Z0-9]{4})?$/.test(c) ? c : '';
+  }
+  function displayWorkOrderNumber(wo) {
+    if (!wo) return '';
+    var full = codeOf(wo.workOrderCode || wo.work_order_code);
+    var half = codeOf(wo.creationCode || wo.creation_code);
+    var pro = codeOf(wo.proCode || wo.pro_code);
+    // Backend may store the halves apart (creation half in
+    // workOrderCode/creationCode, Pro half in proCode): the full number
+    // for THIS order is half + '-' + pro half. A bare half alone means
+    // the order is unassigned, so only the half shows.
+    if (full && full.indexOf('-') >= 0) return '#' + full;
+    if ((full || half) && pro && pro.indexOf('-') < 0) return '#' + (full || half) + '-' + pro;
+    var c = full || half || codeOf(wo.displayId) || codeOf(wo.id);
+    return c ? '#' + c : '';
+  }
+  function displayWorkOrderNumberFromResult(res) {
+    if (!res) return '';
+    return displayWorkOrderNumber(res) || displayWorkOrderNumber(res.record || null);
+  }
+
+  // --- Code-first confirmation (James, Nov 7, 2026) ----------------------
+  // The code is issued at creation, before anything else touches the
+  // order, and the confirmation must show the order by its code from
+  // the start. If a create/set response somehow carries no code, re-read
+  // the order by its internal lookup key (never displayed) BEFORE
+  // anything renders, so no confirmation ever shows the order without
+  // its code. Never rejects and never fails the filing: a failed
+  // re-read just leaves the result as the backend returned it.
+  function fetchCodeFor(workOrderId) {
+    var url = trim(CFG.BACKEND_URL) + '?action=getWorkOrder&workOrderId=' + encodeURIComponent(trim(workOrderId));
+    if (CFG.WO_API_KEY) url += '&apiKey=' + encodeURIComponent(CFG.WO_API_KEY);
+    try {
+      return Promise.resolve(global.fetch(url)).then(function (r) { return r.json(); }).then(function (j) {
+        var w = (j && j.ok && j.workOrder) || null;
+        if (!w) return null;
+        return { workOrderCode: w.workOrderCode || w.work_order_code || null, creationCode: w.creationCode || w.creation_code || null, proCode: w.proCode || w.pro_code || null, record: w };
+      }).catch(function () { return null; });
+    } catch (e) { return Promise.resolve(null); }
+  }
+  function fillMissingCode(result, lookupId) {
+    if (!result || result.workOrderCode || result.creationCode || !trim(lookupId) || !trim(CFG.BACKEND_URL)) return Promise.resolve(result);
+    return fetchCodeFor(lookupId).then(function (c) {
+      if (c) {
+        if (c.workOrderCode) result.workOrderCode = c.workOrderCode;
+        if (c.creationCode) result.creationCode = c.creationCode;
+        if (c.proCode) result.proCode = c.proCode;
+        if (c.record) result.record = c.record;
+      }
+      return result;
+    });
+  }
   // --- Repair-booking autofill (v2.1, James, Nov 7) ------------------------
   // When the customer comes back to ?workOrder=<id>&step=repair, the page
   // shows THEIR details read-only underneath — name, address, appliance,
@@ -417,7 +487,7 @@
   // Demo-mode example (no backend yet): Rizk, the same example the Pay Now
   // page shows. City/state only — no street address, no gate code, no phone.
   var RIZK_EXAMPLE = {
-    id: '#HD7X-000B', displayId: '#HD7X-000B', customerName: 'Rizk',
+    id: '#HD7X-000B', displayId: '#HD7X-000B', workOrderCode: 'HD7X-000B', creationCode: 'HD7X', customerName: 'Rizk',
     firstName: '', lastName: 'Rizk', phone: '', email: '',
     street: '', city: 'Waterford', state: 'MI', zip: '',
     address: 'Waterford, MI', accessNotes: '',
@@ -439,7 +509,7 @@
     var addr = trim(wo.address) || [trim(wo.street), trim(wo.city), trim(wo.state), trim(wo.zip)].filter(function (x) { return x; }).join(', ') || 'Not provided';
     var appl = [trim(wo.applianceBrand), trim(wo.applianceModel)].filter(function (x) { return x; }).join(' ') || 'Not provided';
     var rows = [
-      ['Work order', trim(wo.displayId) || trim(wo.id) || 'Not provided'],
+      ['Work order', displayWorkOrderNumber(wo) || 'Not provided'],
       ['Name', name],
       ['Address', addr],
       ['Appliance', appl],
@@ -506,7 +576,7 @@
       form.parentNode.insertBefore(details, form);
       fetchWorkOrder(repairMode.workOrderId).then(function (wo) {
         if (wo) { details.innerHTML = repairDetailsHtml(wo); fillRepairInputs(wo); }
-        else { details.innerHTML = '<p style="margin:0;color:#bfcdc9;font-size:14px">Work order ' + escHtml(repairMode.workOrderId) + ' — pick a date and time below.</p>'; }
+        else { var fb = codeOf(repairMode.workOrderId); details.innerHTML = '<p style="margin:0;color:#bfcdc9;font-size:14px">' + (fb ? 'Work order #' + escHtml(fb) + ' — pick a date and time below.' : 'Pick a date and time below.') + '</p>'; }
       });
     }
 
@@ -603,9 +673,10 @@
     conf.style.display = 'block';
     var set = function (id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt; };
     var numLine = document.getElementById('conf-number-line');
-    if (res.displayId) {
+    var dispNum = displayWorkOrderNumberFromResult(res);
+    if (dispNum) {
       if (numLine) numLine.style.display = 'block';
-      set('conf-number', res.displayId);
+      set('conf-number', dispNum);
     } else if (numLine) { numLine.style.display = 'none'; }
     if (isRepair) {
       var confH2 = document.querySelector('#confirmation h2');
@@ -630,8 +701,8 @@
        status and agreement line. The number is shown ONLY as the full
        "Work order #HD7X-000B" — never "work order code", never a bare
        creation half. */
-    if (res.workOrderCode) {
-      set('conf-code-note', 'Work order #' + res.workOrderCode);
+    if (dispNum) {
+      set('conf-code-note', 'Work order ' + dispNum);
     }
     set('conf-sent', res.sentToBackend
       ? 'Sent to Full Cycle Plus.'
@@ -657,7 +728,7 @@
     setPrefTiles: setPrefTiles, submitWorkOrder: submitWorkOrder,
     parseRepairQuery: parseRepairQuery,
     submitRepairAppointment: submitRepairAppointment,
-    fetchWorkOrder: fetchWorkOrder,
+    fetchWorkOrder: fetchWorkOrder, displayWorkOrderNumber: displayWorkOrderNumber,
     repairDetailsHtml: repairDetailsHtml,
     RIZK_EXAMPLE: RIZK_EXAMPLE,
     loadSaved: loadSaved

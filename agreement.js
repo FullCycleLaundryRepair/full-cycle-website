@@ -59,9 +59,10 @@
   // code — those never belong on a public page.
   function demoAgreement() {
     return {
-      workOrderId: '#1107-01',
-      displayId: '#1107-01',
+      workOrderId: 'HD7X-000B',
+      displayId: '#HD7X-000B',
       workOrderCode: 'HD7X-000B',
+      creationCode: 'HD7X',
       customerName: 'Rizk',
       phone: '', email: '',
       address: 'Waterford, MI',
@@ -77,10 +78,23 @@
   // Display number: the work-order code (#HD7X-000B) when the job has
   // one, otherwise the record id. Never called "work order code" on
   // the page — it is just Work Order #… (James, Nov 7, 2026).
+  // Per-order display number: this order's own code when it has one
+  // (full code when assigned, creation half when unassigned). An old
+  // internal record id (#MMDD-NN style) is never visible text — if no
+  // code is known for this order, show '—' rather than the internal id.
+  function codeOf(v) {
+    var c = trim(v).replace(/^#/, '').toUpperCase();
+    return /^[A-Z0-9]{4}(-[A-Z0-9]{4})?$/.test(c) ? c : '';
+  }
   function displayNumber(ag) {
     if (!ag) return '—';
-    if (ag.workOrderCode) return '#' + String(ag.workOrderCode).replace(/^#/, '');
-    return ag.displayId || ag.workOrderId || '—';
+    var full = codeOf(ag.workOrderCode || ag.work_order_code);
+    var half = codeOf(ag.creationCode || ag.creation_code);
+    var pro = codeOf(ag.proCode || ag.pro_code);
+    if (full && full.indexOf('-') >= 0) return '#' + full;
+    if ((full || half) && pro && pro.indexOf('-') < 0) return '#' + (full || half) + '-' + pro;
+    var c = full || half || codeOf(ag.displayId) || codeOf(ag.workOrderId);
+    return c ? '#' + c : '—';
   }
 
   // Signature image check (mirrors the backend's
@@ -178,6 +192,7 @@
     var submitBtn = el('submit-agreement');
     var submitNote = el('submit-note');
     var hasInk = false, drawing = false, sized = false, last = null, locked = false;
+    var loadedCode = ''; // this order's own code, from getWorkOrder when loaded
     var apptConfirmed = false;
     var confirmBtn = el('confirm-appt-btn');
     var apptStatus = el('appt-status');
@@ -301,7 +316,7 @@
       callBackend('submitAgreement', { workOrderId: woId, consent: true, signatureName: trim(nameInput.value), signatureImage: sigImage }, function (r) {
         if (r && r.ok) {
           var when = new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
-          lockUI(sigImage, 'Signed ' + when + ' by ' + trim(nameInput.value) + ' · Work order ' + displayNumber({ workOrderId: woId }));
+          lockUI(sigImage, 'Signed ' + when + ' by ' + trim(nameInput.value) + ' · Work order ' + (loadedCode ? '#' + loadedCode : displayNumber({ workOrderId: woId })));
           setText('submit-note', 'Thank you — your signed agreement has been sent back to us, and your job is now active.');
         } else {
           submitBtn.disabled = false;
@@ -360,7 +375,7 @@
       global.fetch(url2).then(function (r2) { return r2.json(); }).then(function (j2) {
         var wo = (j2 && j2.ok && j2.workOrder) || null;
         render(j, wo);
-        if (wo && wo.workOrderCode) setText('agree-wo', 'Work Order #' + String(wo.workOrderCode).replace(/^#/, ''));
+        if (wo) { var c2 = codeOf(wo.workOrderCode || wo.work_order_code) || codeOf(wo.creationCode || wo.creation_code); if (c2) { loadedCode = c2; setText('agree-wo', 'Work Order #' + c2); } }
       }).catch(function () { render(j); });
     }).catch(function () {
       showLoadError('We could not reach the agreement backend. No agreement has been sent — please call (248) 429-9878.');
