@@ -74,11 +74,12 @@
     return h * 60 + mins;
   }
 
-  // A 2-hour block ("8:00-10:00 AM") -> { start, end } minutes since
-  // midnight; a plain time ("9:00 AM") -> { start, end: start }.
+  // A 2-hour block ("8:00-10:00 AM", or the backend v2.9 en-dash form
+  // "9:00–11:00 AM") -> { start, end } minutes since midnight; a plain
+  // time ("9:00 AM") -> { start, end: start + 120 }.
   function parseTimeBlock(t) {
     if (!trim(t)) return null;
-    var parts = String(t).split('-');
+    var parts = String(t).split(/[–—-]/);
     /* The AM/PM designator sits on the end half ("2:00-4:00 PM") — the
        start half inherits it, or the end inherits the start's. */
     var apOf = function (x) { var m = String(x).match(/([AP]M)\s*$/i); return m ? m[1].toUpperCase() : ''; };
@@ -264,7 +265,16 @@
       var blk = parseTimeBlock(b);
       var busy = false;
       jobs.forEach(function (j) {
-        var jt = parseTimeToMinutes(j.scheduledTime || '');
+        // Backend v2.9: scheduledTime is now the block string
+        // ("9:00–11:00 AM") and scheduledTimeStart carries the raw start
+        // ("9:00 AM"). Prefer the start field; else take the block start
+        // from the time value (parseTimeBlock handles hyphen and en-dash
+        // forms). A plain start time still works as before.
+        var jt = parseTimeToMinutes(j.scheduledTimeStart || '');
+        if (jt === null) {
+          var jb = parseTimeBlock(j.scheduledTime || '');
+          jt = jb ? jb.start : null;
+        }
         if (jt !== null && jt >= blk.start && jt < blk.end) busy = true;
       });
       events.forEach(function (e) {
