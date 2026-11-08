@@ -97,6 +97,67 @@
     return c ? '#' + c : '—';
   }
 
+  // --- Appointment block display (James, Nov 7, 2026) ----------------------
+  // Same rule as the Create page: the customer books a 2-hour window,
+  // so show the block ("9:00–11:00 AM"), never just the start time,
+  // and the date as "Sat, Nov 7, 2026", never the raw Date string.
+  // Stored times are block starts; a time off a block boundary still
+  // shows start–start+2h — never invent a different block. A value
+  // that is already a block ("8:00-10:00 AM") renders as-is, normalised.
+  function apptMinutes(t) {
+    var m = trim(t).match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+    if (!m) return null;
+    var h = parseInt(m[1] || '', 10);
+    var mins = m[2] ? parseInt(m[2], 10) : 0;
+    var ap = (m[3] || '').toUpperCase();
+    if (isNaN(h) || isNaN(mins)) return null;
+    if (ap === 'PM' && h < 12) h += 12;
+    if (ap === 'AM' && h === 12) h = 0;
+    return h * 60 + mins;
+  }
+  function apptBlock(t) {
+    if (!trim(t)) return null;
+    var parts = String(t).split('-');
+    var apOf = function (x) { var m = String(x).match(/([AP]M)\s*$/i); return m ? m[1].toUpperCase() : ''; };
+    var startPart = parts[0], endPart = parts.length > 1 ? parts[1] : '';
+    if (!apOf(startPart) && apOf(endPart)) startPart = startPart + ' ' + apOf(endPart);
+    if (!apOf(endPart) && apOf(startPart)) endPart = endPart + ' ' + apOf(startPart);
+    var start = apptMinutes(startPart);
+    if (start === null) return null;
+    var end = endPart ? apptMinutes(endPart) : null;
+    return { start: start, end: (end !== null && end > start) ? end : start + 120 };
+  }
+  function apptTimeText(mins) {
+    var h = Math.floor(mins / 60) % 24;
+    var m = mins % 60;
+    var ap = h >= 12 ? 'PM' : 'AM';
+    var h12 = h % 12; if (h12 === 0) h12 = 12;
+    return h12 + ':' + (m < 10 ? '0' : '') + m + ' ' + ap;
+  }
+  function displayAppointmentBlock(t) {
+    var s = trim(t);
+    if (!s) return '';
+    var blk = apptBlock(s);
+    if (!blk) return s;
+    var startTxt = apptTimeText(blk.start);
+    var endTxt = apptTimeText(blk.end);
+    if (startTxt.slice(-2) === endTxt.slice(-2)) return startTxt.slice(0, -3) + '–' + endTxt;
+    return startTxt + '–' + endTxt;
+  }
+  function formatApptDate(d) {
+    var s = trim(d);
+    if (!s) return '';
+    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    var dt = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(s);
+    if (isNaN(dt.getTime())) return s;
+    return dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  }
+  function displayAppointment(dateText, timeText) {
+    var d = formatApptDate(dateText);
+    var t = displayAppointmentBlock(timeText);
+    return [d, t].filter(function (x) { return x; }).join(' ');
+  }
+
   // Signature image check (mirrors the backend's
   // woValidateSignatureImage): PNG/JPEG data URL, non-empty payload,
   // max 48,000 chars. A blank pad has no ink and is rejected here
@@ -171,7 +232,7 @@
     var appl = [trim(src.applianceBrand), trim(src.applianceModel)].filter(function (x) { return x; }).join(' ');
     setText('appt-appliance', display(appl));
     setText('appt-problem', display(src.problem));
-    var when = [trim(src.scheduledDate), trim(src.scheduledTime)].filter(function (x) { return x; }).join(' ');
+    var when = displayAppointment(src.scheduledDate, src.scheduledTime);
     setText('appt-when', display(when));
   }
 
@@ -385,6 +446,8 @@
   global.FCPAgreement = {
     parseWorkOrder: parseWorkOrder, agreementLink: agreementLink,
     demoAgreement: demoAgreement, displayNumber: displayNumber,
+    displayAppointmentBlock: displayAppointmentBlock, formatApptDate: formatApptDate,
+    displayAppointment: displayAppointment,
     validateSignatureImage: validateSignatureImage,
     validateSubmit: validateSubmit, validateTiles: validateTiles, money: money, display: display,
     AGREEMENT_PAGE_URL: AGREEMENT_PAGE_URL

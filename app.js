@@ -103,6 +103,48 @@
     return h12 + ':' + (mm < 10 ? '0' : '') + mm + ' ' + ap;
   }
 
+  // --- Appointment block display (James, Nov 7, 2026) ----------------------
+  // The customer books a 2-hour window, not a sharp arrival time, so
+  // everywhere an appointment shows, display the block: start to
+  // start+2h, e.g. "9:00–11:00 AM". Stored times are block starts
+  // (8, 10, 12, 2, 4, 6); a time off a block boundary still shows
+  // start–start+2h — never invent a different block. A value that is
+  // already a block ("8:00-10:00 AM") renders as-is, normalised.
+  function minutesToTimeText(mins) {
+    var h = Math.floor(mins / 60) % 24;
+    var m = mins % 60;
+    var ap = h >= 12 ? 'PM' : 'AM';
+    var h12 = h % 12; if (h12 === 0) h12 = 12;
+    return h12 + ':' + (m < 10 ? '0' : '') + m + ' ' + ap;
+  }
+  function displayAppointmentBlock(t) {
+    var s = trim(t);
+    if (!s) return '';
+    var blk = parseTimeBlock(s);
+    if (!blk) return s;
+    var startTxt = minutesToTimeText(blk.start);
+    var endTxt = minutesToTimeText(blk.end);
+    if (startTxt.slice(-2) === endTxt.slice(-2)) return startTxt.slice(0, -3) + '–' + endTxt;
+    return startTxt + '–' + endTxt;
+  }
+  // "2026-11-07" (or any parseable date) -> "Sat, Nov 7, 2026".
+  // Never the raw Date string. Unparseable input passes through.
+  function formatApptDate(d) {
+    var s = trim(d);
+    if (!s) return '';
+    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    var dt = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(s);
+    if (isNaN(dt.getTime())) return s;
+    return dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  }
+  // Full appointment display: "Sat, Nov 7, 2026 9:00–11:00 AM".
+  // Either half may be missing; '' when both are.
+  function displayAppointment(dateText, timeText) {
+    var d = formatApptDate(dateText);
+    var t = displayAppointmentBlock(timeText);
+    return [d, t].filter(function (x) { return x; }).join(' ');
+  }
+
   // --- Validation ----------------------------------------------------------
   // Mandatory: first name, last name, phone, street address, city, state,
   // zip. Email is optional. Returns the first failing message, or ''.
@@ -274,7 +316,7 @@
       if (busyBlocks[trim(time)]) {
         html += '<div class="clash">⚠ That time is already booked — pick another time.</div>';
       } else {
-        html += '<div class="ok">✓ You\'re open at ' + trim(time) + '.</div>';
+        html += '<div class="ok">✓ You\'re open at ' + displayAppointmentBlock(time) + '.</div>';
       }
     }
     return html;
@@ -683,7 +725,7 @@
       if (res.sentToBackend) {
         if (confH2) confH2.textContent = 'Repair appointment set';
         set('conf-code-note', 'Your repair visit is booked on this work order — no new work order was created.');
-        set('conf-sent', 'Repair appointment set for ' + (data.scheduledDate || '—') + (data.scheduledTime ? ' at ' + data.scheduledTime + '.' : '.'));
+        set('conf-sent', 'Repair appointment set for ' + (displayAppointment(data.scheduledDate, data.scheduledTime) || '—') + '.');
         set('conf-agreement', 'No new agreement needed — your original agreement still stands. We\'ll confirm your repair appointment.');
       } else {
         // Demo mode (no backend wired): the pick was only saved on this
@@ -729,6 +771,8 @@
     parseRepairQuery: parseRepairQuery,
     submitRepairAppointment: submitRepairAppointment,
     fetchWorkOrder: fetchWorkOrder, displayWorkOrderNumber: displayWorkOrderNumber,
+    displayAppointmentBlock: displayAppointmentBlock, formatApptDate: formatApptDate,
+    displayAppointment: displayAppointment,
     repairDetailsHtml: repairDetailsHtml,
     RIZK_EXAMPLE: RIZK_EXAMPLE,
     loadSaved: loadSaved
