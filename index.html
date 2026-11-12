@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Create a Work Order — Full Cycle Plus</title>
+<title>Create a Work Order — Full Cycle Laundry Repair</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap');
   :root {
@@ -66,6 +66,12 @@
   .day-note .ok { font-weight: 600; color: var(--accent-deep); }
   .day-note .clash { margin-top: 2px; font-weight: 700; color: var(--danger); }
   .day-note .muted { color: var(--faint); }
+  .block-picker { margin-top: 12px; }
+  .block-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+  @media (min-width: 640px) { .block-grid { grid-template-columns: 1fr 1fr 1fr; } }
+  .block-btn { padding: 8px 6px; border: 2px solid rgba(53,145,127,.45); border-radius: 8px; background: rgba(53,145,127,.18); color: #8fb8ac; font-size: 14px; font-weight: 700; text-align: center; }
+  .block-btn.sel { background: var(--copper); border-color: var(--copper); color: #fff; }
+  .block-btn:disabled { opacity: .45; cursor: not-allowed; background: var(--surface-alt); border-color: var(--border); color: var(--faint); }
   /* Platform terms (audit item 26, Nov 8, 2026): bookers have no signup
      and no login, so the Plus platform terms are agreed HERE, on the
      creation form, alongside the job agreement (which is signed separately
@@ -115,7 +121,7 @@
 <body>
 <main>
   <div class="header-band">
-    <img src="logo-v11.png" alt="Full Cycle Plus" width="1600" height="560">
+    <img src="logo-v11.png" alt="Full Cycle Laundry Repair" width="1600" height="560">
   </div>
 
   <div class="panel" id="create-panel">
@@ -201,20 +207,24 @@
             </label>
           </div>
           <div class="day-note" id="day-note"></div>
+          <div class="block-picker" id="block-picker" style="display:none">
+            <span class="field-label">Available times</span>
+            <div class="block-grid" id="block-grid"></div>
+          </div>
         </div>
         <div class="agree-section" id="platform-terms-section">
-          <h3>Full Cycle Plus — Platform Terms</h3>
+          <h3>Full Cycle Laundry Repair — Platform Terms</h3>
           <div class="agree-terms">
-            <p>Full Cycle Plus is the platform that arranges your repair. When you book here:</p>
+            <p>Full Cycle Laundry Repair is the platform that arranges your repair. When you book here:</p>
             <ul>
-              <li>You pay Full Cycle Plus for the job. Full Cycle Plus pays the professional who does the work.</li>
-              <li>Full Cycle Plus assigns the professional for your job. The job agreement for this repair — the work, the price, and the warranty — is a separate agreement between you and that professional, and you sign it after booking.</li>
+              <li>You pay Full Cycle Laundry Repair for the job. Full Cycle Laundry Repair pays the professional who does the work.</li>
+              <li>Full Cycle Laundry Repair assigns the professional for your job. The job agreement for this repair — the work, the price, and the warranty — is a separate agreement between you and that professional, and you sign it after booking.</li>
               <li>Parts are charged at their actual cost plus Michigan sales tax, with no markup.</li>
             </ul>
             <p class="agree-note">The job agreement link comes with your appointment confirmation. Nothing is charged here — payment is taken when the work is done, or for parts before they are ordered, as the job agreement states.</p>
           </div>
           <div class="sign-tile">
-            <label class="agree-row"><input type="checkbox" id="pt-agree-check"> I agree to the Full Cycle Plus platform terms</label>
+            <label class="agree-row"><input type="checkbox" id="pt-agree-check"> I agree to the Full Cycle Laundry Repair platform terms</label>
             <label class="field-label" for="pt-sig-name">Printed name — type your name to sign</label>
             <input type="text" class="pt-name" id="pt-sig-name" placeholder="Type your full name" autocomplete="name">
             <label class="field-label">Signature — sign with finger or stylus</label>
@@ -234,13 +244,14 @@
     </form>
   </div>
 
-  <p style="margin-top:16px;font-size:14px"><a href="pay.html" style="color:#7cc4b2">Already have a work order? Pay for it here →</a></p>
+  <p style="margin-top:16px;font-size:14px"><a href="pay.html" style="color:#7cc4b2">Already have a work order? Pay for it here →</a><br><a href="track.html" style="color:#7cc4b2">Track your work order →</a></p>
 
   <div class="panel" id="confirmation" aria-live="polite">
     <h2>Work order created</h2>
     <p class="conf-line" id="conf-number-line" style="display:none">Your work-order number<br><span class="conf-number" id="conf-number">—</span></p>
     <p class="conf-line"><span class="muted" id="conf-code-note">Your work order number is issued when the job is filed — it comes with your appointment confirmation.</span></p>
     <p class="conf-line"><span class="muted" id="conf-sent">—</span></p>
+    <p class="conf-line" id="conf-track-line" style="display:none"><a id="conf-track-link" href="track.html" style="color:#7cc4b2">Track your work order →</a></p>
     <p class="conf-line"><span class="muted" id="conf-agreement">—</span></p>
     <p class="conf-line"><span class="muted" id="conf-platform-terms">—</span></p>
     <div class="submit-row">

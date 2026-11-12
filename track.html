@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Track Your Work Order — Full Cycle Laundry Repair</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap');
+  :root {
+    color-scheme: dark;
+    --bg: #0d0d0d;
+    --surface: #171e1b;
+    --surface-alt: #1d2623;
+    --text: #eef3f1;
+    --dim: #bfcdc9;
+    --faint: #8fa39d;
+    --border: #33413d;
+    --border-strong: #46554f;
+    --field-line: #3d4b47;
+    --accent: #35917f;
+    --accent-deep: #7cc4b2;
+    --copper: #d18a4e;
+    --copper-soft: #3a2a1c;
+    --danger: #e07a6e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Barlow", system-ui, sans-serif;
+    line-height: 1.5;
+  }
+  main { max-width: 880px; margin: 0 auto; padding: 8px 12px 40px; }
+  @media (min-width: 640px) { main { padding-left: 16px; padding-right: 16px; } }
+  .header-band {
+    margin-bottom: 8px; overflow: hidden; border-radius: 8px;
+    background: #0d0d0d; text-align: center;
+  }
+  .header-band img { display: block; margin: 0 auto; height: auto; width: min(560px, 100%); }
+  .panel {
+    border-top: 6px solid var(--accent); background: var(--surface);
+    padding: 20px 16px 24px;
+  }
+  @media (min-width: 640px) { .panel { padding-left: 24px; padding-right: 24px; } }
+  h2 {
+    margin: 0 0 4px; font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .wo-line { margin: 0 0 16px; font-size: 17px; font-weight: 700; letter-spacing: 0.5px; }
+  .muted { color: var(--dim); font-size: 14px; }
+  .faint { color: var(--faint); font-size: 13px; }
+  .field-label {
+    display: block; font-size: 11.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint);
+  }
+  input {
+    width: 100%; border: 0; border-bottom: 1.5px solid var(--field-line);
+    border-radius: 4px 4px 0 0; background: var(--surface-alt);
+    padding: 6px; font-size: 15.5px; font-family: inherit; color: var(--text);
+    outline: none; color-scheme: dark; text-transform: uppercase;
+  }
+  input:focus { border-bottom-color: var(--copper); background: var(--copper-soft); }
+  .lookup-row { display: flex; gap: 12px; align-items: flex-end; margin-top: 12px; }
+  .lookup-row .grow { flex: 1; }
+  .error { margin-top: 12px; font-size: 14px; color: var(--danger); font-weight: 600; }
+  .detail-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 16px; }
+  @media (min-width: 640px) { .detail-grid { grid-template-columns: 1fr 1fr; } }
+  .detail .k { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); }
+  .detail .v { font-size: 15.5px; }
+  .section-h {
+    margin: 20px 0 8px; font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  table.rows { width: 100%; border-collapse: collapse; font-size: 15.5px; }
+  table.rows td, table.rows th { padding: 6px 0; border-bottom: 1px solid var(--border); text-align: left; }
+  table.rows td:last-child, table.rows th:last-child { text-align: right; white-space: nowrap; }
+  table.money { width: 100%; border-collapse: collapse; font-size: 15.5px; }
+  table.money td { padding: 6px 0; border-bottom: 1px solid var(--border); }
+  table.money td:last-child { text-align: right; white-space: nowrap; }
+  table.money tr.total td { font-weight: 700; border-bottom: 0; font-size: 17px; }
+  .empty-note { color: var(--faint); font-size: 14px; }
+  .status-open { color: var(--accent-deep); font-weight: 700; }
+  .status-closed { color: var(--dim); font-weight: 700; }
+  button { font-family: inherit; cursor: pointer; }
+  .btn-primary {
+    border: 0; border-radius: 8px; background: var(--accent); color: #fff;
+    padding: 10px 20px; font-size: 14.5px; font-weight: 700;
+  }
+  .btn-primary:disabled { opacity: 0.6; cursor: wait; }
+  .btn-ghost {
+    border: 1.5px solid var(--accent); border-radius: 8px; background: transparent;
+    color: var(--accent); padding: 10px 16px; font-size: 14.5px; font-weight: 700;
+    text-decoration: none; display: inline-block;
+  }
+  .links-row { margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .foot-links { margin-top: 24px; font-size: 14px; }
+  .foot-links a { color: var(--accent-deep); }
+</style>
+</head>
+<body>
+<main>
+  <div class="header-band">
+    <img src="logo-v11.png" alt="Full Cycle Laundry Repair" width="1600" height="560">
+  </div>
+
+  <div class="panel" id="track-panel">
+    <h2>Track Your Work Order</h2>
+    <p class="muted" style="margin-top:0">Enter the work order code from your confirmation email — it looks like XXXX-XXXX. Only your order is shown; there is no list of orders here.</p>
+
+    <div class="lookup-row">
+      <div class="grow">
+        <label class="field-label" for="track-code">Work order code</label>
+        <input id="track-code" placeholder="XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false">
+      </div>
+      <button type="button" class="btn-primary" id="track-btn">Look up</button>
+    </div>
+    <p class="error" id="track-error" style="display:none"></p>
+
+    <div id="track-result" style="display:none">
+      <p class="wo-line" id="track-wo">Work Order —</p>
+      <div class="detail-grid">
+        <div class="detail"><div class="k">Status</div><div class="v" id="track-status">—</div></div>
+        <div class="detail"><div class="k">Problem</div><div class="v" id="track-problem">—</div></div>
+        <div class="detail"><div class="k">Visit</div><div class="v" id="track-when">—</div></div>
+        <div class="detail"><div class="k">Appliance</div><div class="v" id="track-appliance">—</div></div>
+      </div>
+
+      <h3 class="section-h">Parts</h3>
+      <div id="track-parts"></div>
+
+      <h3 class="section-h">Payments</h3>
+      <div id="track-payments"></div>
+
+      <h3 class="section-h">Totals</h3>
+      <table class="money" id="track-totals" aria-label="Totals"></table>
+
+      <div class="links-row">
+        <a class="btn-ghost" id="track-pay-link" href="pay.html">Pay for this order →</a>
+        <a class="btn-ghost" id="track-agreement-link" href="agreement.html">View service agreement →</a>
+      </div>
+    </div>
+
+    <p class="foot-links"><a href="index.html">← Back to Create a Work Order</a><br>
+    <span class="faint">Full Cycle Laundry Repair · (248) 429-9878</span></p>
+  </div>
+</main>
+
+<script src="config.js"></script>
+<script src="track.js"></script>
+</body>
+</html>

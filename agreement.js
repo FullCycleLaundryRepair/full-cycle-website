@@ -1,4 +1,4 @@
-// Full Cycle Plus — Service Agreement page logic.
+// Full Cycle Laundry Repair — Service Agreement page logic.
 // Loaded by agreement.html after config.js (same folder as the Work
 // Order Creation / Pay Now pages, same GitHub site:
 // fullcyclelaundryrepair.github.io/full-cycle-website/agreement.html?
@@ -224,7 +224,6 @@
   function render(ag, wo) {
     var src = wo || (ag && ag.prefill) || ag || {};
     setText('agree-wo', 'Work Order ' + displayNumber(ag));
-    show('demo-note', !!(ag && ag.demo));
     var name = trim(src.customerName) || [trim(src.firstName), trim(src.lastName)].join(' ').trim();
     setText('appt-name', display(name));
     var addr = trim(src.address) || [trim(src.street), trim(src.city), trim(src.state), trim(src.zip)].filter(function (x) { return x; }).join(', ');
@@ -369,7 +368,7 @@
       var v = validateSubmit({ consent: !!(check && check.checked), signatureName: nameInput ? nameInput.value : '', signatureImage: sigImage, hasInk: hasInk });
       if (!v.ok) { setText('submit-note', v.error); update(); return; }
       if (!backendUrl()) {
-        setText('submit-note', 'Demo mode — this example is not sent anywhere. Open the agreement from your appointment confirmation email to sign for real.');
+        setText('submit-note', '');
         return;
       }
       submitBtn.disabled = true;

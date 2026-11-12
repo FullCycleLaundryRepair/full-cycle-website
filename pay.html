@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pay Now — Full Cycle Plus</title>
+<title>Pay Now — Full Cycle Laundry Repair</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap');
   :root {
@@ -48,10 +48,6 @@
   .wo-line { margin: 0 0 16px; font-size: 17px; font-weight: 700; letter-spacing: 0.5px; }
   .muted { color: var(--dim); font-size: 14px; }
   .faint { color: var(--faint); font-size: 13px; }
-  .demo-note {
-    margin: 0 0 16px; padding: 10px 12px; border: 1.5px solid var(--copper);
-    border-radius: 8px; background: var(--copper-soft); color: var(--text); font-size: 14px;
-  }
   .detail-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 16px; }
   @media (min-width: 640px) { .detail-grid { grid-template-columns: 1fr 1fr; } }
   .detail .k { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); }
@@ -95,13 +91,12 @@
 <body>
 <main>
   <div class="header-band">
-    <img src="logo-v11.png" alt="Full Cycle Plus" width="1600" height="560">
+    <img src="logo-v11.png" alt="Full Cycle Laundry Repair" width="1600" height="560">
   </div>
 
   <div class="panel" id="pay-panel">
     <h2>Pay Now</h2>
     <p class="wo-line" id="pay-wo">Work Order —</p>
-    <p class="demo-note" id="demo-note" style="display:none">Example shown — the payment page is not connected to a live work order yet. No payment has been taken. When this page opens from a receipt email, it shows that job's real total.</p>
 
     <div class="detail-grid">
       <div class="detail"><div class="k">Customer</div><div class="v" id="pay-customer">—</div></div>
@@ -120,7 +115,6 @@
     <ol class="steps">
       <li><strong>Pay Now</strong> opens Square's secure checkout — your card details go straight to Square, never to us. We never ask for your card on this page.</li>
       <li><strong>Agree to the payment</strong> below sends a confirmation back to us.</li>
-      <li>That confirmation unlocks the Close Work Order button on our side. Closing is still done manually by us, never automatically.</li>
     </ol>
 
     <div class="pay-row">
@@ -131,10 +125,10 @@
 
     <div class="agree-block" id="agree-block" style="display:none">
       <h2 style="font-size:18px">Agree to the payment</h2>
-      <p class="muted">Please confirm you agree to the payment above. That agreement sends a confirmation back to us, and that is what unlocks the Close Work Order button on our side.</p>
+      <p class="muted">Please confirm you agree to the payment above. That agreement sends a confirmation back to us.</p>
       <button type="button" class="btn-copper" id="agree-btn">I agree to the payment</button>
       <p class="agree-note" id="agree-note"></p>
-      <p class="agree-note" id="agree-done" style="display:none">Thank you — your agreement has been sent back to us.</p>
+      <p class="agree-note" id="agree-done" style="display:none">Your agreement has been sent back to us.</p>
     </div>
 
     <details class="terms">
@@ -144,14 +138,14 @@
         <li>Part cost is paid upfront, before a part is ordered. No markup if you buy the part yourself.</li>
         <li>Repair labor: $75, due when the repair is complete.</li>
         <li>30-day labor-only warranty on repairs.</li>
-        <li>Total liability of Full Cycle Plus is limited to the total amount paid for the specific service.</li>
+        <li>Total liability of Full Cycle Laundry Repair is limited to the total amount paid for the specific service.</li>
         <li>Full terms are in the Service Agreement (Sections 1–10) sent with your appointment confirmation, and in the final receipt email. Governed by the laws of the State of Michigan.</li>
       </ul>
-      <p class="faint">Full Cycle Plus · (248) 429-9878 · fullcycleplus@gmail.com</p>
+      <p class="faint">Full Cycle Laundry Repair · (248) 429-9878</p>
     </details>
 
     <p class="foot-links"><a href="index.html">← Back to Create a Work Order</a><br>
-    <span class="faint">Full Cycle Plus · (248) 429-9878</span></p>
+    <span class="faint">Full Cycle Laundry Repair · (248) 429-9878</span></p>
   </div>
 </main>
 

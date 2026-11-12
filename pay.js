@@ -1,4 +1,4 @@
-// Full Cycle Plus — Pay Now page logic.
+// Full Cycle Laundry Repair — Pay Now page logic.
 // Loaded by pay.html after config.js (same folder as the Work Order
 // Creation page, same GitHub site: fullcyclelaundryrepair.github.io/
 // full-cycle-website/pay.html?workOrder=<id>&stage=diagnosis|closing).
@@ -257,7 +257,6 @@
       lines.innerHTML = rows || '<tr><td>Diagnostic</td><td>$50.00</td></tr>';
     }
     setText('pay-amount', money(amt));
-    show('demo-note', !!wo.demo);
     show('agree-block', stage === 'closing');
   }
 
@@ -273,7 +272,6 @@
     var lines = el('pay-lines');
     if (lines) lines.innerHTML = '';
     setText('pay-amount', '—');
-    show('demo-note', false);
     show('agree-block', false);
     setSquareState('error', note);
   }
@@ -304,7 +302,7 @@
       // disabled — Square is not configured and no backend exists yet.
       render(demoWorkOrder(stage), stage);
       setSquareState('not-configured', 'Square is not set up yet — the payment link will appear here once Square is connected. No payment has been taken.');
-      setText('agree-note', 'Demo mode — the agree step will work once the backend is connected.');
+      setText('agree-note', '');
       return;
     }
 
@@ -355,7 +353,7 @@
         setText('agree-note', 'Sending your agreement…');
         callBackend('acceptReceipt', { workOrderId: wo.id, stage: stage }, function (r) {
           if (r && r.ok) {
-            setText('agree-note', 'Thank you — your agreement has been sent back to us. That unlocks the Close Work Order button on our side. Closing is still done manually by us, never automatically.');
+            setText('agree-note', 'Your agreement has been sent back to us.');
             show('agree-done', true);
           } else {
             agreeBtn.disabled = false;

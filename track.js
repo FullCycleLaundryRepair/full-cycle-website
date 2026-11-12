@@ -1,0 +1,158 @@
+// Full Cycle Laundry Repair — Track Your Work Order page logic.
+// Loaded by track.html after config.js (same folder as the Work Order
+// Creation page, same GitHub site: fullcyclelaundryrepair.github.io/
+// full-cycle-website/track.html?workOrder=<code>).
+//
+// WHAT THIS PAGE IS: a per-code lookup. The client types their work
+// order code (XXXX-XXXX, from the confirmation email) and sees ONLY
+// that one order: status, problem, scheduled date/time, parts, payments,
+// totals, plus links to the Pay Now and agreement pages for that order.
+// WHAT IT IS NOT: it never lists orders. There is no sign-in on this
+// site, so a list would show everyone's orders to everyone — this page
+// never calls listWorkOrders, only getWorkOrder with the typed code.
+// Pure functions are exposed on window.FCTrack so they can be tested
+// headlessly; DOM wiring only runs when `document` exists.
+(function (global) {
+  'use strict';
+
+  var CFG = (global.FCP_CONFIG || {});
+  var PAY_PAGE_URL = CFG.PAY_PAGE_URL || 'https://fullcyclelaundryrepair.github.io/full-cycle-website/pay.html';
+  var AGREEMENT_PAGE_URL = CFG.AGREEMENT_PAGE_URL || 'https://fullcyclelaundryrepair.github.io/full-cycle-website/agreement.html';
+
+  function trim(v) { return (v === undefined || v === null) ? '' : String(v).trim(); }
+  function num(v, d) { var n = Number(v); return isFinite(n) ? n : (d || 0); }
+  function money(cents) { return '$' + (num(cents) / 100).toFixed(2); }
+  function esc(s) {
+    return String(s === undefined || s === null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // The code as the client types it: "hd7x-000b", "#HD7X-000B",
+  // "HD7X 000B" all become "HD7X-000B". The backend matches the code
+  // bare or with #, so this is only for a clean display + URL.
+  function normalizeCode(v) {
+    var c = trim(v).toUpperCase().replace(/\s+/g, '');
+    if (c.charAt(0) === '#') c = c.slice(1);
+    if (/^[A-Z0-9]{8}$/.test(c)) c = c.slice(0, 4) + '-' + c.slice(4);
+    return c;
+  }
+
+  function statusLabel(wo) {
+    if (!wo) return '—';
+    if (wo.closed) return 'Closed';
+    return wo.status || 'Open';
+  }
+
+  function totalsFor(wo) {
+    if (!wo) return null;
+    var paid = 0;
+    (wo.payments || []).forEach(function (p) { paid += num(p.amountCents); });
+    return {
+      servicesCents: num(wo.servicesTotalCents),
+      partsCents: num(wo.partsTotalCents),
+      totalCents: num(wo.totalCents),
+      paidCents: paid,
+      balanceCents: Math.max(0, num(wo.totalCents) - paid)
+    };
+  }
+
+  function backendUrl() { return trim(CFG.BACKEND_URL); }
+  function apiKey() { return trim(CFG.WO_API_KEY); }
+
+  function fetchWorkOrder(code, cb) {
+    var url = backendUrl() + '?action=getWorkOrder&workOrderId=' + encodeURIComponent(code);
+    if (apiKey()) url += '&apiKey=' + encodeURIComponent(apiKey());
+    global.fetch(url).then(function (r) { return r.json(); }).then(function (j) { cb(null, j); })
+      .catch(function (err) { cb(err); });
+  }
+
+  // DOM wiring (skipped headlessly).
+  function $(id) { return global.document.getElementById(id); }
+  function show(el, on) { if (el) el.style.display = on ? '' : 'none'; }
+  function setText(id, v) { var el = $(id); if (el) el.textContent = v; }
+
+  function partsHtml(wo) {
+    var parts = wo.parts || [];
+    if (!parts.length) return '<p class="empty-note">No parts on this order yet.</p>';
+    var rows = parts.map(function (p) {
+      var price = num(p.qty, 1) * num(p.unitPriceCents);
+      return '<tr><td>' + esc(p.name) + (p.qty > 1 ? ' ×' + p.qty : '') + '<br><span class="faint">' + esc(p.status || '') + '</span></td><td>' + money(price) + '</td></tr>';
+    }).join('');
+    return '<table class="rows"><thead><tr><th>Part</th><th>Price</th></tr></thead><tbody>' + rows + '</tbody></table>';
+  }
+
+  function paymentsHtml(wo) {
+    var pays = wo.payments || [];
+    if (!pays.length) return '<p class="empty-note">No payments recorded yet.</p>';
+    var rows = pays.map(function (p) {
+      var label = (p.stage === 'diagnosis' ? 'Diagnosis' : p.stage === 'closing' ? 'Closing' : (p.stage || 'Payment'))
+        + ' · ' + (p.method || '—');
+      return '<tr><td>' + esc(label) + '<br><span class="faint">' + esc(p.paidAt || '') + '</span></td><td>' + money(p.amountCents) + '</td></tr>';
+    }).join('');
+    return '<table class="rows"><thead><tr><th>Payment</th><th>Amount</th></tr></thead><tbody>' + rows + '</tbody></table>';
+  }
+
+  function render(wo) {
+    var code = wo.workOrderCode || wo.creationCode || '';
+    setText('track-wo', 'Work Order #' + code);
+    var st = $('track-status');
+    if (st) { st.textContent = statusLabel(wo); st.className = 'v ' + (wo.closed ? 'status-closed' : 'status-open'); }
+    setText('track-problem', wo.problem || '—');
+    setText('track-when', (wo.scheduledDateDisplay || wo.scheduledDate || '—') + (wo.scheduledTime ? ' at ' + wo.scheduledTime : ''));
+    setText('track-appliance', [wo.applianceBrand, wo.applianceModel].filter(function (x) { return x; }).join(' ') || '—');
+    var pe = $('track-parts'); if (pe) pe.innerHTML = partsHtml(wo);
+    var pa = $('track-payments'); if (pa) pa.innerHTML = paymentsHtml(wo);
+    var t = totalsFor(wo);
+    var te = $('track-totals');
+    if (te) {
+      te.innerHTML = '<tr><td>Services</td><td>' + money(t.servicesCents) + '</td></tr>'
+        + '<tr><td>Parts</td><td>' + money(t.partsCents) + '</td></tr>'
+        + '<tr><td>Total paid</td><td>' + money(t.paidCents) + '</td></tr>'
+        + '<tr class="total"><td>Balance due</td><td>' + money(t.balanceCents) + '</td></tr>';
+    }
+    var pl = $('track-pay-link'); if (pl) pl.href = PAY_PAGE_URL + '?workOrder=' + encodeURIComponent(code);
+    var al = $('track-agreement-link'); if (al) al.href = AGREEMENT_PAGE_URL + '?workOrder=' + encodeURIComponent(code);
+    show($('track-result'), true);
+  }
+
+  function showError(msg) {
+    var el = $('track-error');
+    if (el) { el.textContent = msg; show(el, true); }
+    show($('track-result'), false);
+  }
+
+  function lookup(rawCode) {
+    var code = normalizeCode(rawCode);
+    show($('track-error'), false);
+    if (!code) { showError('Enter your work order code — it looks like XXXX-XXXX.'); return; }
+    if (!backendUrl()) { showError('Tracking is not connected yet — please try again shortly.'); return; }
+    var btn = $('track-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Looking up…'; }
+    fetchWorkOrder(code, function (err, j) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Look up'; }
+      if (err || !j || !j.ok || !j.workOrder) {
+        showError('We could not find that work order code. Check the code from your confirmation email and try again.');
+        return;
+      }
+      render(j.workOrder);
+    });
+  }
+
+  if (global.document) {
+    global.document.addEventListener('DOMContentLoaded', function () {
+      var btn = $('track-btn');
+      var input = $('track-code');
+      if (btn) btn.addEventListener('click', function () { lookup(input ? input.value : ''); });
+      if (input) input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); lookup(input.value); } });
+      // Deep link: ?workOrder=<code> prefills + looks up.
+      try {
+        var q = new URLSearchParams(global.location.search);
+        var pre = normalizeCode(q.get('workOrder') || '');
+        if (pre) { if (input) input.value = pre; lookup(pre); }
+      } catch (e) { /* no query support — manual lookup still works */ }
+    });
+  }
+
+  global.FCTrack = { normalizeCode: normalizeCode, money: money, statusLabel: statusLabel, totalsFor: totalsFor };
+})(typeof window !== 'undefined' ? window : global);

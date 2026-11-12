@@ -1,4 +1,4 @@
-// Full Cycle Plus — Work Order Creation page logic.
+// Full Cycle Laundry Repair — Work Order Creation page logic.
 // Loaded by index.html after config.js.
 // This page is a verbatim port of the "Create a Work Order" tab of the
 // four-tab Full Cycle Plus Work Orders app (client/src/App.tsx, CreateView
@@ -185,7 +185,7 @@
     return { ok: true };
   }
   function validatePlatformTerms(input) {
-    if (!input || input.platformTermsConsent !== true) return { ok: false, error: 'Please tick “I agree to the Full Cycle Plus platform terms” to continue.' };
+    if (!input || input.platformTermsConsent !== true) return { ok: false, error: 'Please tick “I agree to the Full Cycle Laundry Repair platform terms” to continue.' };
     if (!trim(input.platformTermsSignatureName)) return { ok: false, error: 'Please type your full name to sign the platform terms.' };
     var sig = validatePlatformSignatureImage(input.platformTermsSignatureImage, !!input.platformTermsHasInk);
     if (!sig.ok) return sig;
@@ -346,6 +346,37 @@
       o.disabled = !!busy[o.value];
     }
     if (timeEl.value && busy[timeEl.value]) timeEl.value = '';
+  }
+
+  // --- Available-times picker (Nov 12, 2026) --------------------------------
+  // Tappable 2-hour blocks for the picked date, from the same busy-block
+  // map as the day note. Free blocks are tappable; Busy blocks are
+  // disabled and unpickable. Nothing is ever pre-selected — the customer
+  // picks a block, and the pick fills the scheduled time field.
+  // Pure HTML string so it can be tested headlessly; no names, problems,
+  // or event details ever appear here, only Free/Busy per block.
+  function blockPickerHtml(busyBlocks, selectedTime) {
+    var busy = busyBlocks || {};
+    var sel = trim(selectedTime);
+    return TIME_BLOCKS.map(function (b) {
+      var isBusy = !!busy[b];
+      var isSel = !isBusy && sel === b;
+      return '<button type="button" class="block-btn' + (isSel ? ' sel' : '') + '" data-block="' + b + '"' +
+        (isBusy ? ' disabled' : '') + '>' + b + (isBusy ? ' — Busy' : '') + '</button>';
+    }).join('');
+  }
+
+  // Renders the picker into #block-grid for a getDaySchedule response.
+  // Hidden when there is no date yet or the schedule could not be read.
+  function renderBlockPicker(res) {
+    if (typeof document === 'undefined') return;
+    var wrap = document.getElementById('block-picker');
+    var grid = document.getElementById('block-grid');
+    var timeEl = document.getElementById('scheduled-time');
+    if (!wrap || !grid) return;
+    if (!res || !res.ok) { wrap.style.display = 'none'; grid.innerHTML = ''; return; }
+    grid.innerHTML = blockPickerHtml(computeBusyBlocks(res), timeEl ? timeEl.value : '');
+    wrap.style.display = 'block';
   }
 
   function dayScheduleHtml(res, time) {
@@ -779,19 +810,39 @@
     });
 
     var dateEl = $('scheduled-date'), timeEl = $('scheduled-time'), noteEl = $('day-note');
+    var lastDayRes = null;
     function refreshDayNote() {
       if (!dateEl || !noteEl) return;
       var d = trim(dateEl.value);
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) { noteEl.innerHTML = ''; return; }
-      if (!trim(CFG.BACKEND_URL)) { noteEl.innerHTML = ''; return; }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) { noteEl.innerHTML = ''; lastDayRes = null; renderBlockPicker(null); return; }
+      if (!trim(CFG.BACKEND_URL)) { noteEl.innerHTML = ''; lastDayRes = null; renderBlockPicker(null); return; }
       noteEl.innerHTML = '<span class="muted">Checking your calendar…</span>';
       fetchDaySchedule(d).then(function (res) {
+        lastDayRes = res;
         noteEl.innerHTML = dayScheduleHtml(res, timeEl ? timeEl.value : '');
         applyTimeOptions(res);
-      }).catch(function () { noteEl.innerHTML = ''; });
+        renderBlockPicker(res);
+      }).catch(function () { noteEl.innerHTML = ''; lastDayRes = null; renderBlockPicker(null); });
     }
     if (dateEl) dateEl.addEventListener('change', refreshDayNote);
     if (timeEl) timeEl.addEventListener('change', refreshDayNote);
+    /* Tapping a free block fills the scheduled time field (and the
+       select stays the value that is submitted). A busy block is
+       disabled in the picker, so it cannot be picked. */
+    var blockGrid = $('block-grid');
+    if (blockGrid) blockGrid.addEventListener('click', function (ev) {
+      var t = ev.target || ev.srcElement;
+      while (t && t !== blockGrid && !(t.getAttribute && t.getAttribute('data-block'))) t = t.parentNode;
+      if (!t || t === blockGrid) return;
+      var block = t.getAttribute('data-block');
+      if (!block || t.disabled) return;
+      if (timeEl) timeEl.value = block;
+      if (lastDayRes) {
+        noteEl.innerHTML = dayScheduleHtml(lastDayRes, block);
+        applyTimeOptions(lastDayRes);
+        renderBlockPicker(lastDayRes);
+      }
+    });
 
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
@@ -865,6 +916,19 @@
     });
   }
 
+  // What the confirmation says about the send, by how the appointment
+  // confirmation actually went out. The customer gets ONE confirmation
+  // (email thread "Work order XXXX-XXXX — Full Cycle Laundry Repair",
+  // or a text) with the work order code + track link — no payment ask,
+  // no receipt, nothing due yet. The diagnostic is paid after the visit.
+  function confirmationSentText(res) {
+    var m = (res && res.confirmationMessage) || '';
+    if (m === 'sent by email') return 'Your confirmation email has your work order number and a link to track it.';
+    if (m.indexOf('James will send it') >= 0) return 'Your confirmation text has your work order number and a link to track it.';
+    if (m === 'waiting for an email address') return 'Your work order number is above — keep it to track your order.';
+    return 'Your work order number is above — your confirmation has a link to track it.';
+  }
+
   function showConfirmation(res, data, isRepair) {
     var panel = document.getElementById('create-panel');
     var conf = document.getElementById('confirmation');
@@ -890,7 +954,7 @@
         // device — never say it was booked or set.
         if (confH2) confH2.textContent = 'Repair appointment picked';
         set('conf-code-note', 'No new work order was created — this is for your existing work order.');
-        set('conf-sent', 'Saved on this device only — not yet sent to Full Cycle Plus.');
+        set('conf-sent', 'Repair appointment picked for ' + (displayAppointment(data.scheduledDate, data.scheduledTime) || '—') + '.');
         set('conf-agreement', 'No new agreement needed — your original agreement still stands.');
       }
       window.scrollTo(0, 0);
@@ -904,17 +968,27 @@
     if (dispNum) {
       set('conf-code-note', 'Work order ' + dispNum);
     }
+    /* Confirmation points at the email thread + track link, never at a
+       payment up front: the job starts at the diagnostic, and the
+       diagnostic ($50) and any parts are paid after the visit. */
+    var trackLine = document.getElementById('conf-track-line');
+    var trackLink = document.getElementById('conf-track-link');
+    if (dispNum) {
+      var code = dispNum.replace(/^#/, '');
+      if (trackLink) trackLink.href = 'track.html?workOrder=' + encodeURIComponent(code);
+      if (trackLine) trackLine.style.display = 'block';
+    } else if (trackLine) { trackLine.style.display = 'none'; }
     set('conf-sent', res.sentToBackend
-      ? 'Sent to Full Cycle Plus.'
-      : 'Saved on this device only — not yet sent to Full Cycle Plus.');
+      ? confirmationSentText(res)
+      : 'Your work order is saved on this device only.');
     set('conf-agreement', res.agreementToken
       ? 'Your service agreement link will come with your appointment confirmation (agreement ref: ' + res.agreementToken + ').'
-      : 'Your service agreement link will come with your appointment confirmation once the backend issues it. Appointment confirmation message: ' + res.confirmationMessage + '.');
+      : 'Your service agreement link will come with your appointment confirmation email.');
     /* Platform terms (item 26): the booker agreed them on the form,
        before submit — say so plainly on the confirmation. */
     set('conf-platform-terms', res.sentToBackend
       ? 'Platform terms agreed — signed by ' + (data.platformTermsSignatureName || '') + '.'
-      : 'Platform terms agreed on this device — not yet sent to Full Cycle Plus.');
+      : 'Platform terms agreed — signed by ' + (data.platformTermsSignatureName || '') + '.');
     window.scrollTo(0, 0);
   }
 
@@ -932,6 +1006,7 @@
     preferredContactFromDom: preferredContactFromDom,
     zipToCity: zipToCity, parseTimeBlock: parseTimeBlock, TIME_BLOCKS: TIME_BLOCKS,
     dayScheduleHtml: dayScheduleHtml, computeBusyBlocks: computeBusyBlocks,
+    blockPickerHtml: blockPickerHtml, confirmationSentText: confirmationSentText,
     setPrefTiles: setPrefTiles, submitWorkOrder: submitWorkOrder,
     parseRepairQuery: parseRepairQuery,
     submitRepairAppointment: submitRepairAppointment,
