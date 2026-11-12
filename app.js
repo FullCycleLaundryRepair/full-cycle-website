@@ -159,6 +159,39 @@
     return '';
   }
 
+  // --- Platform terms (audit item 26, Nov 8, 2026) -------------------------
+  // Bookers have no signup and no login, so the Plus platform terms are
+  // agreed HERE, on the creation form, alongside the job agreement (which
+  // is signed separately on agreement.html after booking, via the
+  // appointment confirmation link). Mirrors agreement.js exactly:
+  // checkbox + typed name + drawn signature, all three, or nothing is
+  // sent. Signature rules mirror the backend's woValidateSignatureImage
+  // (PNG/JPEG data URL, non-empty payload, max 48,000 chars).
+  // WORDING IS PROVISIONAL (audit item 27): the text on the form is drawn
+  // from the current AGREEMENT-TEXT-v2026-11-06.txt and the decided
+  // two-layer model; the final platform-terms wording lands with the
+  // item-27 reword. The field names below are the contract for the
+  // backend half: createWorkOrder must persist them — v2.13 ignores
+  // unknown fields, so until the backend records them the consent travels
+  // in the payload (and in the demo-mode local record) but is not stored
+  // server-side. See connect-add-execution-2026-11-08.md.
+  function validatePlatformSignatureImage(dataUrl, hasInk) {
+    if (!hasInk) return { ok: false, error: 'Please sign in the signature box.' };
+    if (!dataUrl || typeof dataUrl !== 'string') return { ok: false, error: 'Please sign in the signature box.' };
+    if (dataUrl.length > 48000) return { ok: false, error: 'Signature image is too large. Please sign again with a smaller signature.' };
+    if (!/^data:image\/(png|jpeg);base64,/.test(dataUrl)) return { ok: false, error: 'Signature image must be a PNG or JPEG.' };
+    var payload = dataUrl.split(',')[1] || '';
+    if (payload.length < 20) return { ok: false, error: 'Signature looks empty — please sign in the signature box.' };
+    return { ok: true };
+  }
+  function validatePlatformTerms(input) {
+    if (!input || input.platformTermsConsent !== true) return { ok: false, error: 'Please tick “I agree to the Full Cycle Plus platform terms” to continue.' };
+    if (!trim(input.platformTermsSignatureName)) return { ok: false, error: 'Please type your full name to sign the platform terms.' };
+    var sig = validatePlatformSignatureImage(input.platformTermsSignatureImage, !!input.platformTermsHasInk);
+    if (!sig.ok) return sig;
+    return { ok: true };
+  }
+
   // --- Preferred contact method (v23: Text / Email tiles, one pick) ---
   // Two clickable tiles; the selected tile is orange, the other fades to
   // green. Tapping a tile picks that method. Default is Text.
@@ -211,7 +244,16 @@
       codeSubtype: '',
       codeSource: '',
       codePropertyType: '',
-      codePriority: ''
+      codePriority: '',
+      /* Platform terms (item 26): agreed on this form, before submit.
+         Sent with createWorkOrder for the backend to persist (v2.13
+         ignores unknown fields — backend half still owed; see the note
+         on validatePlatformTerms). Absent/empty when the caller did not
+         collect them (e.g. headless tests on the old BASE shape). */
+      platformTermsConsent: d.platformTermsConsent === true,
+      platformTermsSignatureName: trim(d.platformTermsSignatureName),
+      platformTermsSignatureImage: trim(d.platformTermsSignatureImage),
+      platformTermsSignedAt: trim(d.platformTermsSignedAt)
     };
   }
 
@@ -354,6 +396,15 @@
   function submitWorkOrder(d) {
     var err = validateForm(d);
     if (err) return Promise.resolve({ ok: false, error: err });
+    /* Platform terms (item 26): enforced whenever the caller collected
+       them — the form's submit handler always does (create mode). The
+       check is conditional only so headless callers on the old shape
+       (no platform-terms fields at all) keep their old behaviour; a
+       caller that presents the fields must present them complete. */
+    if (d.platformTermsConsent !== undefined || d.platformTermsSignatureName !== undefined || d.platformTermsSignatureImage !== undefined) {
+      var pt = validatePlatformTerms(d);
+      if (!pt.ok) return Promise.resolve({ ok: false, error: pt.error });
+    }
     var payload = buildPayload(d);
 
     if (!trim(CFG.BACKEND_URL)) {
@@ -591,6 +642,86 @@
     if (!form) return;
     wirePrefTiles();
 
+    /* Platform terms signature pad (item 26) — mirrors agreement.js:
+       pointer drawing, DPR sizing, clear button, live validation line.
+       The section lives inside .grid, so repair-booking mode hides it
+       with the rest of the create fields (the original agreement stands
+       there); the pad wiring itself is harmless when hidden. */
+    var ptCheck = $('pt-agree-check'), ptName = $('pt-sig-name'),
+        ptCanvas = $('pt-sig-pad'), ptHint = $('pt-sig-hint'),
+        ptClear = $('pt-sig-clear'), ptMissing = $('pt-missing');
+    var ptHasInk = false, ptDrawing = false, ptSized = false, ptLast = null;
+    function ptSizeCanvas() {
+      if (ptSized || !ptCanvas) return;
+      var r = ptCanvas.getBoundingClientRect();
+      if (!r.width) return;
+      var dpr = global.devicePixelRatio || 1;
+      ptCanvas.width = Math.round(r.width * dpr);
+      ptCanvas.height = Math.round(r.height * dpr);
+      var ctx = ptCanvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#1c2421';
+      ptSized = true;
+    }
+    function ptPos(e) {
+      var r = ptCanvas.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    }
+    function ptTermsInput() {
+      var sigImage = '';
+      try { sigImage = ptCanvas ? ptCanvas.toDataURL('image/png') : ''; } catch (e) { sigImage = ''; }
+      return { platformTermsConsent: !!(ptCheck && ptCheck.checked), platformTermsSignatureName: ptName ? ptName.value : '', platformTermsSignatureImage: sigImage, platformTermsHasInk: ptHasInk };
+    }
+    function ptUpdate() {
+      if (!ptMissing) return;
+      var v = validatePlatformTerms(ptTermsInput());
+      if (v.ok) { ptMissing.classList.add('ready'); ptMissing.textContent = 'Platform terms agreed — ready to create your work order.'; }
+      else { ptMissing.classList.remove('ready'); ptMissing.textContent = 'Still needed: ' + v.error.replace(/^Please /, '').replace(/\.$/, '') + '.'; }
+    }
+    function ptClearPad() {
+      if (!ptCanvas) return;
+      var ctx = ptCanvas.getContext('2d');
+      if (ctx) ctx.clearRect(0, 0, ptCanvas.width, ptCanvas.height);
+      ptHasInk = false;
+      if (ptHint) ptHint.classList.remove('off');
+      ptUpdate();
+    }
+    if (ptCanvas) {
+      ptCanvas.style.touchAction = 'none';
+      ptCanvas.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
+      ptCanvas.addEventListener('pointerdown', function (e) {
+        ptSizeCanvas();
+        ptDrawing = true;
+        ptLast = ptPos(e);
+        try { ptCanvas.setPointerCapture(e.pointerId); } catch (err) {}
+        e.preventDefault();
+      });
+      ptCanvas.addEventListener('pointermove', function (e) {
+        if (!ptDrawing) return;
+        var ctx = ptCanvas.getContext('2d');
+        var p = ptPos(e);
+        ctx.beginPath(); ctx.moveTo(ptLast.x, ptLast.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+        ptLast = p;
+        if (!ptHasInk) { ptHasInk = true; if (ptHint) ptHint.classList.add('off'); ptUpdate(); }
+        e.preventDefault();
+      });
+      var ptEndDraw = function () {
+        if (ptDrawing && ptLast) {
+          var ctx = ptCanvas.getContext('2d');
+          ctx.beginPath(); ctx.arc(ptLast.x, ptLast.y, 1.2, 0, Math.PI * 2); ctx.fillStyle = '#1c2421'; ctx.fill();
+          if (!ptHasInk) { ptHasInk = true; if (ptHint) ptHint.classList.add('off'); }
+        }
+        ptDrawing = false;
+        ptUpdate();
+      };
+      ptCanvas.addEventListener('pointerup', ptEndDraw);
+      ptCanvas.addEventListener('pointercancel', ptEndDraw);
+    }
+    if (ptClear) ptClear.addEventListener('click', ptClearPad);
+    if (ptCheck) ptCheck.addEventListener('change', ptUpdate);
+    if (ptName) ptName.addEventListener('input', ptUpdate);
+    ptUpdate();
+
     /* Repair-booking mode (v1.9): ?workOrder=<id>&step=repair from the Parts
      * Have Arrived message. Banner + heading + button say so, and submit
      * books the repair on the EXISTING job — it never creates a new one. */
@@ -692,6 +823,22 @@
         scheduledDate: dateEl ? dateEl.value : '',
         scheduledTime: timeEl ? timeEl.value : ''
       };
+      /* Platform terms (item 26): agreed BEFORE submit — checkbox +
+         typed name + drawn signature, all three, or nothing is sent.
+         Repair mode never reaches here (it returns above), so the
+         original agreement stands there. */
+      var pt = ptTermsInput();
+      var ptv = validatePlatformTerms(pt);
+      if (!ptv.ok) {
+        if (errEl) errEl.textContent = ptv.error;
+        if (ptMissing) { ptMissing.classList.remove('ready'); ptMissing.textContent = ptv.error; }
+        return;
+      }
+      data.platformTermsConsent = true;
+      data.platformTermsSignatureName = pt.platformTermsSignatureName;
+      data.platformTermsSignatureImage = pt.platformTermsSignatureImage;
+      data.platformTermsHasInk = true;
+      data.platformTermsSignedAt = new Date().toISOString();
       if (btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
       if (errEl) errEl.textContent = '';
       submitWorkOrder(data).then(function (res) {
@@ -710,6 +857,7 @@
       $('create-panel').style.display = 'block';
       form.reset();
       setPrefTiles('Text');
+      ptClearPad();
       if (stateEl) stateEl.value = CFG.DEFAULT_STATE || 'MI';
       if (noteEl) noteEl.innerHTML = '';
       autoZip = '';
@@ -762,6 +910,11 @@
     set('conf-agreement', res.agreementToken
       ? 'Your service agreement link will come with your appointment confirmation (agreement ref: ' + res.agreementToken + ').'
       : 'Your service agreement link will come with your appointment confirmation once the backend issues it. Appointment confirmation message: ' + res.confirmationMessage + '.');
+    /* Platform terms (item 26): the booker agreed them on the form,
+       before submit — say so plainly on the confirmation. */
+    set('conf-platform-terms', res.sentToBackend
+      ? 'Platform terms agreed — signed by ' + (data.platformTermsSignatureName || '') + '.'
+      : 'Platform terms agreed on this device — not yet sent to Full Cycle Plus.');
     window.scrollTo(0, 0);
   }
 
@@ -774,6 +927,8 @@
     CITY_ZIP: CITY_ZIP, cityChange: cityChange,
     parseTimeToMinutes: parseTimeToMinutes, isoToTimeText: isoToTimeText,
     validateForm: validateForm, buildPayload: buildPayload,
+    validatePlatformTerms: validatePlatformTerms,
+    validatePlatformSignatureImage: validatePlatformSignatureImage,
     preferredContactFromDom: preferredContactFromDom,
     zipToCity: zipToCity, parseTimeBlock: parseTimeBlock, TIME_BLOCKS: TIME_BLOCKS,
     dayScheduleHtml: dayScheduleHtml, computeBusyBlocks: computeBusyBlocks,

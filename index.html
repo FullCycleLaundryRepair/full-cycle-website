@@ -66,6 +66,32 @@
   .day-note .ok { font-weight: 600; color: var(--accent-deep); }
   .day-note .clash { margin-top: 2px; font-weight: 700; color: var(--danger); }
   .day-note .muted { color: var(--faint); }
+  /* Platform terms (audit item 26, Nov 8, 2026): bookers have no signup
+     and no login, so the Plus platform terms are agreed HERE, on the
+     creation form, alongside the job agreement (which is signed separately
+     on agreement.html after booking). Mirrors agreement.html's sign-tile
+     pattern: checkbox + typed name + drawn signature. The section lives
+     inside .grid so repair-booking mode (?step=repair) hides it with the
+     rest of the create fields — the original agreement stands there. */
+  .agree-section { grid-column: 1 / -1; border-top: 1px solid var(--border); padding-top: 16px; margin-top: 4px; }
+  .agree-section h3 { margin: 0 0 10px; font-family: "Barlow Condensed", "Arial Narrow", sans-serif; font-size: 19px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+  .agree-terms { font-size: 14.5px; color: var(--dim); }
+  .agree-terms p { margin: 0 0 10px; }
+  .agree-terms ul { margin: 0 0 10px; padding-left: 20px; }
+  .agree-terms li { margin-bottom: 4px; }
+  .agree-terms .agree-note { color: var(--faint); font-size: 13.5px; }
+  .sign-tile { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; }
+  .agree-row { display: flex; align-items: flex-start; gap: 10px; font-size: 16px; font-weight: 600; cursor: pointer; }
+  .agree-row input { width: 22px; height: 22px; margin-top: 2px; flex: none; accent-color: var(--accent); background: transparent; border: 0; padding: 0; }
+  .sign-tile .field-label { margin-top: 14px; }
+  .pt-name { width: 100%; margin-top: 4px; padding: 10px 12px; border-radius: 8px; border: 1.5px solid var(--field-line); background: #eef3f1; color: #1c2421; font-family: inherit; font-size: 16px; }
+  .sig-wrap { margin-top: 14px; border: 1.5px solid var(--field-line); border-radius: 8px; background: #fff; position: relative; overflow: hidden; }
+  .sig-pad { display: block; width: 100%; height: 180px; touch-action: none; cursor: crosshair; }
+  .sig-hint { position: absolute; left: 12px; top: 8px; color: #8a9a94; font-size: 14px; pointer-events: none; }
+  .sig-hint.off { display: none; }
+  .sig-tools { margin-top: 8px; }
+  .agree-error { margin-top: 10px; font-size: 14px; color: var(--copper); font-weight: 600; }
+  .agree-error.ready { color: var(--accent-deep); }
   .submit-row { margin-top: 24px; display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
   .submit-row .error { margin-right: auto; font-size: 14px; color: var(--danger); }
   button {
@@ -176,6 +202,30 @@
           </div>
           <div class="day-note" id="day-note"></div>
         </div>
+        <div class="agree-section" id="platform-terms-section">
+          <h3>Full Cycle Plus — Platform Terms</h3>
+          <div class="agree-terms">
+            <p>Full Cycle Plus is the platform that arranges your repair. When you book here:</p>
+            <ul>
+              <li>You pay Full Cycle Plus for the job. Full Cycle Plus pays the professional who does the work.</li>
+              <li>Full Cycle Plus assigns the professional for your job. The job agreement for this repair — the work, the price, and the warranty — is a separate agreement between you and that professional, and you sign it after booking.</li>
+              <li>Parts are charged at their actual cost plus Michigan sales tax, with no markup.</li>
+            </ul>
+            <p class="agree-note">The job agreement link comes with your appointment confirmation. Nothing is charged here — payment is taken when the work is done, or for parts before they are ordered, as the job agreement states.</p>
+          </div>
+          <div class="sign-tile">
+            <label class="agree-row"><input type="checkbox" id="pt-agree-check"> I agree to the Full Cycle Plus platform terms</label>
+            <label class="field-label" for="pt-sig-name">Printed name — type your name to sign</label>
+            <input type="text" class="pt-name" id="pt-sig-name" placeholder="Type your full name" autocomplete="name">
+            <label class="field-label">Signature — sign with finger or stylus</label>
+            <div class="sig-wrap">
+              <canvas class="sig-pad" id="pt-sig-pad" aria-label="Signature pad — sign with finger or stylus"></canvas>
+              <div class="sig-hint" id="pt-sig-hint">Sign here</div>
+            </div>
+            <div class="sig-tools"><button type="button" class="btn-ghost" id="pt-sig-clear">Clear signature</button></div>
+            <div class="agree-error" id="pt-missing"></div>
+          </div>
+        </div>
       </div>
       <div class="submit-row">
         <span class="error" id="form-error"></span>
@@ -192,6 +242,7 @@
     <p class="conf-line"><span class="muted" id="conf-code-note">Your work order number is issued when the job is filed — it comes with your appointment confirmation.</span></p>
     <p class="conf-line"><span class="muted" id="conf-sent">—</span></p>
     <p class="conf-line"><span class="muted" id="conf-agreement">—</span></p>
+    <p class="conf-line"><span class="muted" id="conf-platform-terms">—</span></p>
     <div class="submit-row">
       <button type="button" class="btn-ghost" id="new-request-btn">Create another work order</button>
     </div>
