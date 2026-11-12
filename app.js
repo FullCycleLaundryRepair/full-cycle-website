@@ -289,8 +289,9 @@
   // renders them. The personal calendar never collides with the business
   // calendar: only the WORK calendar (WO_CALENDAR_ID) feeds this.
   // Pure busy-block map for a getDaySchedule response: which 2-hour blocks
-  // are taken by booked work orders or WORK-calendar events. Free/Busy
-  // ticker (James, standing Nov 7, 2026): an event marked Free never
+  // are taken by booked work orders or PERSONAL-calendar events. Free/Busy
+  // ticker (James, standing Nov 7, 2026; source changed to personal calendar
+  // Nov 12, 2026 — one calendar): an event marked Free never
   // blocks a slot. No titles, details or names are used here.
   function computeBusyBlocks(res) {
     var jobs = (res && res.workOrders) || [];
@@ -362,7 +363,7 @@
       var isBusy = !!busy[b];
       var isSel = !isBusy && sel === b;
       return '<button type="button" class="block-btn' + (isSel ? ' sel' : '') + '" data-block="' + b + '"' +
-        (isBusy ? ' disabled' : '') + '>' + b + (isBusy ? ' — Busy' : '') + '</button>';
+        (isBusy ? ' disabled' : '') + '>' + b + (isBusy ? ' — Not available' : '') + '</button>';
     }).join('');
   }
 
@@ -389,7 +390,7 @@
       html += '<span class="ok">Nothing booked that day — all times are open.</span><br>';
     }
     html += '<div>' + TIME_BLOCKS.map(function (b) {
-      return b + ' — ' + (busyBlocks[b] ? 'Busy' : 'Free');
+      return b + ' — ' + (busyBlocks[b] ? 'Not available' : 'Free');
     }).join('<br>') + '</div>';
     if (!calendarConnected) {
       html += '<div class="muted">(Work calendar couldn\'t be read just now — showing booked work orders only.)</div>';
