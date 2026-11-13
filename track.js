@@ -44,16 +44,31 @@
     return wo.status || 'Open';
   }
 
+  // Bill math (v1.2, James, Nov 12, 2026) — ONE formula everywhere the
+  // bill total appears (billing page, pay.html, this balance). Subtotal
+  // = services + parts. Tax 6% on the subtotal. Square fee 3.3% + 30¢
+  // on the whole ticket (subtotal + tax). No tax/fee on $0.
+  function billTotals(subtotalCents) {
+    var sub = Math.max(0, Math.round(num(subtotalCents)));
+    if (!sub) return { subtotalCents: 0, taxCents: 0, squareFeeCents: 0, totalCents: 0 };
+    var tax = Math.round(sub * 0.06);
+    var fee = Math.round((sub + tax) * 0.033) + 30;
+    return { subtotalCents: sub, taxCents: tax, squareFeeCents: fee, totalCents: sub + tax + fee };
+  }
+
   function totalsFor(wo) {
     if (!wo) return null;
     var paid = 0;
     (wo.payments || []).forEach(function (p) { paid += num(p.amountCents); });
+    var bt = billTotals(num(wo.servicesTotalCents) + num(wo.partsTotalCents));
     return {
       servicesCents: num(wo.servicesTotalCents),
       partsCents: num(wo.partsTotalCents),
+      taxCents: bt.taxCents,
+      feeCents: bt.squareFeeCents,
       totalCents: num(wo.totalCents),
       paidCents: paid,
-      balanceCents: Math.max(0, num(wo.totalCents) - paid)
+      balanceCents: Math.max(0, num(wo.totalCents) + bt.taxCents + bt.squareFeeCents - paid)
     };
   }
 
@@ -63,7 +78,10 @@
   function fetchWorkOrder(code, cb) {
     var url = backendUrl() + '?action=getWorkOrder&workOrderId=' + encodeURIComponent(code);
     if (apiKey()) url += '&apiKey=' + encodeURIComponent(apiKey());
-    global.fetch(url).then(function (r) { return r.json(); }).then(function (j) { cb(null, j); })
+    // cache: no-store — the track link must show the live order every
+    // open (a bill sent after the customer got the link still shows
+    // up: new charges, amount due, payment status). (v1.2)
+    global.fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) { cb(null, j); })
       .catch(function (err) { cb(err); });
   }
 
@@ -108,6 +126,9 @@
     if (te) {
       te.innerHTML = '<tr><td>Services</td><td>' + money(t.servicesCents) + '</td></tr>'
         + '<tr><td>Parts</td><td>' + money(t.partsCents) + '</td></tr>'
+        + ((t.servicesCents + t.partsCents) > 0
+          ? '<tr><td>Tax (6%)</td><td>' + money(t.taxCents) + '</td></tr>'
+          + '<tr><td>Square fee</td><td>' + money(t.feeCents) + '</td></tr>' : '')
         + '<tr><td>Total paid</td><td>' + money(t.paidCents) + '</td></tr>'
         + '<tr class="total"><td>Balance due</td><td>' + money(t.balanceCents) + '</td></tr>';
     }
@@ -154,5 +175,5 @@
     });
   }
 
-  global.FCTrack = { normalizeCode: normalizeCode, money: money, statusLabel: statusLabel, totalsFor: totalsFor };
+  global.FCTrack = { normalizeCode: normalizeCode, money: money, statusLabel: statusLabel, totalsFor: totalsFor, billTotals: billTotals };
 })(typeof window !== 'undefined' ? window : global);

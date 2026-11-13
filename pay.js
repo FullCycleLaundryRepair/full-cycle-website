@@ -16,7 +16,10 @@
 //
 // AMOUNTS (never trusted from the URL — always computed from the
 // backend work order when configured):
-//   diagnosis stage = diagnostic $50 + parts ordered on that visit
+//   diagnosis stage = the bill James sent: every service + part on
+//     the order, MI sales tax 6%, Square fee 3.3% + 30¢, minus what is
+//     already paid at the diagnosis step. The bill message links here,
+//     so this MUST equal the bill total. (v1.2, James, Nov 12, 2026)
 //   closing stage   = total − already paid (the balance due)
 // In demo mode (no BACKEND_URL yet) the page shows the Rizk example
 // (#HD7X-000B, Diagnostic $50, Parts $0, Labor $0, Total $50) and
@@ -61,13 +64,29 @@
       : 'Final payment: repair labor $75, plus parts if needed.';
   }
 
+  // Bill math (v1.2, James, Nov 12, 2026) — ONE formula everywhere
+  // the bill total appears (billing page, this page, track balance).
+  // Subtotal = services + parts. Tax 6% on the subtotal. Square fee
+  // 3.3% + 30¢ on the whole ticket (subtotal + tax). No tax/fee on $0.
+  function billTotals(subtotalCents) {
+    var sub = Math.max(0, Math.round(num(subtotalCents)));
+    if (!sub) return { subtotalCents: 0, taxCents: 0, squareFeeCents: 0, totalCents: 0 };
+    var tax = Math.round(sub * 0.06);
+    var fee = Math.round((sub + tax) * 0.033) + 30;
+    return { subtotalCents: sub, taxCents: tax, squareFeeCents: fee, totalCents: sub + tax + fee };
+  }
+
   // Amount due (cents) for a stage, from a loaded backend work order.
-  // Diagnosis: diagnostic estimate + parts estimate (parts ordered on
-  // that visit, paid upfront before ordering). Closing: total − paid.
+  // Diagnosis: the bill — every service + part on the order, tax 6% +
+  // Square fee 3.3% + 30¢, minus what is already paid at the diagnosis
+  // step. Closing: total − paid.
   function stageAmountCents(wo, stage) {
     if (!wo) return 0;
     if (stage === 'diagnosis') {
-      return num(wo.estimateDiagnosticCents) + num(wo.estimatePartsCents);
+      var bt = billTotals(num(wo.servicesTotalCents) + num(wo.partsTotalCents));
+      var diagPaid = 0;
+      (wo.payments || []).forEach(function (p) { if (p.stage === 'diagnosis') diagPaid += num(p.amountCents); });
+      return Math.max(0, bt.totalCents - diagPaid);
     }
     var paid = 0;
     (wo.payments || []).forEach(function (p) { paid += num(p.amountCents); });
@@ -79,11 +98,14 @@
     if (!wo) return null;
     var paid = 0;
     (wo.payments || []).forEach(function (p) { paid += num(p.amountCents); });
+    var bt = billTotals(num(wo.servicesTotalCents) + num(wo.partsTotalCents));
     return {
       services: num(wo.servicesTotalCents),
       parts: num(wo.partsTotalCents),
       urgency: num(wo.estimateUrgencyCents),
       urgencyName: wo.urgency || 'Standard',
+      tax: bt.taxCents,
+      fee: bt.squareFeeCents,
       total: num(wo.totalCents),
       paid: paid,
       due: Math.max(0, num(wo.totalCents) - paid)
@@ -217,7 +239,7 @@
   function callBackend(action, body, cb) {
     var url = backendUrl();
     if (!url) { cb({ ok: false, error: 'BACKEND_NOT_CONFIGURED' }); return; }
-    var opts = { method: body ? 'POST' : 'GET', headers: {} };
+    var opts = { method: body ? 'POST' : 'GET', headers: {}, cache: 'no-store' };
     var full = url + '?action=' + encodeURIComponent(action);
     if (apiKey()) full += '&apiKey=' + encodeURIComponent(apiKey());
     if (body) { opts.headers['Content-Type'] = 'text/plain'; opts.body = JSON.stringify(body); }
@@ -250,6 +272,10 @@
         rows += '<tr><td>Part — ' + esc(p.name || p.partName || 'Part') + (p.qty ? ' × ' + p.qty : '') + '</td><td>' + money(num(p.unitPriceCents) * num(p.qty, 1)) + '</td></tr>';
       });
       if (t && t.urgency) rows += '<tr><td>Urgency (' + esc(t.urgencyName) + ')</td><td>' + money(t.urgency) + '</td></tr>';
+      if (t && stage === 'diagnosis') {
+        rows += '<tr><td>Tax (6%)</td><td>' + money(t.tax) + '</td></tr>';
+        rows += '<tr><td>Square fee</td><td>' + money(t.fee) + '</td></tr>';
+      }
       if (t) {
         rows += '<tr><td>Already paid</td><td>−' + money(t.paid) + '</td></tr>';
         rows += '<tr class="total"><td>Total due' + (stage === 'diagnosis' ? ' for this step' : ' (balance)') + '</td><td>' + money(amt) + '</td></tr>';
@@ -313,19 +339,24 @@
 
     setText('pay-amount', 'Loading…');
     // getWorkOrder is a GET: build it directly (callBackend only POSTs
-    // with a body, so the GET goes here).
+    // with a body, so the GET goes here). cache: no-store — the page
+    // must show the live order every open (a bill sent after the
+    // customer got the link still shows up). (v1.2)
     var url = backendUrl() + '?action=getWorkOrder&workOrderId=' + encodeURIComponent(woId);
     if (apiKey()) url += '&apiKey=' + encodeURIComponent(apiKey());
-    global.fetch(url).then(function (r) { return r.json(); }).then(function (j) {
+    global.fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
       if (!j || !j.ok || !j.workOrder) {
         renderLoadError('We could not load that work order. Please use the Pay Now link in your receipt email, or call (248) 429-9878.');
         return;
       }
       var wo = j.workOrder;
       render(wo, stage);
+      var amt = stageAmountCents(wo, stage);
       // Check Square before enabling Pay Now.
       callBackend('getSquareStatus', null, function (s) {
-        if (s && s.ok && s.configured) {
+        if (amt <= 0) {
+          setSquareState('error', 'Nothing is due for this step — no payment needed.');
+        } else if (s && s.ok && s.configured) {
           setSquareState('ready', 'Pay securely with Square — your card details go straight to Square, never to us.');
         } else {
           setSquareState('not-configured', 'Square is not set up yet — the payment link will appear here once Square is connected. No payment has been taken.');
@@ -369,6 +400,7 @@
   global.FCPPay = {
     parseStage: parseStage, stageLabel: stageLabel, stageDescription: stageDescription,
     stageAmountCents: stageAmountCents, totalsFor: totalsFor, payLink: payLink,
+    billTotals: billTotals,
     demoWorkOrder: demoWorkOrder, displayNumber: displayNumber, money: money,
     displayAppointmentBlock: displayAppointmentBlock, formatApptDate: formatApptDate,
     displayAppointment: displayAppointment,

@@ -983,8 +983,8 @@
       ? confirmationSentText(res)
       : 'Your work order is saved on this device only.');
     set('conf-agreement', res.agreementToken
-      ? 'Your service agreement link will come with your appointment confirmation (agreement ref: ' + res.agreementToken + ').'
-      : 'Your service agreement link will come with your appointment confirmation email.');
+      ? 'Your service agreement is on your track page — open your work order link to view it (agreement ref: ' + res.agreementToken + ').'
+      : 'Your service agreement is on your track page — open your work order link to view it.');
     /* Platform terms (item 26): the booker agreed them on the form,
        before submit — say so plainly on the confirmation. */
     set('conf-platform-terms', res.sentToBackend
