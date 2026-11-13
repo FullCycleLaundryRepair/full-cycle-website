@@ -53,6 +53,7 @@
    * never sets it, so a return there reveals nothing. */
   var pendingDraft = null;
   var fallbackShown = false;
+  var retryWired = false;
   function esc(s) {
     return String(s).replace(/[&<>"]/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
@@ -83,12 +84,69 @@
     if (everHidden && pendingDraft !== null) revealFallback(pendingDraft);
   });
 
-  /* The confirmation itself is recorded by this beacon the moment the
-   * page loads — the confirm URL never goes stale (code + token), so
-   * it fires immediately, before any detail fetch. */
-  if (confirmUrl) {
-    var img = new Image();
-    img.src = confirmUrl;
+  /* Deep Dive 4, Problem 11 — the confirmation beacon is VERIFIED
+   * before anything claims "confirmed" or "sent". The old
+   * fire-and-forget `new Image()` beacon had no onerror, no status
+   * check and no retry: if that GET failed, the page still opened
+   * Eva and still showed success while the backend still showed
+   * unconfirmed. Now: fetch (no-cors — Apps Script sends no CORS
+   * headers, so the response is opaque, but a network failure still
+   * rejects, which is the distinction that matters), with an Image
+   * fallback where fetch is unavailable. A failed beacon shows an
+   * honest "couldn't reach the backend — tap Confirm again" state
+   * with a retry button; a missing `confirm` param never prints a
+   * false "confirmed" message. The email branch only runs after the
+   * beacon succeeds, so "sent" is never asserted before the live
+   * fetch verifies the backend was reached. Limitation, stated
+   * plainly: no-cors cannot read the server's answer, so this
+   * verifies the backend was REACHED, not the MailApp send result —
+   * the server-side confirm page reports a failed email send. */
+  function sendConfirmBeacon(cb) {
+    if (!confirmUrl) { cb(false, 'missing'); return; }
+    var settled = false;
+    function done(ok) { if (!settled) { settled = true; cb(ok); } }
+    try {
+      if (typeof fetch === 'function') {
+        fetch(confirmUrl, { mode: 'no-cors', cache: 'no-store', credentials: 'omit' })
+          .then(function () { done(true); }, function () { done(false); });
+        setTimeout(function () { done(false); }, 15000);
+        return;
+      }
+    } catch (e) { /* fall through to the Image beacon */ }
+    try {
+      var img = new Image();
+      img.onload = function () { done(true); };
+      img.onerror = function () { done(false); };
+      img.src = confirmUrl;
+      setTimeout(function () { done(false); }, 15000);
+    } catch (e2) { done(false); }
+  }
+
+  function showMissingConfirm() {
+    show('<h1>Confirmation link incomplete</h1>' + lineHtml()
+      + '<p>This confirmation link is missing its confirmation — nothing was confirmed and nothing was sent. Please open the Confirm link from your newest work order email again.</p>'
+      + (workOrder ? '<p class="dim">Track the work order here: <a style="color:#f2f2f2" href="https://fullcyclelaundryrepair.github.io/full-cycle-website/track.html?workOrder=' + encodeURIComponent(workOrder) + '">work order ' + esc(workOrder) + '</a>.</p>' : ''));
+  }
+
+  function showConfirmError() {
+    show('<h1>Couldn\u2019t reach the backend</h1>' + lineHtml()
+      + '<p>Your appointment was <b>not</b> confirmed yet — the confirmation could not reach the backend. Tap Confirm again.</p>'
+      + '<p style="margin:14px 0 0;"><a class="btn btn-copper" id="confirm-retry-btn" href="#">Tap to confirm again</a></p>');
+    /* Wire the retry once: a second failure re-shows this state and
+     * must not stack a second listener (two beacons, two auto-opens). */
+    if (!retryWired) {
+      var rb = document.getElementById('confirm-retry-btn');
+      if (rb && rb.addEventListener) { retryWired = true; rb.addEventListener('click', function (ev) { if (ev && ev.preventDefault) ev.preventDefault(); attemptConfirm(); }); }
+    }
+  }
+
+  function attemptConfirm() {
+    show('<h1>Confirming your appointment…</h1><p>One moment.</p>');
+    sendConfirmBeacon(function (ok, why) {
+      if (why === 'missing' || !confirmUrl) { showMissingConfirm(); return; }
+      if (!ok) { showConfirmError(); return; }
+      runBranch();
+    });
   }
 
   /* Live details (v1.9, deep dive 3 Problem 9): the relay link bakes
@@ -169,39 +227,52 @@
     }, 4500);
   }
 
-  try {
-    if (pref === 'email') {
-      show('<h1>Appointment confirmed</h1>' + lineHtml()
-        + '<p>The confirmation email has been sent to ' + esc(email) + '.</p>');
-      /* No navigation to wait on here — refresh the displayed line
-       * with live details if they arrive, so a rescheduled order
-       * shows the current time, not the baked one. */
-      liveDetails(5000, function (d) {
-        if (d && d.ok) {
-          name = d.name || name;
-          when = d.when || when;
-          email = d.email || email;
-          show('<h1>Appointment confirmed</h1>' + lineHtml()
-            + '<p>The confirmation email has been sent to ' + esc(email) + '.</p>');
-        }
-      });
-    } else if (bakedEva) {
-      /* Race the live fetch against a 2.5s cap: fresh details when
-       * they arrive in time, baked params otherwise — the auto-open
-       * fires either way, inside the tap's activation window. */
-      liveDetails(2500, function (d) {
-        var evaUrl = (d && d.ok && d.evaUrl) ? d.evaUrl : bakedEva;
-        var draft = (d && d.ok && d.draft) ? d.draft : draftFromEva(bakedEva);
-        if (d && d.ok) { name = d.name || name; when = d.when || when; }
-        openEva(evaUrl, draft);
-      });
-    } else {
+  /* The branch below only runs after the beacon verified the backend
+   * was reached (attemptConfirm above) — nothing here claims
+   * "confirmed" or "sent" on a failed or missing beacon. */
+  function runBranch() {
+    try {
+      if (pref === 'email') {
+        show('<h1>Appointment confirmed</h1>' + lineHtml()
+          + '<p>The confirmation email has been sent to ' + esc(email) + '.</p>');
+        /* No navigation to wait on here — refresh the displayed line
+         * with live details if they arrive, so a rescheduled order
+         * shows the current time, not the baked one. */
+        liveDetails(5000, function (d) {
+          if (d && d.ok) {
+            name = d.name || name;
+            when = d.when || when;
+            email = d.email || email;
+            show('<h1>Appointment confirmed</h1>' + lineHtml()
+              + '<p>The confirmation email has been sent to ' + esc(email) + '.</p>');
+          }
+        });
+      } else if (bakedEva) {
+        /* Race the live fetch against a 2.5s cap: fresh details when
+         * they arrive in time, baked params otherwise — the auto-open
+         * fires either way, inside the tap's activation window. */
+        liveDetails(2500, function (d) {
+          var evaUrl = (d && d.ok && d.evaUrl) ? d.evaUrl : bakedEva;
+          var draft = (d && d.ok && d.draft) ? d.draft : draftFromEva(bakedEva);
+          if (d && d.ok) { name = d.name || name; when = d.when || when; }
+          openEva(evaUrl, draft);
+        });
+      } else {
+        show('<h1>Appointment confirmed</h1>' + lineHtml()
+          + '<p>The confirmation is recorded on the work order.</p>');
+      }
+    } catch (e) {
       show('<h1>Appointment confirmed</h1>' + lineHtml()
         + '<p>The confirmation is recorded on the work order.</p>');
     }
-  } catch (e) {
-    show('<h1>Appointment confirmed</h1>' + lineHtml()
-      + '<p>The confirmation is recorded on the work order.</p>');
+  }
+
+  if (!confirmUrl) {
+    /* No confirm param at all: never print a false "confirmed"
+     * message for a confirmation that never happened (Problem 11). */
+    showMissingConfirm();
+  } else {
+    attemptConfirm();
   }
 })();
 </script>

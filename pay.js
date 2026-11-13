@@ -104,33 +104,68 @@
     return Math.max(0, billTotal - paid);
   }
 
+  // Deep Dive 4, Problem 20 — the stage the customer still owes for:
+  // diagnosis when the diagnosis step is unpaid, else closing. The
+  // track page and the pay page (no stage in the link) both use this,
+  // so a customer who has not paid the diagnosis bill lands on
+  // "Bill payment", not "Closing payment".
+  function stageForOrder(wo) {
+    if (!wo) return 'closing';
+    return stageAmountCents(wo, 'diagnosis') > 0 ? 'diagnosis' : 'closing';
+  }
+
   // Totals row for the page, from a loaded backend work order.
-  function totalsFor(wo) {
+  // Deep Dive 4, Problem 23 — paid is stage-appropriate: paidStage
+  // is the diagnosis-step payments on the diagnosis page and every
+  // payment on the closing page, so "Already paid" never contradicts
+  // the "Total due for this step" next to it. `paid` stays the
+  // all-payments total for callers that need it.
+  function totalsFor(wo, stage) {
     if (!wo) return null;
-    var paid = 0;
-    (wo.payments || []).forEach(function (p) { paid += num(p.amountCents); });
+    var paid = 0, diagPaid = 0;
+    (wo.payments || []).forEach(function (p) { paid += num(p.amountCents); if (p.stage === 'diagnosis') diagPaid += num(p.amountCents); });
     var bt = billTotals(num(wo.servicesTotalCents) + num(wo.partsTotalCents));
     var billed = num(wo.billedTotalCents) > 0;
     var billTotal = billed ? num(wo.billedTotalCents) : bt.totalCents;
+    /* Deep Dive 4, Problem 19 — when billed, the services/parts
+     * split comes from the frozen billedLines (mirror of the
+     * backend's woBillBalance), not the live totals: a part added
+     * after billing must not move the rows while the total stays
+     * frozen, or services + parts + tax + fee stops equalling the
+     * total. */
+    var services = num(wo.servicesTotalCents), parts = num(wo.partsTotalCents);
+    if (billed && wo.billedLines) {
+      services = 0; parts = 0;
+      (wo.billedLines.services || []).forEach(function (s) { services += num(s.priceCents); });
+      (wo.billedLines.parts || []).forEach(function (pp) { parts += num(pp.qty, 1) * num(pp.unitPriceCents); });
+    }
+    var st = (stage === 'diagnosis') ? 'diagnosis' : 'closing';
     return {
-      services: num(wo.servicesTotalCents),
-      parts: num(wo.partsTotalCents),
+      services: services,
+      parts: parts,
       urgency: num(wo.estimateUrgencyCents),
       urgencyName: wo.urgency || 'Standard',
       tax: billed ? num(wo.billedTaxCents) : bt.taxCents,
       fee: billed ? num(wo.billedFeeCents) : bt.squareFeeCents,
       total: billTotal,
       paid: paid,
+      paidDiagnosis: diagPaid,
+      paidStage: st === 'diagnosis' ? diagPaid : paid,
       due: Math.max(0, billTotal - paid)
     };
   }
 
   // The Pay Now link for an email / text: our page, work order id +
   // stage as query params. The page itself fetches the live amounts
-  // from the backend — the link never carries an amount.
-  function payLink(workOrderId, stage) {
-    return PAY_PAGE_URL + '?workOrder=' + encodeURIComponent(trim(workOrderId))
+  // from the backend — the link never carries an amount. v2.4 (Track
+  // B, Deep Dive 4 Problem 3): acceptReceipt is token-gated, so a
+  // link built for the customer carries &key=<token> with it; a bare
+  // code-only link never carries one.
+  function payLink(workOrderId, stage, token) {
+    var url = PAY_PAGE_URL + '?workOrder=' + encodeURIComponent(trim(workOrderId))
       + '&stage=' + (stage === 'diagnosis' ? 'diagnosis' : 'closing');
+    if (token) url += '&key=' + encodeURIComponent(trim(token));
+    return url;
   }
 
   // Demo/example work order (Rizk #A7K2-001) shown only when no
@@ -261,7 +296,7 @@
   function show(id, on) { var n = el(id); if (n) n.style.display = on ? '' : 'none'; }
 
   function render(wo, stage) {
-    var t = totalsFor(wo);
+    var t = totalsFor(wo, stage);
     var amt = stageAmountCents(wo, stage);
     setText('pay-wo', 'Work Order ' + displayNumber(wo));
     setText('pay-customer', wo.customerName || '—');
@@ -273,10 +308,17 @@
     var lines = el('pay-lines');
     if (lines) {
       var rows = '';
-      (wo.services || []).forEach(function (s) {
+      /* Deep Dive 4, Problem 19 — the invoice rows are the frozen
+       * bill when one went out (same billedLines split as
+       * totalsFor): a part added after billing must not appear here
+       * with a price the frozen total does not include. */
+      var billedLines = (num(wo.billedTotalCents) > 0 && wo.billedLines) ? wo.billedLines : null;
+      var lineServices = billedLines ? billedLines.services : wo.services;
+      var lineParts = billedLines ? billedLines.parts : wo.parts;
+      (lineServices || []).forEach(function (s) {
         rows += '<tr><td>' + esc(s.description) + '</td><td>' + money(s.priceCents) + '</td></tr>';
       });
-      (wo.parts || []).forEach(function (p) {
+      (lineParts || []).forEach(function (p) {
         rows += '<tr><td>Part — ' + esc(p.name || p.partName || 'Part') + (p.qty ? ' × ' + p.qty : '') + '</td><td>' + money(num(p.unitPriceCents) * num(p.qty, 1)) + '</td></tr>';
       });
       if (t && t.urgency) rows += '<tr><td>Urgency (' + esc(t.urgencyName) + ')</td><td>' + money(t.urgency) + '</td></tr>';
@@ -285,7 +327,7 @@
         rows += '<tr><td>Square fee</td><td>' + money(t.fee) + '</td></tr>';
       }
       if (t) {
-        rows += '<tr><td>Already paid</td><td>−' + money(t.paid) + '</td></tr>';
+        rows += '<tr><td>Already paid</td><td>−' + money(t.paidStage) + '</td></tr>';
         rows += '<tr class="total"><td>Total due' + (stage === 'diagnosis' ? ' for this step' : ' (balance)') + '</td><td>' + money(amt) + '</td></tr>';
       }
       lines.innerHTML = rows || '<tr><td>Diagnostic</td><td>$50.00</td></tr>';
@@ -326,10 +368,15 @@
     var params = {};
     try {
       var q = new URLSearchParams(global.location.search);
-      params = { workOrder: q.get('workOrder') || '', stage: q.get('stage') || '' };
-    } catch (e) { params = { workOrder: '', stage: '' }; }
+      params = { workOrder: q.get('workOrder') || '', stage: q.get('stage') || '', key: q.get('key') || '' };
+    } catch (e) { params = { workOrder: '', stage: '', key: '' }; }
     var stage = parseStage(params);
+    /* Deep Dive 4, Problem 20 — no stage in the link: pick it from
+     * the order once it loads (diagnosis while that step is unpaid),
+     * instead of always landing on "Closing payment". */
+    var stageGiven = ['diagnosis', 'closing'].indexOf(trim(params.stage).toLowerCase()) >= 0;
     var woId = trim(params.workOrder);
+    var pageKey = trim(params.key); // v2.4: token-gates acceptReceipt
 
     if (!backendUrl()) {
       // Demo mode: Rizk example, honestly labelled. Pay Now stays
@@ -358,6 +405,7 @@
         return;
       }
       var wo = j.workOrder;
+      if (!stageGiven) stage = stageForOrder(wo);
       render(wo, stage);
       var amt = stageAmountCents(wo, stage);
       // Check Square before enabling Pay Now.
@@ -377,8 +425,16 @@
         callBackend('createSquarePaymentLink', { workOrderId: wo.id, stage: stage, amountCents: amt }, function (r) {
           if (r && r.ok && (r.url || r.longUrl)) {
             global.open(r.url || r.longUrl, '_blank');
-            setSquareState('ready', 'Square checkout opened in a new tab. Once you have paid, tap “I agree to the payment” below.');
-            show('agree-block', true);
+            /* Deep Dive 4, Problem 20 — the agree block is
+             * closing-only: forcing it open after ANY Pay Now click
+             * let a diagnosis-stage customer record a diagnosis
+             * acceptance believing it was the close-unlocking ping. */
+            if (stage === 'closing') {
+              setSquareState('ready', 'Square checkout opened in a new tab. Once you have paid, tap “I agree to the payment” below.');
+              show('agree-block', true);
+            } else {
+              setSquareState('ready', 'Square checkout opened in a new tab. Once you have paid, come back here — the page will show the updated balance.');
+            }
           } else if (r && r.error === 'SQUARE_NOT_CONFIGURED') {
             setSquareState('not-configured', 'Square is not set up yet — the payment link will appear here once Square is connected. No payment has been taken.');
           } else {
@@ -388,9 +444,17 @@
       };
       var agreeBtn = el('agree-btn');
       if (agreeBtn) agreeBtn.onclick = function () {
+        /* v2.4 (Track B): acceptReceipt is token-gated. Without the
+         * token (e.g. arrived from the track page by code only) the
+         * ping cannot be recorded — point at the agree link in the
+         * closing receipt email, which carries it. */
+        if (!pageKey) {
+          setText('agree-note', 'Please use the "I agree to the payment" link in your closing receipt email — it carries the agreement for this order.');
+          return;
+        }
         agreeBtn.disabled = true;
         setText('agree-note', 'Sending your agreement…');
-        callBackend('acceptReceipt', { workOrderId: wo.id, stage: stage }, function (r) {
+        callBackend('acceptReceipt', { workOrderId: wo.id, token: pageKey, stage: stage }, function (r) {
           if (r && r.ok) {
             setText('agree-note', 'Your agreement has been sent back to us.');
             show('agree-done', true);
@@ -407,7 +471,7 @@
 
   global.FCPPay = {
     parseStage: parseStage, stageLabel: stageLabel, stageDescription: stageDescription,
-    stageAmountCents: stageAmountCents, totalsFor: totalsFor, payLink: payLink,
+    stageAmountCents: stageAmountCents, stageForOrder: stageForOrder, totalsFor: totalsFor, payLink: payLink,
     billTotals: billTotals,
     demoWorkOrder: demoWorkOrder, displayNumber: displayNumber, money: money,
     displayAppointmentBlock: displayAppointmentBlock, formatApptDate: formatApptDate,

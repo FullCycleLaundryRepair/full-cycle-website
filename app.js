@@ -164,15 +164,23 @@
 
   // --- Validation ----------------------------------------------------------
   // Mandatory: first name, last name, phone, street address, city, state,
-  // zip, problem. Email is optional. Returns the first failing message, or ''.
+  // zip, problem. Email is optional — UNLESS Email is the preferred
+  // contact (DD4 Problem 13, Track E): an email-pref order with no email
+  // is a dead end, so submit is blocked with a clear message instead of
+  // silently filing it or silently switching the customer to Text.
+  // Returns the first failing message, or ''.
   function validateForm(d) {
     if (!trim(d.firstName) || !trim(d.lastName)) return 'First and last name are required.';
     if (!trim(d.phone)) return 'Phone number is required.';
+    if (phoneDigits(d.phone).length < 10) return 'Enter a valid phone number with at least 10 digits.';
     if (!trim(d.street)) return 'Street address is required.';
     if (!trim(d.city)) return 'City is required.';
     if (!trim(d.state)) return 'State is required.';
     if (!trim(d.zip)) return 'Zip is required.';
     if (!trim(d.problem)) return 'Problem is required.';
+    if (d.preferredContact === 'Email' && !trim(d.email)) return 'Add an email address, or switch your preferred contact to Text.';
+    var schedErr = validateSchedule(d.scheduledDate, d.scheduledTime);
+    if (schedErr) return schedErr;
     return '';
   }
 
@@ -183,6 +191,33 @@
     var m = String(n.getMonth() + 1).padStart(2, '0');
     var d = String(n.getDate()).padStart(2, '0');
     return n.getFullYear() + '-' + m + '-' + d;
+  }
+
+  // DD4 Problems 7/12/13 (Track E) — schedule + phone validation,
+  // mirroring the server (woValidateSchedule / woPhoneDigits in Code.gs)
+  // with the same messages. A date in the past is rejected, a 2-hour
+  // block that already started today is rejected, and an empty date or
+  // time is rejected — so a fully busy day can no longer submit with
+  // scheduledTime '' (the time select is cleared by applyTimeOptions
+  // when every block is busy, and validateForm now stops that submit).
+  function phoneDigits(v) { return trim(v).replace(/[^0-9]/g, ''); }
+  function nowMinutesLocal() { var n = new Date(); return n.getHours() * 60 + n.getMinutes(); }
+  function validateSchedule(date, time, dateMsg) {
+    var d = trim(date), t = trim(time);
+    if (!d) return dateMsg || 'Pick a date.';
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return 'Pick a valid date (YYYY-MM-DD).';
+    if (d < todayLocalISO()) return 'That date is in the past — pick today or a later date.';
+    if (!t) return 'Pick a 2-hour time block.';
+    var blk = parseTimeBlock(t);
+    if (!blk) return 'Pick a valid 2-hour time block.';
+    if (d === todayLocalISO() && blk.start < nowMinutesLocal()) return 'That time block has already started — pick a later time today or another day.';
+    return '';
+  }
+  // True when every 2-hour block that day is busy — the fully-busy day
+  // the submit handler names explicitly instead of failing generically.
+  function allBlocksBusy(busyBlocks) {
+    var b = busyBlocks || {};
+    return TIME_BLOCKS.every(function (blk) { return !!b[blk]; });
   }
 
   // --- Platform terms (audit item 26, Nov 8, 2026) -------------------------
@@ -533,7 +568,7 @@
       /* Code first: the confirmation must show the order by its code
          from the start — fill a missing code (re-read by lookup key)
          before the confirmation send/render below. */
-      return fillMissingCode(result, result.displayId).then(function (filled) {
+      return fillMissingCode(result, result.displayId, result.agreementToken).then(function (filled) {
         result = filled;
         /* Auto-send the appointment confirmation now, by preferred contact.
            A failed send does NOT fail the filing — the row stays ready and
@@ -568,7 +603,14 @@
       var q = new URLSearchParams(s);
       var id = trim(q.get('workOrder'));
       if (!id) return null;
-      return { workOrderId: id, step: trim(q.get('step')) || 'repair' };
+      /* v2.4 (Track B): the repair link carries the per-order token
+       * (?key=…) — setRepairAppointment is token-gated. The key is
+       * included ONLY when present, so the no-key shape stays exactly
+       * { workOrderId, step }. */
+      var out = { workOrderId: id, step: trim(q.get('step')) || 'repair' };
+      var k = trim(q.get('key'));
+      if (k) out.key = k;
+      return out;
     } catch (e) { /* no URLSearchParams (headless test sandbox) — manual parse below */ }
     if (s.charAt(0) === '?') s = s.slice(1);
     var out = {};
@@ -579,20 +621,29 @@
     });
     var wid = trim(out.workOrder);
     if (!wid) return null;
-    return { workOrderId: wid, step: trim(out.step) || 'repair' };
+    var repaired = { workOrderId: wid, step: trim(out.step) || 'repair' };
+    if (trim(out.key)) repaired.key = trim(out.key);
+    return repaired;
   }
 
-  function submitRepairAppointment(workOrderId, scheduledDate, scheduledTime) {
+  function submitRepairAppointment(workOrderId, scheduledDate, scheduledTime, token) {
     var date = trim(scheduledDate), time = trim(scheduledTime);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return Promise.resolve({ ok: false, error: 'Pick a repair date.' });
-    if (!time) return Promise.resolve({ ok: false, error: 'Pick a 2-hour time block.' });
+    var schedErr = validateSchedule(date, time, 'Pick a repair date.');
+    if (schedErr) return Promise.resolve({ ok: false, error: schedErr });
+    /* v2.4 (Track B): setRepairAppointment is token-gated — the
+     * token comes from the repair link (?key=…) and is sent only
+     * when the caller holds it, so the no-token call shape is
+     * unchanged. */
+    var tok = trim(token);
     var payload = { action: 'setRepairAppointment', workOrderId: trim(workOrderId), scheduledDate: date, scheduledTime: time };
+    if (tok) payload.token = tok;
     if (!trim(CFG.BACKEND_URL)) {
       var record = { payload: payload, savedAt: new Date().toISOString(), sentToBackend: false };
       saveLocal(record);
       return Promise.resolve({ ok: true, mode: 'demo', displayId: trim(workOrderId), workOrderCode: codeOf(trim(workOrderId)) || null, creationCode: null, sentToBackend: false, confirmationMessage: 'queued — ready, not sent yet', record: record });
     }
     var body = { action: 'setRepairAppointment', workOrderId: trim(workOrderId), scheduledDate: date, scheduledTime: time };
+    if (tok) body.token = tok;
     if (CFG.WO_API_KEY) body.apiKey = CFG.WO_API_KEY;
     return global.fetch(trim(CFG.BACKEND_URL), {
       method: 'POST', headers: { 'Content-Type': 'text/plain' },
@@ -601,7 +652,7 @@
       if (!res || !res.ok) throw new Error((res && res.error) || 'Backend returned an error.');
       var wo = res.workOrder || {};
       var out = { ok: true, mode: 'live', displayId: wo.displayId || wo.id || trim(workOrderId), workOrderCode: wo.workOrderCode || wo.work_order_code || null, creationCode: wo.creationCode || wo.creation_code || null, sentToBackend: true, confirmationMessage: 'Repair appointment set.', record: wo };
-      return fillMissingCode(out, out.displayId);
+      return fillMissingCode(out, out.displayId, tok);
     }).catch(function (e) {
       return { ok: false, error: 'Could not reach the backend: ' + e.message + ' — nothing was booked. Your date and time are still on this screen; try again.' };
     });
@@ -647,8 +698,12 @@
   // anything renders, so no confirmation ever shows the order without
   // its code. Never rejects and never fails the filing: a failed
   // re-read just leaves the result as the backend returned it.
-  function fetchCodeFor(workOrderId) {
+  function fetchCodeFor(workOrderId, token) {
     var url = trim(CFG.BACKEND_URL) + '?action=getWorkOrder&workOrderId=' + encodeURIComponent(trim(workOrderId));
+    /* v2.4 (Track B): a bare internal id is no longer a public
+     * lookup key — the token that came with the order proves the
+     * link, so pass it when held. */
+    if (trim(token)) url += '&key=' + encodeURIComponent(trim(token));
     if (CFG.WO_API_KEY) url += '&apiKey=' + encodeURIComponent(CFG.WO_API_KEY);
     try {
       return Promise.resolve(global.fetch(url)).then(function (r) { return r.json(); }).then(function (j) {
@@ -658,9 +713,9 @@
       }).catch(function () { return null; });
     } catch (e) { return Promise.resolve(null); }
   }
-  function fillMissingCode(result, lookupId) {
+  function fillMissingCode(result, lookupId, token) {
     if (!result || result.workOrderCode || result.creationCode || !trim(lookupId) || !trim(CFG.BACKEND_URL)) return Promise.resolve(result);
-    return fetchCodeFor(lookupId).then(function (c) {
+    return fetchCodeFor(lookupId, token).then(function (c) {
       if (c) {
         if (c.workOrderCode) result.workOrderCode = c.workOrderCode;
         if (c.creationCode) result.creationCode = c.creationCode;
@@ -900,7 +955,12 @@
     if (timeEl) timeEl.addEventListener('change', refreshDayNote);
 
     /* Default the date to today, shown washed out until the customer
-     * picks another day — today is whatever day they open the page. */
+     * picks another day — today is whatever day they open the page.
+     * DD4 Problem 7 (Track E): min is set in JS, not in index.html,
+     * because "today" moves every day — a literal min="..." in the
+     * HTML would go stale the next morning. The native picker blocks
+     * past dates; validateForm is the backstop for typed ones. */
+    if (dateEl) dateEl.min = todayLocalISO();
     if (dateEl && !dateEl.value) {
       dateEl.value = todayLocalISO();
       dateEl.classList.add('date-default');
@@ -930,9 +990,15 @@
       var btn = $('submit-btn'), errEl = $('form-error');
       if (repairMode) {
         var rDate = dateEl ? dateEl.value : '', rTime = timeEl ? timeEl.value : '';
+        /* DD4 Problem 7 (Track E): a fully busy day clears the pick and
+           must not submit silently — name the day, don't just fail. */
+        if (!trim(rTime) && rDate >= todayLocalISO() && lastDayRes && lastDayRes.ok && allBlocksBusy(computeBusyBlocks(lastDayRes))) {
+          if (errEl) errEl.textContent = 'No times are free on ' + formatApptDate(rDate) + ' — pick another date.';
+          return;
+        }
         if (btn) { btn.disabled = true; btn.textContent = 'Setting…'; }
         if (errEl) errEl.textContent = '';
-        submitRepairAppointment(repairMode.workOrderId, rDate, rTime).then(function (res) {
+        submitRepairAppointment(repairMode.workOrderId, rDate, rTime, repairMode.key).then(function (res) {
           if (btn) { btn.disabled = false; btn.textContent = 'Set repair appointment'; }
           if (!res.ok) {
             if (errEl) errEl.textContent = res.error || 'Could not book it — try again.';
@@ -971,6 +1037,12 @@
       data.platformTermsSignatureImage = pt.platformTermsSignatureImage;
       data.platformTermsHasInk = true;
       data.platformTermsSignedAt = new Date().toISOString();
+      /* DD4 Problem 7 (Track E): fully busy day — same explicit message
+         as repair mode, before the generic validateForm backstop. */
+      if (!trim(data.scheduledTime) && data.scheduledDate >= todayLocalISO() && lastDayRes && lastDayRes.ok && allBlocksBusy(computeBusyBlocks(lastDayRes))) {
+        if (errEl) errEl.textContent = 'No times are free on ' + formatApptDate(data.scheduledDate) + ' — pick another date.';
+        return;
+      }
       if (btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
       if (errEl) errEl.textContent = '';
       submitWorkOrder(data).then(function (res) {
@@ -1002,12 +1074,17 @@
   // (email thread "Work order A7K2-001 — Full Cycle Laundry Repair",
   // or a text) with the work order code + track link — no payment ask,
   // no receipt, nothing due yet. The diagnostic is paid after the visit.
-  function confirmationSentText(res) {
+  // DD4 Problem 13 (Track E): never say "your work order number is
+  // above" when no number was actually displayed (the Problem 1 case).
+  // hasNumber defaults to true so old one-arg callers keep the old
+  // wording; showConfirmation passes whether a number was shown.
+  function confirmationSentText(res, hasNumber) {
     var m = (res && res.confirmationMessage) || '';
-    if (m === 'sent by email') return 'Your confirmation email has your work order number and a link to track it.';
-    if (m.indexOf('James will send it') >= 0) return 'Your confirmation text has your work order number and a link to track it.';
-    if (m === 'waiting for an email address') return 'Your work order number is above — keep it to track your order.';
-    return 'Your work order number is above — your confirmation has a link to track it.';
+    var shown = hasNumber !== false;
+    if (m === 'sent by email') return shown ? 'Your confirmation email has your work order number and a link to track it.' : 'Your confirmation email has a link to track it.';
+    if (m.indexOf('James will send it') >= 0) return shown ? 'Your confirmation text has your work order number and a link to track it.' : 'Your confirmation text has a link to track it.';
+    if (m === 'waiting for an email address') return shown ? 'Your work order number is above — keep it to track your order.' : 'We could not send your confirmation yet — add an email address, or choose Text, so we can send your work order number.';
+    return shown ? 'Your work order number is above — your confirmation has a link to track it.' : 'Your confirmation has a link to track it — your work order number will be in your email or text.';
   }
 
   function showConfirmation(res, data, isRepair) {
@@ -1060,11 +1137,27 @@
       if (trackLine) trackLine.style.display = 'block';
     } else if (trackLine) { trackLine.style.display = 'none'; }
     set('conf-sent', res.sentToBackend
-      ? confirmationSentText(res)
+      ? confirmationSentText(res, !!dispNum)
       : 'Your work order is saved on this device only.');
     set('conf-agreement', res.agreementToken
       ? 'Your service agreement is on your track page — open your work order link to view it (agreement ref: ' + res.agreementToken + ').'
       : 'Your service agreement is on your track page — open your work order link to view it.');
+    /* v2.4 (Track B): the agreement link the customer opens from
+     * here carries the per-order token, which is what authorises
+     * the signature — without it the agreement page can show the
+     * agreement but cannot sign it. Turn this line into the link
+     * (and stop printing the raw token on screen). */
+    if (res.agreementToken && dispNum) {
+      var confAgree = document.getElementById('conf-agreement');
+      if (confAgree) {
+        confAgree.textContent = '';
+        var agreeA = document.createElement('a');
+        agreeA.href = 'agreement.html?workOrder=' + encodeURIComponent(dispNum.replace(/^#/, '')) + '&key=' + encodeURIComponent(res.agreementToken);
+        agreeA.textContent = 'View and agree to your service agreement →';
+        agreeA.style.color = '#7cc4b2';
+        confAgree.appendChild(agreeA);
+      }
+    }
     /* Platform terms (item 26): the booker agreed them on the form,
        before submit — say so plainly on the confirmation. */
     set('conf-platform-terms', res.sentToBackend
@@ -1082,6 +1175,8 @@
     CITY_ZIP: CITY_ZIP, cityChange: cityChange,
     parseTimeToMinutes: parseTimeToMinutes, isoToTimeText: isoToTimeText,
     validateForm: validateForm, buildPayload: buildPayload,
+    validateSchedule: validateSchedule, phoneDigits: phoneDigits,
+    allBlocksBusy: allBlocksBusy,
     validatePlatformTerms: validatePlatformTerms,
     validatePlatformSignatureImage: validatePlatformSignatureImage,
     preferredContactFromDom: preferredContactFromDom,

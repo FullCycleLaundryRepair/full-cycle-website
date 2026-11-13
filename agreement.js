@@ -47,10 +47,22 @@
   // carries. Never an amount, a token, or a personal detail.
   function parseWorkOrder(q) { return trim(q && q.workOrder); }
 
+  // The per-order agreement token from the query string (?key=…).
+  // v2.4 (Track B, Deep Dive 4 Problem 3): submitAgreement is
+  // token-gated — the token arrives on the agreement link the
+  // customer opens from the creation confirmation and is sent back
+  // with the signature. A code-only arrival has no key and cannot sign.
+  function parsePageKey(q) { return trim(q && q.key); }
+
   // The agreement link for an email / text: our page, work order id
-  // only. The page itself fetches the live details from the backend.
-  function agreementLink(workOrderId) {
-    return AGREEMENT_PAGE_URL + '?workOrder=' + encodeURIComponent(trim(workOrderId));
+  // only — plus the per-order token when the caller holds it (v2.4:
+  // the token is what authorises the signature, so a link built for
+  // the customer carries &key=<token>; a bare code-only link never
+  // carries one).
+  function agreementLink(workOrderId, token) {
+    var url = AGREEMENT_PAGE_URL + '?workOrder=' + encodeURIComponent(trim(workOrderId));
+    if (token) url += '&key=' + encodeURIComponent(trim(token));
+    return url;
   }
 
   // Demo/example agreement (Rizk #A7K2-001) shown only when no
@@ -238,9 +250,10 @@
     var params = {};
     try {
       var q = new URLSearchParams(global.location.search);
-      params = { workOrder: q.get('workOrder') || '' };
-    } catch (e) { params = { workOrder: '' }; }
+      params = { workOrder: q.get('workOrder') || '', key: q.get('key') || '' };
+    } catch (e) { params = { workOrder: '', key: '' }; }
     var woId = parseWorkOrder(params);
+    var pageKey = parsePageKey(params); // v2.4: token-gates submitAgreement
 
     var check = el('agree-check');
     var nameInput = el('sig-name');
@@ -355,7 +368,12 @@
       if (confirmBtn) confirmBtn.disabled = true;
       setText('locked-when', whenText);
       var img = el('locked-sig');
-      if (img) img.src = sigImage;
+      /* v2.4 (Track B): the backend no longer returns the stored
+       * signature image to a code-only caller, so an already-signed
+       * view has no image to show — hide the img instead of setting
+       * an empty/broken src. A fresh signature still passes its own
+       * just-drawn image in. */
+      if (img) { if (sigImage) img.src = sigImage; else img.style.display = 'none'; }
       show('locked', true);
       setText('missing', '');
     }
@@ -372,7 +390,7 @@
       }
       submitBtn.disabled = true;
       setText('submit-note', 'Sending your agreement…');
-      callBackend('submitAgreement', { workOrderId: woId, consent: true, signatureName: trim(nameInput.value), signatureImage: sigImage }, function (r) {
+      callBackend('submitAgreement', { workOrderId: woId, token: pageKey, consent: true, signatureName: trim(nameInput.value), signatureImage: sigImage }, function (r) {
         if (r && r.ok) {
           var when = new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
           lockUI(sigImage, 'Signed ' + when + ' by ' + trim(nameInput.value) + ' · Work order ' + (loadedCode ? '#' + loadedCode : displayNumber({ workOrderId: woId })));
@@ -428,6 +446,11 @@
         setText('submit-note', 'This agreement is already signed and locked.');
         return;
       }
+      /* v2.4 (Track B): without the token this page can show the
+       * agreement but cannot sign it — say so up front instead of
+       * failing only on Submit. The token arrives on the agreement
+       * link from the creation confirmation. */
+      if (!pageKey) setText('submit-note', 'To sign, open the agreement link from your appointment confirmation — this page was opened without it.');
       // Display code comes from getWorkOrder.
       var url2 = backendUrl() + '?action=getWorkOrder&workOrderId=' + encodeURIComponent(woId);
       if (apiKey()) url2 += '&apiKey=' + encodeURIComponent(apiKey());
@@ -442,7 +465,7 @@
   }
 
   global.FCPAgreement = {
-    parseWorkOrder: parseWorkOrder, agreementLink: agreementLink,
+    parseWorkOrder: parseWorkOrder, parsePageKey: parsePageKey, agreementLink: agreementLink,
     demoAgreement: demoAgreement, displayNumber: displayNumber,
     displayAppointmentBlock: displayAppointmentBlock, formatApptDate: formatApptDate,
     displayAppointment: displayAppointment,

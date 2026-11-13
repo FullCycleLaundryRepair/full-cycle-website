@@ -71,15 +71,37 @@
      * over the current services + parts. */
     var billed = num(wo.billedTotalCents) > 0;
     var total = billed ? num(wo.billedTotalCents) : num(wo.totalCents) + bt.taxCents + bt.squareFeeCents;
+    /* Deep Dive 4, Problem 19 — when billed, the services/parts split
+     * comes from the frozen billedLines (mirror of the backend's
+     * woBillBalance), not the live totals: a part added after billing
+     * must not move the rows while the total stays frozen. */
+    var servicesCents = num(wo.servicesTotalCents), partsCents = num(wo.partsTotalCents);
+    if (billed && wo.billedLines) {
+      servicesCents = 0; partsCents = 0;
+      (wo.billedLines.services || []).forEach(function (s) { servicesCents += num(s.priceCents); });
+      (wo.billedLines.parts || []).forEach(function (pp) { partsCents += num(pp.qty, 1) * num(pp.unitPriceCents); });
+    }
     return {
-      servicesCents: num(wo.servicesTotalCents),
-      partsCents: num(wo.partsTotalCents),
+      servicesCents: servicesCents,
+      partsCents: partsCents,
       taxCents: billed ? num(wo.billedTaxCents) : bt.taxCents,
       feeCents: billed ? num(wo.billedFeeCents) : bt.squareFeeCents,
       totalCents: total,
       paidCents: paid,
       balanceCents: Math.max(0, total - paid)
     };
+  }
+
+  /* Deep Dive 4, Problem 20 — the pay stage the customer still owes
+   * for: diagnosis while the diagnosis step is unpaid, else closing.
+   * The pay link carries it, so the customer lands on "Bill payment"
+   * instead of "Closing payment" before the diagnosis bill is paid. */
+  function payStage(wo) {
+    if (!wo) return 'closing';
+    var t = totalsFor(wo);
+    var diagPaid = 0;
+    (wo.payments || []).forEach(function (p) { if (p.stage === 'diagnosis') diagPaid += num(p.amountCents); });
+    return Math.max(0, t.totalCents - diagPaid) > 0 ? 'diagnosis' : 'closing';
   }
 
   function backendUrl() { return trim(CFG.BACKEND_URL); }
@@ -142,7 +164,7 @@
         + '<tr><td>Total paid</td><td>' + money(t.paidCents) + '</td></tr>'
         + '<tr class="total"><td>Balance due</td><td>' + money(t.balanceCents) + '</td></tr>';
     }
-    var pl = $('track-pay-link'); if (pl) pl.href = PAY_PAGE_URL + '?workOrder=' + encodeURIComponent(code);
+    var pl = $('track-pay-link'); if (pl) pl.href = PAY_PAGE_URL + '?workOrder=' + encodeURIComponent(code) + '&stage=' + payStage(wo);
     var al = $('track-agreement-link'); if (al) al.href = AGREEMENT_PAGE_URL + '?workOrder=' + encodeURIComponent(code);
     show($('track-result'), true);
   }
@@ -185,5 +207,5 @@
     });
   }
 
-  global.FCTrack = { normalizeCode: normalizeCode, money: money, statusLabel: statusLabel, totalsFor: totalsFor, billTotals: billTotals };
+  global.FCTrack = { normalizeCode: normalizeCode, money: money, statusLabel: statusLabel, totalsFor: totalsFor, billTotals: billTotals, payStage: payStage };
 })(typeof window !== 'undefined' ? window : global);
