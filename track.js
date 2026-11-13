@@ -143,6 +143,46 @@
     return '<table class="rows"><thead><tr><th>Payment</th><th>Amount</th></tr></thead><tbody>' + rows + '</tbody></table>';
   }
 
+
+  /* v2.5 — diagnostic report, photos, notes (James, Nov 13, 2026).
+   * Headers + values only — no admin language, no builder language.
+   * The approval is a STATE here: the track page carries no token, so
+   * the tap that records approval lives in the bill message (token-
+   * carrying link, backend woApproveDiagnosisPage / acceptReceipt).
+   * Photos are this order's only — the backend load filters by
+   * work_order_id, so another order's photos can never render here. */
+  function diagnosisHtml(wo) {
+    if (!wo.diagnosis) return '<p class="empty-note">No diagnostic report yet.</p>';
+    var t = totalsFor(wo);
+    var rows = '';
+    (wo.services || []).forEach(function (sv) { rows += '<tr><td>' + esc(sv.description) + '</td><td>' + money(sv.priceCents) + '</td></tr>'; });
+    (wo.parts || []).forEach(function (pp) { rows += '<tr><td>' + esc(pp.name) + (pp.qty > 1 ? ' \u00d7' + pp.qty : '') + '</td><td>' + money(num(pp.qty, 1) * num(pp.unitPriceCents)) + '</td></tr>'; });
+    var approval = wo.diagnosisApproved ? 'Approved' : 'Awaiting approval';
+    return '<p>' + esc(wo.diagnosis) + '</p>'
+      + (rows ? '<table class="rows"><thead><tr><th>Item</th><th>Price</th></tr></thead><tbody>' + rows + '</tbody></table>' : '')
+      + '<table class="money"><tbody>'
+      + '<tr><td>Subtotal</td><td>' + money(t.servicesCents + t.partsCents) + '</td></tr>'
+      + '<tr><td>Tax (6%)</td><td>' + money(t.taxCents) + '</td></tr>'
+      + '<tr><td>Square fee</td><td>' + money(t.feeCents) + '</td></tr>'
+      + '<tr class="total"><td>Total</td><td>' + money(t.totalCents) + '</td></tr>'
+      + '<tr><td>Approval</td><td>' + esc(approval) + '</td></tr>'
+      + '</tbody></table>';
+  }
+
+  function photosHtml(wo) {
+    var photos = wo.photos || [];
+    if (!photos.length) return '<p class="empty-note">No photos on this order yet.</p>';
+    var items = photos.map(function (ph) {
+      return '<a href="' + esc(ph.url) + '" target="_blank" rel="noopener"><img src="' + esc(ph.thumbnailUrl || ph.url) + '" alt="' + esc(ph.caption || '') + '" style="width:96px;height:96px;object-fit:cover;border-radius:8px;margin:0 8px 8px 0;border:1px solid #33413d;"></a>';
+    }).join('');
+    return '<div>' + items + '</div>';
+  }
+
+  function notesHtml(wo) {
+    if (!wo.notes) return '<p class="empty-note">No notes on this order yet.</p>';
+    return '<p>' + esc(wo.notes) + '</p>';
+  }
+
   function render(wo) {
     var code = wo.workOrderCode || wo.creationCode || '';
     setText('track-wo', 'Work Order #' + code);
@@ -151,6 +191,9 @@
     setText('track-problem', wo.problem || '—');
     setText('track-when', (wo.scheduledDateDisplay || wo.scheduledDate || '—') + (wo.scheduledTime ? ' at ' + wo.scheduledTime : ''));
     setText('track-appliance', [wo.applianceBrand, wo.applianceModel].filter(function (x) { return x; }).join(' ') || '—');
+    var dg = $('track-diagnosis'); if (dg) dg.innerHTML = diagnosisHtml(wo);
+    var ph = $('track-photos'); if (ph) ph.innerHTML = photosHtml(wo);
+    var nt = $('track-notes'); if (nt) nt.innerHTML = notesHtml(wo);
     var pe = $('track-parts'); if (pe) pe.innerHTML = partsHtml(wo);
     var pa = $('track-payments'); if (pa) pa.innerHTML = paymentsHtml(wo);
     var t = totalsFor(wo);
@@ -207,5 +250,5 @@
     });
   }
 
-  global.FCTrack = { normalizeCode: normalizeCode, money: money, statusLabel: statusLabel, totalsFor: totalsFor, billTotals: billTotals, payStage: payStage };
+  global.FCTrack = { normalizeCode: normalizeCode, money: money, statusLabel: statusLabel, totalsFor: totalsFor, billTotals: billTotals, payStage: payStage, diagnosisHtml: diagnosisHtml, photosHtml: photosHtml, notesHtml: notesHtml };
 })(typeof window !== 'undefined' ? window : global);
