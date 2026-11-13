@@ -11,6 +11,10 @@
   p { margin: 0 0 10px; }
   .dim { color: #8fa39b; font-size: 13px; }
   .foot { background: #0d0d0d; color: #8fa39b; text-align: center; font-size: 12px; padding: 12px 16px; }
+  .draft { background: #171e1b; border: 1px solid #33413d; border-radius: 10px; padding: 14px; white-space: pre-wrap; margin: 14px 0 6px; font-size: 14px; }
+  .btn { display: inline-block; text-decoration: none; font-weight: 700; padding: 12px 20px; border-radius: 10px; margin: 6px 0 2px; }
+  .btn-copper { background: #b0652f; color: #ffffff; }
+  .btn-dark { background: #2e3d38; color: #f2f2f2; padding: 9px 16px; }
 </style>
 </head>
 <body>
@@ -18,53 +22,158 @@
   <h1>Confirming your appointment…</h1>
   <p>One moment.</p>
 </div>
+<div class="card" id="fallback" style="display:none">
+  <h1>Eva didn’t open — send the text yourself</h1>
+  <p>Tap the button to copy the confirmation text and open Google Voice. It sends from your business number (248) 429-9878 — never from your personal mobile.</p>
+  <div class="draft" id="fbDraft"></div>
+  <p style="margin:14px 0 0;"><a class="btn btn-dark" id="fbCopyBtn" href="https://voice.google.com/u/0/messages">Copy text &amp; Open Google Voice</a></p>
+  <p class="dim">If the copy does not work, long-press the text above to copy it by hand.</p>
+  <p class="dim" id="fbTrack"></p>
+</div>
 <div class="foot">Full Cycle Laundry Repair &middot; (248) 429-9878</div>
 <script>
 (function () {
+  var EXEC = 'https://script.google.com/macros/s/AKfycbwwxlXIYS9NGec6nj1B9E2ojknETKj0XSKne0p0Lgh8X7-WDCP-RkpwL6aIaLMQihMt2A/exec';
+  var VOICE_URL = 'https://voice.google.com/u/0/messages';
   var q = new URLSearchParams(location.search);
   var confirmUrl = q.get('confirm') || '';
   var pref = (q.get('pref') || 'text').toLowerCase();
-  var evaUrl = q.get('eva') || '';
+  var bakedEva = q.get('eva') || '';
+  var workOrder = q.get('workOrder') || '';
+  var key = q.get('key') || '';
   var name = q.get('name') || '';
   var when = q.get('when') || '';
   var email = q.get('email') || '';
   var box = document.getElementById('msg');
+  var fb = document.getElementById('fallback');
+  var everHidden = false;
   function esc(s) {
     return String(s).replace(/[&<>"]/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
     });
   }
+  function lineHtml() {
+    return (name || when) ? '<p>' + esc(name) + (name && when ? ', ' : '') + esc(when) + '.</p>' : '';
+  }
   function show(html) { box.innerHTML = html; }
-  var line = (name || when) ? '<p>' + esc(name) + (name && when ? ', ' : '') + esc(when) + '.</p>' : '';
-  try {
-    /* Fire the confirmation to the backend: records it, and for an
-     * email-preference customer sends the confirmation email
-     * server-side. The beacon is a plain image load — no CORS read
-     * needed, the GET is sent and the backend does the work. */
-    if (confirmUrl) {
-      var img = new Image();
-      img.src = confirmUrl;
-    }
-    if (pref === 'email') {
-      show('<h1>Appointment confirmed</h1>' + line
-        + '<p>The confirmation email has been sent to ' + esc(email) + '.</p>');
-    } else if (evaUrl) {
-      show('<h1>Opening Eva…</h1>' + line
-        + '<p>Eva is opening with your confirmation text ready — you just tap Send.</p>'
-        + '<p class="dim">If Eva doesn\u2019t open, tap the Confirm link in your email again.</p>');
-      setTimeout(function () { window.location.replace(evaUrl); }, 500);
-      /* Backup: if the scripted navigation does not fire, the meta
-       * refresh retries it. */
-      var meta = document.createElement('meta');
-      meta.httpEquiv = 'refresh';
-      meta.content = '2;url=' + evaUrl;
-      document.head.appendChild(meta);
+  function draftFromEva(evaUrl) {
+    try { return new URLSearchParams((evaUrl.split('?')[1] || '')).get('text') || ''; } catch (e) { return ''; }
+  }
+  document.addEventListener('visibilitychange', function () { if (document.hidden) everHidden = true; });
+  window.addEventListener('pagehide', function () { everHidden = true; });
+
+  /* The confirmation itself is recorded by this beacon the moment the
+   * page loads — the confirm URL never goes stale (code + token), so
+   * it fires immediately, before any detail fetch. */
+  if (confirmUrl) {
+    var img = new Image();
+    img.src = confirmUrl;
+  }
+
+  /* Live details (v1.9, deep dive 3 Problem 9): the relay link bakes
+   * the draft + eva:// URL at email-build time, so after a
+   * reschedule an old email's link carries stale details. Re-fetch
+   * them live via JSONP — Apps Script sends no CORS headers, so a
+   * plain fetch cannot read the answer, but a <script> tag can.
+   * cb(null) on timeout/error; the caller falls back to the baked
+   * params, so a slow or failed fetch never blocks the auto-open. */
+  function liveDetails(timeoutMs, cb) {
+    var done = false;
+    var script = document.createElement('script');
+    var timer = setTimeout(function () { if (!done) { done = true; cb(null); } }, timeoutMs);
+    window.__fclrDetails = function (data) {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      try { document.head.removeChild(script); } catch (e) {}
+      cb(data);
+    };
+    script.onerror = function () { if (!done) { done = true; clearTimeout(timer); cb(null); } };
+    script.src = EXEC + '?action=confirmDetails&workOrder=' + encodeURIComponent(workOrder)
+      + '&key=' + encodeURIComponent(key) + '&callback=__fclrDetails';
+    document.head.appendChild(script);
+  }
+
+  function revealFallback(draft) {
+    if (draft) {
+      document.getElementById('fbDraft').textContent = draft;
+      document.getElementById('fbTrack').textContent = '';
+      var btn = document.getElementById('fbCopyBtn');
+      btn.addEventListener('click', function (ev) {
+        var go = function () { window.location.href = VOICE_URL; };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          ev.preventDefault();
+          navigator.clipboard.writeText(draft).then(go, function () { go(); });
+        } else {
+          try {
+            var ta = document.createElement('textarea');
+            ta.value = draft;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          } catch (e) {}
+          ev.preventDefault();
+          go();
+        }
+      });
     } else {
-      show('<h1>Appointment confirmed</h1>' + line
+      document.getElementById('fbDraft').textContent = 'The confirmation text could not be loaded. Open the work order to see it.';
+      document.getElementById('fbTrack').innerHTML = workOrder
+        ? 'Track it here: <a style="color:#f2f2f2" href="https://fullcyclelaundryrepair.github.io/full-cycle-website/track.html?workOrder=' + encodeURIComponent(workOrder) + '">work order ' + esc(workOrder) + '</a>.'
+        : '';
+    }
+    fb.style.display = 'block';
+  }
+
+  function openEva(evaUrl, draft) {
+    show('<h1>Opening Eva…</h1>' + lineHtml()
+      + '<p>Eva is opening with your confirmation text ready — you just tap Send.</p>'
+      + '<p class="dim">If Eva doesn\u2019t open, the text to send will appear below.</p>');
+    setTimeout(function () { window.location.replace(evaUrl); }, 500);
+    /* Fallback (v1.9, deep dive 3 Problem 12): if the page is still
+     * visible a few seconds after the nav attempt — and was never
+     * hidden, which is what happens when Eva opens and backgrounds
+     * this tab — the auto-open failed, so reveal the draft + copy
+     * button below. This is fallback-only: it never shows on the
+     * happy path. */
+    setTimeout(function () {
+      if (!everHidden && document.visibilityState === 'visible') revealFallback(draft);
+    }, 4500);
+  }
+
+  try {
+    if (pref === 'email') {
+      show('<h1>Appointment confirmed</h1>' + lineHtml()
+        + '<p>The confirmation email has been sent to ' + esc(email) + '.</p>');
+      /* No navigation to wait on here — refresh the displayed line
+       * with live details if they arrive, so a rescheduled order
+       * shows the current time, not the baked one. */
+      liveDetails(5000, function (d) {
+        if (d && d.ok) {
+          name = d.name || name;
+          when = d.when || when;
+          email = d.email || email;
+          show('<h1>Appointment confirmed</h1>' + lineHtml()
+            + '<p>The confirmation email has been sent to ' + esc(email) + '.</p>');
+        }
+      });
+    } else if (bakedEva) {
+      /* Race the live fetch against a 2.5s cap: fresh details when
+       * they arrive in time, baked params otherwise — the auto-open
+       * fires either way, inside the tap's activation window. */
+      liveDetails(2500, function (d) {
+        var evaUrl = (d && d.ok && d.evaUrl) ? d.evaUrl : bakedEva;
+        var draft = (d && d.ok && d.draft) ? d.draft : draftFromEva(bakedEva);
+        if (d && d.ok) { name = d.name || name; when = d.when || when; }
+        openEva(evaUrl, draft);
+      });
+    } else {
+      show('<h1>Appointment confirmed</h1>' + lineHtml()
         + '<p>The confirmation is recorded on the work order.</p>');
     }
   } catch (e) {
-    show('<h1>Appointment confirmed</h1>' + line
+    show('<h1>Appointment confirmed</h1>' + lineHtml()
       + '<p>The confirmation is recorded on the work order.</p>');
   }
 })();
