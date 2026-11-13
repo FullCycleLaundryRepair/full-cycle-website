@@ -16,13 +16,17 @@
 //
 // AMOUNTS (never trusted from the URL — always computed from the
 // backend work order when configured):
-//   diagnosis stage = the bill James sent: every service + part on
-//     the order, MI sales tax 6%, Square fee 3.3% + 30¢, minus what is
-//     already paid at the diagnosis step. The bill message links here,
-//     so this MUST equal the bill total. (v1.2, James, Nov 12, 2026)
-//   closing stage   = total − already paid (the balance due)
+//   diagnosis stage = the bill James sent: the frozen billed total when
+//     a bill went out, otherwise every service + part on the order, MI
+//     sales tax 6%, Square fee 3.3% + 30¢, minus what is already paid
+//     at the diagnosis step. The bill message links here, so this MUST
+//     equal the bill total. (v1.2, James, Nov 12, 2026; frozen billed
+//     total v2.1, Nov 13, 2026)
+//   closing stage   = the same bill total minus everything already paid
+//     (the balance due). The old closing amount omitted tax + fee;
+//     v2.1 charges the bill total for both stages.
 // In demo mode (no BACKEND_URL yet) the page shows the Rizk example
-// (#HD7X-000B, Diagnostic $50, Parts $0, Labor $0, Total $50) and
+// (#A7K2-001, Diagnostic $50, Parts $0, Labor $0, Total $50) and
 // says clearly that it is an example and nothing has been paid. A
 // failed load is different: it shows an error only and never renders
 // the example as if it were the customer's real work order.
@@ -54,14 +58,14 @@
   }
 
   function stageLabel(stage) {
-    return stage === 'diagnosis' ? 'Diagnosis payment' : 'Closing payment';
+    return stage === 'diagnosis' ? 'Bill payment' : 'Closing payment';
   }
 
   // What this payment is for, in plain words.
   function stageDescription(stage) {
     return stage === 'diagnosis'
-      ? 'Diagnostic visit: $50, plus parts if needed on that visit.'
-      : 'Final payment: repair labor $75, plus parts if needed.';
+      ? 'Your bill for this job — all services and parts, plus 6% tax and the Square fee.'
+      : 'Final payment: the balance left on your bill.';
   }
 
   // Bill math (v1.2, James, Nov 12, 2026) — ONE formula everywhere
@@ -77,20 +81,27 @@
   }
 
   // Amount due (cents) for a stage, from a loaded backend work order.
-  // Diagnosis: the bill — every service + part on the order, tax 6% +
-  // Square fee 3.3% + 30¢, minus what is already paid at the diagnosis
-  // step. Closing: total − paid.
+  // ONE formula everywhere (v2.1, Deep Dive 3, Problems 2 + 10): the
+  // bill total — the frozen billed total when a bill went out, otherwise
+  // services + parts + 6% tax + 3.3% Square fee + 30¢ — minus what is
+  // already paid. Diagnosis subtracts only diagnosis-stage payments;
+  // closing subtracts everything paid. The old closing amount was
+  // totalCents − paid with no tax or fee, undercharging every balance
+  // (a $170 job billed $186.45; the old page asked $65.68 after a
+  // $104.32 diagnosis payment instead of $82.13).
   function stageAmountCents(wo, stage) {
     if (!wo) return 0;
+    var billTotal = num(wo.billedTotalCents) > 0
+      ? num(wo.billedTotalCents)
+      : billTotals(num(wo.servicesTotalCents) + num(wo.partsTotalCents)).totalCents;
     if (stage === 'diagnosis') {
-      var bt = billTotals(num(wo.servicesTotalCents) + num(wo.partsTotalCents));
       var diagPaid = 0;
       (wo.payments || []).forEach(function (p) { if (p.stage === 'diagnosis') diagPaid += num(p.amountCents); });
-      return Math.max(0, bt.totalCents - diagPaid);
+      return Math.max(0, billTotal - diagPaid);
     }
     var paid = 0;
     (wo.payments || []).forEach(function (p) { paid += num(p.amountCents); });
-    return Math.max(0, num(wo.totalCents) - paid);
+    return Math.max(0, billTotal - paid);
   }
 
   // Totals row for the page, from a loaded backend work order.
@@ -99,16 +110,18 @@
     var paid = 0;
     (wo.payments || []).forEach(function (p) { paid += num(p.amountCents); });
     var bt = billTotals(num(wo.servicesTotalCents) + num(wo.partsTotalCents));
+    var billed = num(wo.billedTotalCents) > 0;
+    var billTotal = billed ? num(wo.billedTotalCents) : bt.totalCents;
     return {
       services: num(wo.servicesTotalCents),
       parts: num(wo.partsTotalCents),
       urgency: num(wo.estimateUrgencyCents),
       urgencyName: wo.urgency || 'Standard',
-      tax: bt.taxCents,
-      fee: bt.squareFeeCents,
-      total: num(wo.totalCents),
+      tax: billed ? num(wo.billedTaxCents) : bt.taxCents,
+      fee: billed ? num(wo.billedFeeCents) : bt.squareFeeCents,
+      total: billTotal,
       paid: paid,
-      due: Math.max(0, num(wo.totalCents) - paid)
+      due: Math.max(0, billTotal - paid)
     };
   }
 
@@ -120,16 +133,16 @@
       + '&stage=' + (stage === 'diagnosis' ? 'diagnosis' : 'closing');
   }
 
-  // Demo/example work order (Rizk #HD7X-000B) shown only when no
+  // Demo/example work order (Rizk #A7K2-001) shown only when no
   // backend is configured. Clearly labelled as an example on the page;
   // never presented as a live job. No street address, phone, or gate
   // code — those never belong on a public page.
   function demoWorkOrder(stage) {
     return {
-      id: 'HD7X-000B',
-      displayId: '#HD7X-000B',
-      workOrderCode: 'HD7X-000B',
-      creationCode: 'HD7X',
+      id: 'A7K2-001',
+      displayId: '#A7K2-001',
+      workOrderCode: 'A7K2-001',
+      creationCode: 'A7K2-001',
       customerName: 'Rizk',
       problem: 'Dryer — not heating',
       city: 'Waterford', state: 'MI',
@@ -149,22 +162,17 @@
     };
   }
 
-  // Display number: the work-order code (#HD7X-000B) when the job has
-  // one, otherwise the record id. Never called "work order code" on
-  // the page — it is just Work Order #… (James, Nov 7, 2026).
-  // Per-order display number: this order's own code when it has one
-  // (full code when assigned, creation half when unassigned). An old
-  // internal record id (#MMDD-NN style) is never visible text — if no
-  // code is known for this order, show '—' rather than the internal id.
+  // Display number: the work-order code (#A7K2-001) when the job has
+  // one, otherwise '—'. Never called "work order code" on the page —
+  // it is just Work Order #… (James, Nov 7, 2026). The code is shown
+  // exactly as the backend returns it (new XXXX-001 system, Nov 13,
+  // 2026; legacy codes pass through untouched). An old internal record
+  // id (#MMDD-NN style) is never visible text — if no code is known
+  // for this order, show '—' rather than the internal id.
   function displayNumber(wo) {
     if (!wo) return '—';
-    var c = function (v) { var x = trim(v).replace(/^#/, '').toUpperCase(); return /^[A-Z0-9]{4}(-[A-Z0-9]{4})?$/.test(x) ? x : ''; };
-    var full = c(wo.workOrderCode || wo.work_order_code);
-    var half = c(wo.creationCode || wo.creation_code);
-    var pro = c(wo.proCode || wo.pro_code);
-    if (full && full.indexOf('-') >= 0) return '#' + full;
-    if ((full || half) && pro && pro.indexOf('-') < 0) return '#' + (full || half) + '-' + pro;
-    var n = full || half || c(wo.displayId) || c(wo.id);
+    var c = function (v) { var x = trim(v).replace(/^#/, '').toUpperCase(); if (!x || /^\d{4}-\d{2}$/.test(x)) return ''; return x; };
+    var n = c(wo.workOrderCode || wo.work_order_code) || c(wo.creationCode || wo.creation_code) || c(wo.displayId) || c(wo.id);
     return n ? '#' + n : '—';
   }
 
@@ -272,7 +280,7 @@
         rows += '<tr><td>Part — ' + esc(p.name || p.partName || 'Part') + (p.qty ? ' × ' + p.qty : '') + '</td><td>' + money(num(p.unitPriceCents) * num(p.qty, 1)) + '</td></tr>';
       });
       if (t && t.urgency) rows += '<tr><td>Urgency (' + esc(t.urgencyName) + ')</td><td>' + money(t.urgency) + '</td></tr>';
-      if (t && stage === 'diagnosis') {
+      if (t) {
         rows += '<tr><td>Tax (6%)</td><td>' + money(t.tax) + '</td></tr>';
         rows += '<tr><td>Square fee</td><td>' + money(t.fee) + '</td></tr>';
       }

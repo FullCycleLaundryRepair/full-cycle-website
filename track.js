@@ -4,7 +4,7 @@
 // full-cycle-website/track.html?workOrder=<code>).
 //
 // WHAT THIS PAGE IS: a per-code lookup. The client types their work
-// order code (XXXX-XXXX, from the confirmation email) and sees ONLY
+// order code (A7K2-001, from the confirmation email) and sees ONLY
 // that one order: status, problem, scheduled date/time, parts, payments,
 // totals, plus links to the Pay Now and agreement pages for that order.
 // WHAT IT IS NOT: it never lists orders. There is no sign-in on this
@@ -28,13 +28,17 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
-  // The code as the client types it: "hd7x-000b", "#HD7X-000B",
-  // "HD7X 000B" all become "HD7X-000B". The backend matches the code
-  // bare or with #, so this is only for a clean display + URL.
+  // The code as the client types it: "a7k2-001", "#A7K2-001",
+  // "A7K2 001" all become "A7K2-001". Legacy codes pass through
+  // untouched too: "hd7x-000b" stays "HD7X-000B", bare "TD5W" stays
+  // "TD5W", and an internal id "#1126-01" stays "1126-01" — the
+  // backend resolves every format, so this only tidies the display
+  // + URL, never rejects a format. A dashless code just gets its dash
+  // back (7 chars = new XXXX-001, 8 chars = legacy XXXX-XXXX).
   function normalizeCode(v) {
     var c = trim(v).toUpperCase().replace(/\s+/g, '');
     if (c.charAt(0) === '#') c = c.slice(1);
-    if (/^[A-Z0-9]{8}$/.test(c)) c = c.slice(0, 4) + '-' + c.slice(4);
+    if (/^[A-Z0-9]{7,8}$/.test(c)) c = c.slice(0, 4) + '-' + c.slice(4);
     return c;
   }
 
@@ -61,14 +65,20 @@
     var paid = 0;
     (wo.payments || []).forEach(function (p) { paid += num(p.amountCents); });
     var bt = billTotals(num(wo.servicesTotalCents) + num(wo.partsTotalCents));
+    /* v2.1 — the frozen billed total wins when a bill went out (Deep Dive
+     * 3, Problem 10): the balance is the billed total minus paid, never
+     * a live recompute after parts changed. Otherwise the bill formula
+     * over the current services + parts. */
+    var billed = num(wo.billedTotalCents) > 0;
+    var total = billed ? num(wo.billedTotalCents) : num(wo.totalCents) + bt.taxCents + bt.squareFeeCents;
     return {
       servicesCents: num(wo.servicesTotalCents),
       partsCents: num(wo.partsTotalCents),
-      taxCents: bt.taxCents,
-      feeCents: bt.squareFeeCents,
-      totalCents: num(wo.totalCents),
+      taxCents: billed ? num(wo.billedTaxCents) : bt.taxCents,
+      feeCents: billed ? num(wo.billedFeeCents) : bt.squareFeeCents,
+      totalCents: total,
       paidCents: paid,
-      balanceCents: Math.max(0, num(wo.totalCents) + bt.taxCents + bt.squareFeeCents - paid)
+      balanceCents: Math.max(0, total - paid)
     };
   }
 
@@ -146,7 +156,7 @@
   function lookup(rawCode) {
     var code = normalizeCode(rawCode);
     show($('track-error'), false);
-    if (!code) { showError('Enter your work order code — it looks like XXXX-XXXX.'); return; }
+    if (!code) { showError('Enter your work order code — it looks like A7K2-001.'); return; }
     if (!backendUrl()) { showError('Tracking is not connected yet — please try again shortly.'); return; }
     var btn = $('track-btn');
     if (btn) { btn.disabled = true; btn.textContent = 'Looking up…'; }
