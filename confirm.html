@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Confirming appointment — Full Cycle Laundry Repair</title>
+<style>
+  body { background: #0d0d0d; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+  .card { background: #141414; color: #f2f2f2; max-width: 560px; margin: 0 auto; padding: 28px 20px; font-size: 15px; line-height: 1.6; }
+  h1 { margin: 0 0 14px; font-size: 22px; }
+  p { margin: 0 0 10px; }
+  .dim { color: #8fa39b; font-size: 13px; }
+  .foot { background: #0d0d0d; color: #8fa39b; text-align: center; font-size: 12px; padding: 12px 16px; }
+</style>
+</head>
+<body>
+<div class="card" id="msg">
+  <h1>Confirming your appointment…</h1>
+  <p>One moment.</p>
+</div>
+<div class="foot">Full Cycle Laundry Repair &middot; (248) 429-9878</div>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search);
+  var confirmUrl = q.get('confirm') || '';
+  var pref = (q.get('pref') || 'text').toLowerCase();
+  var evaUrl = q.get('eva') || '';
+  var name = q.get('name') || '';
+  var when = q.get('when') || '';
+  var email = q.get('email') || '';
+  var box = document.getElementById('msg');
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function show(html) { box.innerHTML = html; }
+  var line = (name || when) ? '<p>' + esc(name) + (name && when ? ', ' : '') + esc(when) + '.</p>' : '';
+  try {
+    /* Fire the confirmation to the backend: records it, and for an
+     * email-preference customer sends the confirmation email
+     * server-side. The beacon is a plain image load — no CORS read
+     * needed, the GET is sent and the backend does the work. */
+    if (confirmUrl) {
+      var img = new Image();
+      img.src = confirmUrl;
+    }
+    if (pref === 'email') {
+      show('<h1>Appointment confirmed</h1>' + line
+        + '<p>The confirmation email has been sent to ' + esc(email) + '.</p>');
+    } else if (evaUrl) {
+      show('<h1>Opening Eva…</h1>' + line
+        + '<p>Eva is opening with your confirmation text ready — you just tap Send.</p>'
+        + '<p class="dim">If Eva doesn\u2019t open, tap the Confirm link in your email again.</p>');
+      setTimeout(function () { window.location.replace(evaUrl); }, 500);
+      /* Backup: if the scripted navigation does not fire, the meta
+       * refresh retries it. */
+      var meta = document.createElement('meta');
+      meta.httpEquiv = 'refresh';
+      meta.content = '2;url=' + evaUrl;
+      document.head.appendChild(meta);
+    } else {
+      show('<h1>Appointment confirmed</h1>' + line
+        + '<p>The confirmation is recorded on the work order.</p>');
+    }
+  } catch (e) {
+    show('<h1>Appointment confirmed</h1>' + line
+      + '<p>The confirmation is recorded on the work order.</p>');
+  }
+})();
+</script>
+</body>
+</html>
