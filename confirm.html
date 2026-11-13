@@ -47,6 +47,12 @@
   var box = document.getElementById('msg');
   var fb = document.getElementById('fallback');
   var everHidden = false;
+  /* Relay fix (v2.3): the draft from the last openEva attempt, so the
+   * fallback can be revealed when the user comes back to this tab
+   * after Eva opened. Null until openEva runs — the email branch
+   * never sets it, so a return there reveals nothing. */
+  var pendingDraft = null;
+  var fallbackShown = false;
   function esc(s) {
     return String(s).replace(/[&<>"]/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
@@ -59,8 +65,23 @@
   function draftFromEva(evaUrl) {
     try { return new URLSearchParams((evaUrl.split('?')[1] || '')).get('text') || ''; } catch (e) { return ''; }
   }
-  document.addEventListener('visibilitychange', function () { if (document.hidden) everHidden = true; });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { everHidden = true; return; }
+    /* Return to the tab after the Eva attempt: the page was hidden
+     * (Eva opened and backgrounded it) and is visible again. The
+     * 4.5s timer already ran while hidden, so reveal the fallback
+     * now — draft + copy button — or a failed fill is a dead end.
+     * The relay cannot tell a failed fill from a good one; the
+     * fallback is harmless when the text already went out. */
+    if (everHidden && pendingDraft !== null) revealFallback(pendingDraft);
+  });
   window.addEventListener('pagehide', function () { everHidden = true; });
+  /* bfcache restore (back navigation): visibilitychange may not fire,
+   * so cover the same return here. everHidden is false on a fresh
+   * load, so this is a no-op until the tab has actually been hidden. */
+  window.addEventListener('pageshow', function () {
+    if (everHidden && pendingDraft !== null) revealFallback(pendingDraft);
+  });
 
   /* The confirmation itself is recorded by this beacon the moment the
    * page loads — the confirm URL never goes stale (code + token), so
@@ -95,6 +116,11 @@
   }
 
   function revealFallback(draft) {
+    /* Idempotent: the 4.5s timer and the return-to-tab handler can
+     * both fire for the same attempt — never wire the copy button
+     * twice. */
+    if (fallbackShown) return;
+    fallbackShown = true;
     if (draft) {
       document.getElementById('fbDraft').textContent = draft;
       document.getElementById('fbTrack').textContent = '';
@@ -127,6 +153,7 @@
   }
 
   function openEva(evaUrl, draft) {
+    pendingDraft = draft;
     show('<h1>Opening Eva…</h1>' + lineHtml()
       + '<p>Eva is opening with your confirmation text ready — you just tap Send.</p>'
       + '<p class="dim">If Eva doesn\u2019t open, the text to send will appear below.</p>');

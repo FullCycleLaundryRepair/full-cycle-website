@@ -26,7 +26,7 @@
 // detail in the URL. The page loads the job from the backend
 // (getAgreement + getWorkOrder) when configured.
 // In demo mode (no BACKEND_URL yet) the page shows the Rizk example
-// (#HD7X-000B, Diagnostic $50, Parts $0, Labor $0, Total $50) and
+// (#A7K2-001, Diagnostic $50, Parts $0, Labor $0, Total $50) and
 // says clearly that it is an example: signing there sends nothing.
 // A failed load is different: it shows an error panel only and never
 // renders the example, and never leaves a live submit path on a demo.
@@ -53,16 +53,16 @@
     return AGREEMENT_PAGE_URL + '?workOrder=' + encodeURIComponent(trim(workOrderId));
   }
 
-  // Demo/example agreement (Rizk #HD7X-000B) shown only when no
+  // Demo/example agreement (Rizk #A7K2-001) shown only when no
   // backend is configured. Clearly labelled as an example on the page;
   // never presented as a live job. No street address, phone, or gate
   // code — those never belong on a public page.
   function demoAgreement() {
     return {
-      workOrderId: 'HD7X-000B',
-      displayId: '#HD7X-000B',
-      workOrderCode: 'HD7X-000B',
-      creationCode: 'HD7X',
+      workOrderId: 'A7K2-001',
+      displayId: '#A7K2-001',
+      workOrderCode: 'A7K2-001',
+      creationCode: 'A7K2-001',
       customerName: 'Rizk',
       phone: '', email: '',
       address: 'Waterford, MI',
@@ -75,25 +75,24 @@
     };
   }
 
-  // Display number: the work-order code (#HD7X-000B) when the job has
-  // one, otherwise the record id. Never called "work order code" on
-  // the page — it is just Work Order #… (James, Nov 7, 2026).
-  // Per-order display number: this order's own code when it has one
-  // (full code when assigned, creation half when unassigned). An old
-  // internal record id (#MMDD-NN style) is never visible text — if no
-  // code is known for this order, show '—' rather than the internal id.
+  // Display number: the work-order code (#A7K2-001) when the job has
+  // one, otherwise '—'. Never called "work order code" on the page —
+  // it is just Work Order #… (James, Nov 7, 2026). The code is shown
+  // exactly as the backend returns it (new XXXX-001 system, Nov 13,
+  // 2026; legacy codes pass through untouched). An old internal record
+  // id (#MMDD-NN style) is never visible text — if no code is known
+  // for this order, show '—' rather than the internal id.
   function codeOf(v) {
     var c = trim(v).replace(/^#/, '').toUpperCase();
-    return /^[A-Z0-9]{4}(-[A-Z0-9]{4})?$/.test(c) ? c : '';
+    if (!c) return '';
+    if (/^\d{4}-\d{2}$/.test(c)) return ''; // internal record id, lookup key only
+    return c;
   }
   function displayNumber(ag) {
     if (!ag) return '—';
-    var full = codeOf(ag.workOrderCode || ag.work_order_code);
-    var half = codeOf(ag.creationCode || ag.creation_code);
-    var pro = codeOf(ag.proCode || ag.pro_code);
-    if (full && full.indexOf('-') >= 0) return '#' + full;
-    if ((full || half) && pro && pro.indexOf('-') < 0) return '#' + (full || half) + '-' + pro;
-    var c = full || half || codeOf(ag.displayId) || codeOf(ag.workOrderId);
+    var c = codeOf(ag.workOrderCode || ag.work_order_code)
+      || codeOf(ag.creationCode || ag.creation_code)
+      || codeOf(ag.displayId) || codeOf(ag.workOrderId);
     return c ? '#' + c : '—';
   }
 

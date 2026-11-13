@@ -33,9 +33,19 @@
   @media (min-width: 640px) { main { padding-left: 16px; padding-right: 16px; } }
   .header-band {
     margin-bottom: 8px; overflow: hidden; border-radius: 8px;
-    background: #0d0d0d; text-align: center;
+    background: #0d0d0d; display: flex; align-items: center; justify-content: center;
+    gap: 14px; padding: 12px 16px;
   }
-  .header-band img { display: block; margin: 0 auto; height: auto; width: min(560px, 100%); }
+  .header-band img { display: block; height: 147px; width: auto; flex: none; }
+  .header-band .brand-name { display: flex; flex-direction: column; justify-content: center; line-height: 1.05; }
+  .header-band .brand-fc { display: block; font-family: "Barlow Condensed", "Arial Narrow", sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: .01em; color: var(--copper); font-size: 60px; }
+  .header-band .brand-lr { display: block; font-family: "Barlow Condensed", "Arial Narrow", sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: .01em; color: var(--accent); font-size: 30px; }
+  @media (max-width: 560px) {
+    .header-band { gap: 10px; padding: 10px 12px; }
+    .header-band img { height: 84px; }
+    .header-band .brand-fc { font-size: 34px; }
+    .header-band .brand-lr { font-size: 17px; }
+  }
   .panel {
     border-top: 6px solid var(--accent); background: var(--surface);
     padding: 20px 16px 24px;
@@ -99,17 +109,18 @@
 <body>
 <main>
   <div class="header-band">
-    <img src="logo-v11.png" alt="Full Cycle Laundry Repair" width="1600" height="560">
+    <img src="logo-laundry-repair.png" alt="Full Cycle Laundry Repair" width="640" height="640">
+    <div class="brand-name"><span class="brand-fc">Full Cycle</span><span class="brand-lr">Laundry Repair</span></div>
   </div>
 
   <div class="panel" id="track-panel">
     <h2>Track Your Work Order</h2>
-    <p class="muted" style="margin-top:0">Enter the work order code from your confirmation email — it looks like XXXX-XXXX. Only your order is shown; there is no list of orders here.</p>
+    <p class="muted" style="margin-top:0">Enter the work order code from your confirmation email — it looks like A7K2-001. Only your order is shown; there is no list of orders here.</p>
 
     <div class="lookup-row">
       <div class="grow">
         <label class="field-label" for="track-code">Work order code</label>
-        <input id="track-code" placeholder="XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <input id="track-code" placeholder="A7K2-001" autocomplete="off" autocapitalize="characters" spellcheck="false">
       </div>
       <button type="button" class="btn-primary" id="track-btn">Look up</button>
     </div>

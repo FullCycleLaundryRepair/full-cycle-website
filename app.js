@@ -92,16 +92,32 @@
     return { start: start, end: (end !== null && end > start) ? end : start + 120 };
   }
 
-  // ISO timestamp from the backend's CalendarApp events -> "9:00 AM".
+  // ISO timestamp from the backend's calendar events -> "9:00 AM".
+  // Calendar events are Michigan (Eastern) times: the Advanced path
+  // returns dateTime with a -05:00/-04:00 offset and the CalendarApp
+  // fallback returns UTC (.toISOString()). Either way the wall clock
+  // that matters is Eastern, NOT the viewer's local timezone — the
+  // old getHours() version shifted every block by the viewer's UTC
+  // offset (a UTC viewer saw an 8 AM ET event as 1 PM, which broke
+  // the day note / busy-block merge tests and would mis-block slots
+  // for any customer outside ET). Format the instant in
+  // America/Detroit so the result is identical in every timezone
+  // (and EST/EDT is handled by the zone, not a hardcoded offset).
   function isoToTimeText(iso) {
     if (!iso) return '';
     var d = new Date(iso);
     if (isNaN(d.getTime())) return '';
-    var h = d.getHours();
-    var ap = h >= 12 ? 'PM' : 'AM';
-    var h12 = h % 12; if (h12 === 0) h12 = 12;
-    var mm = d.getMinutes();
-    return h12 + ':' + (mm < 10 ? '0' : '') + mm + ' ' + ap;
+    try {
+      return new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Detroit', hour: 'numeric', minute: '2-digit', hour12: true
+      }).format(d);
+    } catch (e) {
+      var h = d.getHours();
+      var ap = h >= 12 ? 'PM' : 'AM';
+      var h12 = h % 12; if (h12 === 0) h12 = 12;
+      var mm = d.getMinutes();
+      return h12 + ':' + (mm < 10 ? '0' : '') + mm + ' ' + ap;
+    }
   }
 
   // --- Appointment block display (James, Nov 7, 2026) ----------------------
@@ -343,6 +359,41 @@
     return busyBlocks;
   }
 
+  // Merge consecutive busy 2-hour blocks into one display range
+  // (James, Nov 13, 2026): a day-job stretch (8 AM–4 PM) shows as ONE
+  // "8:00 AM–4:00 PM — Not available" block, not four separate blocked
+  // 2-hour buttons. Free blocks stay individual 2-hour buttons; a lone
+  // busy block renders as itself. Display-only — computeBusyBlocks
+  // stays the canonical per-block busy map.
+  function mergedDisplayBlocks(busyBlocks) {
+    var busy = busyBlocks || {};
+    var out = [];
+    var i = 0;
+    while (i < TIME_BLOCKS.length) {
+      var b = TIME_BLOCKS[i];
+      if (!busy[b]) { out.push({ label: b, busy: false, blocks: [b] }); i++; continue; }
+      var j = i;
+      while (j + 1 < TIME_BLOCKS.length && busy[TIME_BLOCKS[j + 1]]) j++;
+      var startBlk = parseTimeBlock(TIME_BLOCKS[i]);
+      var endBlk = parseTimeBlock(TIME_BLOCKS[j]);
+      // A lone busy block keeps its original TIME_BLOCKS label
+      // ("8:00-10:00 AM"); only a run of 2+ gets the merged range label.
+      if (j === i) {
+        out.push({ label: TIME_BLOCKS[i], busy: true, blocks: [TIME_BLOCKS[i]] });
+        i = j + 1;
+        continue;
+      }
+      var startTxt = minutesToTimeText(startBlk.start);
+      var endTxt = minutesToTimeText(endBlk.end);
+      var label = startTxt.slice(-2) === endTxt.slice(-2)
+        ? startTxt.slice(0, -3) + '–' + endTxt
+        : startTxt + '–' + endTxt;
+      out.push({ label: label, busy: true, blocks: TIME_BLOCKS.slice(i, j + 1) });
+      i = j + 1;
+    }
+    return out;
+  }
+
   // Busy blocks are not selectable (James, Nov 7, 2026): disable the
   // time-select option for every busy block, and clear the pick if the
   // block just picked turned out busy. Free blocks stay selectable.
@@ -369,11 +420,11 @@
   function blockPickerHtml(busyBlocks, selectedTime) {
     var busy = busyBlocks || {};
     var sel = trim(selectedTime);
-    return TIME_BLOCKS.map(function (b) {
-      var isBusy = !!busy[b];
-      var isSel = !isBusy && sel === b;
-      return '<button type="button" class="block-btn' + (isSel ? ' sel' : '') + '" data-block="' + b + '"' +
-        (isBusy ? ' disabled' : '') + '>' + b + (isBusy ? ' — Not available' : '') + '</button>';
+    return mergedDisplayBlocks(busy).map(function (d) {
+      var isSel = !d.busy && sel === d.label;
+      var dataBlock = d.blocks.length === 1 ? d.blocks[0] : d.label;
+      return '<button type="button" class="block-btn' + (isSel ? ' sel' : '') + '" data-block="' + dataBlock + '"' +
+        (d.busy ? ' disabled' : '') + '>' + d.label + (d.busy ? ' — Not available' : '') + '</button>';
     }).join('');
   }
 
@@ -399,8 +450,8 @@
     if (!anyBusy) {
       html += '<span class="ok">Nothing booked that day — all times are open.</span><br>';
     }
-    html += '<div>' + TIME_BLOCKS.map(function (b) {
-      return b + ' — ' + (busyBlocks[b] ? 'Not available' : 'Free');
+    html += '<div>' + mergedDisplayBlocks(busyBlocks).map(function (d) {
+      return d.label + ' — ' + (d.busy ? 'Not available' : 'Free');
     }).join('<br>') + '</div>';
     if (!calendarConnected) {
       html += '<div class="muted">(Work calendar couldn\'t be read just now — showing booked work orders only.)</div>';
@@ -473,7 +524,6 @@
         displayId: wo.displayId || wo.id || null,
         creationCode: wo.creationCode || wo.creation_code || null,
         workOrderCode: wo.workOrderCode || wo.work_order_code || null,
-        proCode: wo.proCode || wo.pro_code || null,
         agreementToken: wo.agreementToken || wo.agreement_token || null,
         sentToBackend: true,
         confirmationMessage: 'queued — ready, not sent yet',
@@ -540,7 +590,7 @@
     if (!trim(CFG.BACKEND_URL)) {
       var record = { payload: payload, savedAt: new Date().toISOString(), sentToBackend: false };
       saveLocal(record);
-      return Promise.resolve({ ok: true, mode: 'demo', displayId: trim(workOrderId), workOrderCode: codeOf(trim(workOrderId)) ? trim(workOrderId).replace(/^#/, '').toUpperCase() : null, creationCode: null, sentToBackend: false, confirmationMessage: 'queued — ready, not sent yet', record: record });
+      return Promise.resolve({ ok: true, mode: 'demo', displayId: trim(workOrderId), workOrderCode: codeOf(trim(workOrderId)) || null, creationCode: null, sentToBackend: false, confirmationMessage: 'queued — ready, not sent yet', record: record });
     }
     var body = { action: 'setRepairAppointment', workOrderId: trim(workOrderId), scheduledDate: date, scheduledTime: time };
     if (CFG.WO_API_KEY) body.apiKey = CFG.WO_API_KEY;
@@ -550,7 +600,7 @@
     }).then(function (r) { return r.json(); }).then(function (res) {
       if (!res || !res.ok) throw new Error((res && res.error) || 'Backend returned an error.');
       var wo = res.workOrder || {};
-      var out = { ok: true, mode: 'live', displayId: wo.displayId || wo.id || trim(workOrderId), workOrderCode: wo.workOrderCode || wo.work_order_code || null, creationCode: wo.creationCode || wo.creation_code || null, proCode: wo.proCode || wo.pro_code || null, sentToBackend: true, confirmationMessage: 'Repair appointment set.', record: wo };
+      var out = { ok: true, mode: 'live', displayId: wo.displayId || wo.id || trim(workOrderId), workOrderCode: wo.workOrderCode || wo.work_order_code || null, creationCode: wo.creationCode || wo.creation_code || null, sentToBackend: true, confirmationMessage: 'Repair appointment set.', record: wo };
       return fillMissingCode(out, out.displayId);
     }).catch(function (e) {
       return { ok: false, error: 'Could not reach the backend: ' + e.message + ' — nothing was booked. Your date and time are still on this screen; try again.' };
@@ -558,29 +608,30 @@
   }
 
 
-  // --- Work-order display number (James, Nov 7, 2026) --------------------
-  // Every work order keeps its OWN code — the FORMAT (#XXXX-XXXX) is what
-  // applies everywhere, never one hard-coded code. Displayed number comes
-  // from THAT order's live data: full workOrderCode when assigned, the
-  // creation half (creationCode) only when unassigned. An old internal
-  // record id (#MMDD-NN style) is NEVER visible text — it stays a lookup
-  // key only. Returns '' when no code is known for this order.
+  // --- Work-order display number (James, Nov 13, 2026) --------------------
+  // NEW simple system: every work order has ONE code, XXXX-001 (four
+  // random uppercase alphanumerics, dash, 001 — James, employee 001).
+  // The backend stores that full code in BOTH workOrderCode and
+  // creationCode; proCode is always '' and is ignored entirely. The
+  // display is the code exactly as the backend returns it, with a '#'
+  // prefix. Old codes still resolve through the backend (bare 4-char
+  // legacy code, Plus-style XXXX-XXXX, internal #MMDD-NN id) and are
+  // passed through untouched — but an internal record id (#MMDD-NN
+  // style) is NEVER visible text; it stays a lookup key only. codeOf
+  // accepts any code string and rejects only the internal-id shape,
+  // so no legacy format is ever rejected client-side. Returns '' when
+  // no code is known for this order.
   function codeOf(v) {
     var c = trim(v).replace(/^#/, '').toUpperCase();
-    return /^[A-Z0-9]{4}(-[A-Z0-9]{4})?$/.test(c) ? c : '';
+    if (!c) return '';
+    if (/^\d{4}-\d{2}$/.test(c)) return ''; // internal record id, lookup key only
+    return c;
   }
   function displayWorkOrderNumber(wo) {
     if (!wo) return '';
-    var full = codeOf(wo.workOrderCode || wo.work_order_code);
-    var half = codeOf(wo.creationCode || wo.creation_code);
-    var pro = codeOf(wo.proCode || wo.pro_code);
-    // Backend may store the halves apart (creation half in
-    // workOrderCode/creationCode, Pro half in proCode): the full number
-    // for THIS order is half + '-' + pro half. A bare half alone means
-    // the order is unassigned, so only the half shows.
-    if (full && full.indexOf('-') >= 0) return '#' + full;
-    if ((full || half) && pro && pro.indexOf('-') < 0) return '#' + (full || half) + '-' + pro;
-    var c = full || half || codeOf(wo.displayId) || codeOf(wo.id);
+    var c = codeOf(wo.workOrderCode || wo.work_order_code)
+      || codeOf(wo.creationCode || wo.creation_code)
+      || codeOf(wo.displayId) || codeOf(wo.id);
     return c ? '#' + c : '';
   }
   function displayWorkOrderNumberFromResult(res) {
@@ -603,7 +654,7 @@
       return Promise.resolve(global.fetch(url)).then(function (r) { return r.json(); }).then(function (j) {
         var w = (j && j.ok && j.workOrder) || null;
         if (!w) return null;
-        return { workOrderCode: w.workOrderCode || w.work_order_code || null, creationCode: w.creationCode || w.creation_code || null, proCode: w.proCode || w.pro_code || null, record: w };
+        return { workOrderCode: w.workOrderCode || w.work_order_code || null, creationCode: w.creationCode || w.creation_code || null, record: w };
       }).catch(function () { return null; });
     } catch (e) { return Promise.resolve(null); }
   }
@@ -613,7 +664,6 @@
       if (c) {
         if (c.workOrderCode) result.workOrderCode = c.workOrderCode;
         if (c.creationCode) result.creationCode = c.creationCode;
-        if (c.proCode) result.proCode = c.proCode;
         if (c.record) result.record = c.record;
       }
       return result;
@@ -632,7 +682,7 @@
   // Demo-mode example (no backend yet): Rizk, the same example the Pay Now
   // page shows. City/state only — no street address, no gate code, no phone.
   var RIZK_EXAMPLE = {
-    id: '#HD7X-000B', displayId: '#HD7X-000B', workOrderCode: 'HD7X-000B', creationCode: 'HD7X', customerName: 'Rizk',
+    id: '#A7K2-001', displayId: '#A7K2-001', workOrderCode: 'A7K2-001', creationCode: 'A7K2-001', customerName: 'Rizk',
     firstName: '', lastName: 'Rizk', phone: '', email: '',
     street: '', city: 'Waterford', state: 'MI', zip: '',
     address: 'Waterford, MI', accessNotes: '',
@@ -949,7 +999,7 @@
 
   // What the confirmation says about the send, by how the appointment
   // confirmation actually went out. The customer gets ONE confirmation
-  // (email thread "Work order XXXX-XXXX — Full Cycle Laundry Repair",
+  // (email thread "Work order A7K2-001 — Full Cycle Laundry Repair",
   // or a text) with the work order code + track link — no payment ask,
   // no receipt, nothing due yet. The diagnostic is paid after the visit.
   function confirmationSentText(res) {
@@ -993,9 +1043,9 @@
     }
     /* v25 (James): no name / when / contact recap below the Create button —
        the confirmation keeps only the work-order number, code note, sent
-       status and agreement line. The number is shown ONLY as the full
-       "Work order #HD7X-000B" — never "work order code", never a bare
-       creation half. */
+       status and agreement line. The number is shown ONLY as
+       "Work order #A7K2-001" — never "work order code", never a bare
+       fragment of the code. */
     if (dispNum) {
       set('conf-code-note', 'Work order ' + dispNum);
     }
@@ -1037,6 +1087,7 @@
     preferredContactFromDom: preferredContactFromDom,
     zipToCity: zipToCity, parseTimeBlock: parseTimeBlock, TIME_BLOCKS: TIME_BLOCKS,
     dayScheduleHtml: dayScheduleHtml, computeBusyBlocks: computeBusyBlocks,
+    mergedDisplayBlocks: mergedDisplayBlocks,
     blockPickerHtml: blockPickerHtml, confirmationSentText: confirmationSentText,
     setPrefTiles: setPrefTiles, submitWorkOrder: submitWorkOrder,
     parseRepairQuery: parseRepairQuery,
