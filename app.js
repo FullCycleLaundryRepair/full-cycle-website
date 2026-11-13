@@ -148,7 +148,7 @@
 
   // --- Validation ----------------------------------------------------------
   // Mandatory: first name, last name, phone, street address, city, state,
-  // zip. Email is optional. Returns the first failing message, or ''.
+  // zip, problem. Email is optional. Returns the first failing message, or ''.
   function validateForm(d) {
     if (!trim(d.firstName) || !trim(d.lastName)) return 'First and last name are required.';
     if (!trim(d.phone)) return 'Phone number is required.';
@@ -156,7 +156,17 @@
     if (!trim(d.city)) return 'City is required.';
     if (!trim(d.state)) return 'State is required.';
     if (!trim(d.zip)) return 'Zip is required.';
+    if (!trim(d.problem)) return 'Problem is required.';
     return '';
+  }
+
+  // Today's date in local time (YYYY-MM-DD) — whatever day the customer
+  // opens the page, not a fixed date. Pure, so it can be tested headlessly.
+  function todayLocalISO() {
+    var n = new Date();
+    var m = String(n.getMonth() + 1).padStart(2, '0');
+    var d = String(n.getDate()).padStart(2, '0');
+    return n.getFullYear() + '-' + m + '-' + d;
   }
 
   // --- Platform terms (audit item 26, Nov 8, 2026) -------------------------
@@ -752,6 +762,17 @@
     if (ptClear) ptClear.addEventListener('click', ptClearPad);
     if (ptCheck) ptCheck.addEventListener('change', ptUpdate);
     if (ptName) ptName.addEventListener('input', ptUpdate);
+    /* Terms of Service toggle: the legal text is collapsed by default;
+     * the button opens it. The checkbox + typed name + signature stay
+     * visible outside the collapsed area. */
+    var termsBtn = document.getElementById('terms-toggle-btn');
+    var termsBody = document.getElementById('terms-body');
+    if (termsBtn && termsBody) termsBtn.addEventListener('click', function () {
+      var open = termsBody.hasAttribute('hidden');
+      if (open) termsBody.removeAttribute('hidden'); else termsBody.setAttribute('hidden', '');
+      termsBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      termsBtn.textContent = open ? 'Hide Terms of Service' : 'Read Terms of Service';
+    });
     ptUpdate();
 
     /* Repair-booking mode (v1.9): ?workOrder=<id>&step=repair from the Parts
@@ -827,6 +848,15 @@
     }
     if (dateEl) dateEl.addEventListener('change', refreshDayNote);
     if (timeEl) timeEl.addEventListener('change', refreshDayNote);
+
+    /* Default the date to today, shown washed out until the customer
+     * picks another day — today is whatever day they open the page. */
+    if (dateEl && !dateEl.value) {
+      dateEl.value = todayLocalISO();
+      dateEl.classList.add('date-default');
+      refreshDayNote();
+    }
+    if (dateEl) dateEl.addEventListener('change', function () { dateEl.classList.remove('date-default'); });
     /* Tapping a free block fills the scheduled time field (and the
        select stays the value that is submitted). A busy block is
        disabled in the picker, so it cannot be picked. */
@@ -1016,6 +1046,7 @@
     displayAppointment: displayAppointment,
     repairDetailsHtml: repairDetailsHtml,
     RIZK_EXAMPLE: RIZK_EXAMPLE,
-    loadSaved: loadSaved
+    loadSaved: loadSaved,
+    todayLocalISO: todayLocalISO
   };
 })(typeof window !== 'undefined' ? window : globalThis);
