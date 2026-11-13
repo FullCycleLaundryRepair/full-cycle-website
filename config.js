@@ -29,7 +29,7 @@ window.FCP_CONFIG = {
   // calls without a key are accepted), so this stays empty until a
   // key is set on the backend via setGithubProps — then paste the
   // same value here. Never put a real key in a public repo.
-  WO_API_KEY: '',
+  WO_API_KEY: 'c8b721f7a5c65cb40b392ce051a22e6c34053b710c7840b7',
 
   // Service area — the page serves Michigan; State defaults to MI.
   DEFAULT_STATE: 'MI',
