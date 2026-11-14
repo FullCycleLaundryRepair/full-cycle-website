@@ -4,6 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pay Now — Full Cycle Laundry Repair</title>
+<!-- SPEED (v2.10.8, Nov 14, 2026 — James: the card fields took ~15s
+     to appear). The 487KB Square SDK script is preloaded here so
+     pay.js's loadSquareSdk() finds it in cache instead of fetching
+     it after both backend round trips. Preload only fetches — it
+     does not execute — so if the backend ever reports a non-sandbox
+     environment, the preloaded script is simply never used.
+     Preconnects warm the two origins the page fetches from before
+     any JS runs. -->
+<link rel="preconnect" href="https://sandbox.web.squarecdn.com">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preload" as="script" href="https://sandbox.web.squarecdn.com/v1/square.js">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap');
   :root {

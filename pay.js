@@ -398,6 +398,9 @@
   // were the customer's real work order. Details stay blank, the
   // amount stays blank, and Pay Now stays disabled.
   function renderLoadError(note) {
+    // v2.10.8: a failed load must also clear the early card-loading
+    // state (no-op when the card section was never shown).
+    hideCardLoading();
     setText('pay-wo', 'Work Order —');
     setText('pay-customer', '—');
     setText('pay-problem', '—');
@@ -582,12 +585,44 @@
   // Leaves the card section alone — if showCardUnavailable already put
   // its note up, it stays visible.
   function enableLinkPay(note) {
+    // v2.10.8: if the card form never attached, the early loading
+    // note is still up — clear it (unless showCardUnavailable already
+    // replaced it with its own note, which hideCardLoading leaves
+    // alone) so the customer never stares at a stale "Loading…".
+    hideCardLoading();
     payMode = 'link';
     cardHandle = null;
     setStepText('link');
     var btn = el('pay-now-btn');
     if (btn) btn.textContent = 'Pay Now with Square';
     setSquareState('ready', note || 'Pay securely with Square — your card details go straight to Square, never to us.');
+  }
+
+  // SPEED (v2.10.8, Nov 14, 2026 — James: the card fields took ~15s
+  // to appear). The loading note below is shown the moment the page
+  // starts fetching, so the customer sees the card form is coming
+  // instead of a page with no card area at all while the SDK sets
+  // up. hideCardLoading() clears it only while it is still the
+  // loading text — showCardUnavailable's honest note (different
+  // text) is left alone, so the fallback message stays visible.
+  var CARD_LOADING_NOTE = 'Loading the secure card form…';
+  function hideCardLoading() {
+    var n = el('card-note');
+    if (n && n.textContent === CARD_LOADING_NOTE) {
+      show('card-section', false);
+      setText('card-note', '');
+    }
+  }
+
+  // Pure decision: should the embedded card form start? (v2.10.8 —
+  // extracted from the old inline status branch so the parallel
+  // restructure keeps the exact same decision, testable headlessly.)
+  // The environment is NOT checked here — loadSquareSdk only loads
+  // the sandbox SDK (squareSdkUrl returns null otherwise), so a
+  // non-sandbox backend still falls back to the payment link.
+  function shouldStartEmbeddedCard(status, amt) {
+    return !!(status && status.ok && status.configured && status.cardPayments
+      && status.appId && status.locationId && amt > 0);
   }
 
   // Render Square's card form into #card-container and switch the Pay
@@ -724,6 +759,51 @@
     }
 
     setText('pay-amount', 'Loading…');
+    // SPEED (v2.10.8, Nov 14, 2026 — James: the card fields took
+    // ~15s to appear). Measured Nov 14, 2026 (curl, 3 rounds, this
+    // VM): pay.html ~0.4s, Square SDK script ~0.3–0.6s,
+    // getWorkOrder ~5.1s, getSquareStatus ~2.4s. The old flow ran
+    // those two Apps Script calls SEQUENTIALLY — order, then status,
+    // then the SDK script — ~7.5s of backend round trips before the
+    // SDK even started loading, plus card()/attach() and the iframe
+    // bootstrap on top, which is how a cold load reached ~15s. The
+    // two calls are independent — getSquareStatus needs nothing
+    // from the work order — so they now run in PARALLEL and the
+    // card form starts as soon as BOTH have answered. The 487KB
+    // SDK script is preloaded in pay.html <head>, so
+    // loadSquareSdk's appended <script> hits the cache. The card
+    // section also shows immediately with a loading note, so the
+    // page never looks like it has no card form while the SDK is
+    // still setting up.
+    show('card-section', true);
+    setText('card-note', CARD_LOADING_NOTE);
+    // State shared by the two parallel calls. maybeStartCard runs
+    // the exact decision the old sequential flow made (same
+    // branches, same messages) — only once both have answered.
+    var wo = null;
+    var amt = 0;
+    var orderLoaded = false;
+    var statusResult = null;
+    var statusLoaded = false;
+    function maybeStartCard() {
+      if (!orderLoaded || !statusLoaded) return;
+      var s = statusResult;
+      if (amt <= 0) {
+        hideCardLoading();
+        setSquareState('error', 'Nothing is due for this step — no payment needed.');
+      } else if (shouldStartEmbeddedCard(s, amt)) {
+        loadSquareSdk(squareSdkUrl(s.environment), function (loaded) {
+          if (loaded) initEmbeddedCard(s, wo, stage, amt);
+          else enableLinkPay('Card fields could not load — Pay Now opens Square’s secure checkout instead.');
+        });
+      } else if (s && s.ok && s.configured) {
+        showCardUnavailable('Card payments on this page are not set up yet — use Pay Now below to pay on Square’s secure checkout.');
+        enableLinkPay('Pay securely with Square — your card details go straight to Square, never to us.');
+      } else {
+        hideCardLoading();
+        setSquareState('not-configured', 'Square is not set up yet — the payment link will appear here once Square is connected. No payment has been taken.');
+      }
+    }
     // getWorkOrder is a GET: build it directly (callBackend only POSTs
     // with a body, so the GET goes here). cache: no-store — the page
     // must show the live order every open (a bill sent after the
@@ -735,31 +815,12 @@
         renderLoadError('We could not load that work order. Please use the Pay Now link in your receipt email, or call (248) 429-9878.');
         return;
       }
-      var wo = j.workOrder;
+      wo = j.workOrder;
       if (!stageGiven) stage = stageForOrder(wo);
       render(wo, stage);
-      var amt = stageAmountCents(wo, stage);
-      // Check Square before enabling Pay Now. v2.8: when the backend
-      // says card payments are ready (configured + Application ID +
-      // sandbox), load Square's SDK and render the card form on this
-      // page; otherwise the Pay Now button pays via the Square link.
-      callBackend('getSquareStatus', null, function (s) {
-        if (amt <= 0) {
-          setSquareState('error', 'Nothing is due for this step — no payment needed.');
-        } else if (s && s.ok && s.configured) {
-          if (s.cardPayments && s.appId && s.locationId) {
-            loadSquareSdk(squareSdkUrl(s.environment), function (loaded) {
-              if (loaded) initEmbeddedCard(s, wo, stage, amt);
-              else enableLinkPay('Card fields could not load — Pay Now opens Square’s secure checkout instead.');
-            });
-          } else {
-            showCardUnavailable('Card payments on this page are not set up yet — use Pay Now below to pay on Square’s secure checkout.');
-            enableLinkPay('Pay securely with Square — your card details go straight to Square, never to us.');
-          }
-        } else {
-          setSquareState('not-configured', 'Square is not set up yet — the payment link will appear here once Square is connected. No payment has been taken.');
-        }
-      });
+      amt = stageAmountCents(wo, stage);
+      orderLoaded = true;
+      maybeStartCard();
       var btn = el('pay-now-btn');
       if (btn) btn.onclick = function () {
         if (payMode === 'embedded' && cardHandle) { payWithCard(cardHandle, wo, stage); return; }
@@ -790,6 +851,15 @@
     }).catch(function () {
       renderLoadError('We could not reach the payment page backend. No payment has been taken — please call (248) 429-9878.');
     });
+    // Parallel with the order fetch (v2.10.8): getSquareStatus needs
+    // nothing from the work order, so it no longer waits ~5s for the
+    // order call to finish first. Read-only — safe to run even if
+    // the order fetch fails (maybeStartCard simply never fires then).
+    callBackend('getSquareStatus', null, function (s) {
+      statusResult = s;
+      statusLoaded = true;
+      maybeStartCard();
+    });
   }
 
   global.FCPPay = {
@@ -797,7 +867,7 @@
     stageAmountCents: stageAmountCents, stageForOrder: stageForOrder, totalsFor: totalsFor, payLink: payLink,
     billTotals: billTotals,
     squareSdkUrl: squareSdkUrl, isCardNonce: isCardNonce, chargeCardPayload: chargeCardPayload,
-    cardFormStyle: cardFormStyle,
+    cardFormStyle: cardFormStyle, shouldStartEmbeddedCard: shouldStartEmbeddedCard,
     cardErrorText: cardErrorText, chargeErrorText: chargeErrorText,
     demoWorkOrder: demoWorkOrder, displayNumber: displayNumber, money: money,
     displayAppointmentBlock: displayAppointmentBlock, formatApptDate: formatApptDate,
