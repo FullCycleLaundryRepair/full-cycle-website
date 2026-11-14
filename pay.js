@@ -455,7 +455,7 @@
   // page (Nov 14: the form never rendered, "Card fields could not
   // load"). The card area's background comes from `input`'s
   // backgroundColor instead — the SDK maps that onto the iframe
-  // container — so the dark #171e1b surface lives there. Never put
+  // container — so the field surface lives there. Never put
   // backgroundColor (or anything else) back on `.input-container`.
   //
   // FONT-FAMILY ALLOWLIST (same SDK source, Nov 14, 2026 — the
@@ -467,9 +467,31 @@
   // never rendered, even after the backgroundColor fix. The stack
   // below uses only allowlisted families (Helvetica Neue, Arial,
   // sans-serif); never put a custom/web font back in here.
+  //
+  // FIELD SURFACE MUST BE LIGHT — AUTOFILL (v2.10.3, Nov 14, 2026):
+  // the dark #171e1b surface never showed on the live page. Pixel
+  // proof from James's screenshot: field surface (254,254,254),
+  // entered-text glyphs (238,243,241) = our near-white #eef3f1 —
+  // contrast ~1.06:1, unreadable. Read from Square's own served
+  // files, the mechanism is Chrome autofill: the iframe's
+  // card-element.css paints every autofilled input white with
+  // `-webkit-box-shadow: 0 0 0 100px #fff inset !important`, and
+  // the SDK's style API exposes NO property that can override it,
+  // while the host page cannot detect autofill inside the
+  // cross-origin iframe. Any customer with a saved card — the
+  // common case — gets white fields. One text color must read on
+  // BOTH the container surface AND the white autofill shadow, so
+  // the surface itself must be light: input.backgroundColor is
+  // #ffffff on purpose (Square's own default), input.color is dark
+  // #1a1a1a, and the placeholder gets an explicit mid-grey. Never
+  // go back to a dark field surface with light text — autofill
+  // will wash it out again. (The dark #171e1b panel around the
+  // field is the page's own .panel background in pay.html; the
+  // white box is the Square field, not a page bug.)
   function cardFormStyle() {
     return {
-      input: { fontSize: '15.5px', fontFamily: 'Helvetica Neue, Arial, sans-serif', color: '#eef3f1', backgroundColor: '#171e1b' },
+      input: { fontSize: '15.5px', fontFamily: 'Helvetica Neue, Arial, sans-serif', color: '#1a1a1a', backgroundColor: '#ffffff' },
+      'input::placeholder': { color: '#6b7280' },
       '.input-container': { borderColor: '#3d4b47', borderRadius: '8px' },
       '.input-container.is-focus': { borderColor: '#35917f' },
       '.input-container.is-error': { borderColor: '#e07a6e' },
