@@ -476,30 +476,32 @@
   // SITE MATCH (v2.10.5, Nov 14, 2026 — James's redirect; the pale
   // patina fill is SUPERSEDED, dropped): the form is mapped onto the
   // site's own input rules (index.html lines 70-75) as closely as
-  // the allowlist permits.
+  // the allowlist permits. CORRECTED v2.10.7 (James, Nov 14, 2026):
+  // he does NOT want the dark site values — the fill is the PALE
+  // PATINA TINT #dcebe7 with text #1a1a1a and placeholder #5a6360
+  // (the company-colors values, restored). The border / radius /
+  // focus / error / font values below are unchanged.
   // - Resting border: --field-line #3d4b47 on `.input-container`
-  //   (1.70:1 on the dark field — subtle, exactly like the site's
-  //   own inputs, which use the same field-line on surface-alt;
-  //   the old 9.15:1 figure was on the white field). The site's
-  //   inputs use border-bottom only; the SDK box draws a full 1px
-  //   border — borderWidth maps to a width calc, not border width
-  //   — so a full field-line border is the closest the allowlist
-  //   permits.
+  //   (7.44:1 on the tint — clearly visible; the 1.70:1 figure was
+  //   on the dark field). The site's inputs use border-bottom
+  //   only; the SDK box draws a full 1px border — borderWidth maps
+  //   to a width calc, not border width — so a full field-line
+  //   border is the closest the allowlist permits.
   // - Radius: 4px — the site's resting radius (4px 4px 0 0) as one
   //   validator-safe value.
   // - Focus: border --copper #d18a4e (the site's focus cue; seen
   //   live). Focus background --copper-soft #3a2a1c has NO
   //   allowlisted property (`input` has no focus variant), so the
-  //   copper border carries the focus state alone.
-  // - Text: --text #eef3f1 on the dark field --surface-alt
-  //   #1d2623, 13.83:1 (AAA) — the site's own input pairing
-  //   (index.html lines 70-75). Placeholder: --faint #8fa39d,
-  //   ~5.8:1 on #1d2623 (AA) — faint, like the site's own
-  //   placeholders; entered text stays AAA.
+  //   copper border carries the focus state alone. Honest note:
+  //   copper on the tint is 2.29:1 (under the 3:1 non-text bar) —
+  //   subtle, kept because it IS the site's copper.
+  // - Text: #1a1a1a on the tint #dcebe7, 14.16:1 (AAA).
+  //   Placeholder: #5a6360, 5.04:1 on #dcebe7 (AA) — faint by
+  //   design; entered text stays AAA.
   // - Error: --danger #e07a6e for border AND message text (James:
   //   red on error). Message text 6.64:1 on the dark page
-  //   (passes); error border on the dark field ~5.3:1 (passes the
-  //   3:1 non-text bar — the old 2.93:1 figure was on white).
+  //   (passes); error border on the tint is 2.38:1 (under the 3:1
+  //   non-text bar — kept because it IS the site's red).
   //
   // DARK SURFACE — v2.10.6 (Nov 14, 2026) CORRECTS the v2.10.5
   // "genuinely impossible" conclusion. The v2.10.5 trace was right
@@ -525,24 +527,29 @@
   // payments.card()/attach() runs (the Jun 2026 report notes the
   // scheme must be set during initialization). With it, the
   // iframe stays transparent and the styled background shows
-  // through — so input.backgroundColor IS #1d2623 (site
-  // --surface-alt) and input.color IS #eef3f1 (site --text) again.
-  // HARD RULE: never ship the light text without the scheme fix
-  // in the same deploy — #eef3f1 on a white iframe is ~1.12:1,
-  // the original washed-out bug. If the live visual check still
-  // shows white fields, the fallback is the spec-valid
+  // through — v2.10.6 shipped input.backgroundColor #1d2623 (site
+  // --surface-alt) and input.color #eef3f1 (site --text).
+  // CORRECTED v2.10.7 (James, Nov 14, 2026): the fill is the PALE
+  // PATINA TINT #dcebe7 with text #1a1a1a and placeholder #5a6360
+  // — NOT the dark site values (#1d2623 / #eef3f1) v2.10.6 shipped.
+  // The scheme fix is what makes the tint actually show: without
+  // it the iframe painted white over #dcebe7 too (proven live
+  // ~16:14, fields plain white).
+  // HARD RULE: never ship the tint/text without the scheme fix
+  // in the same deploy — without it the fields render white
+  // again. If the live visual check still shows white fields, the fallback is the spec-valid
   // `:root { color-scheme: unset; }` (Nov 2023 fix, same thread)
   // — not applied pre-emptively because it touches the whole
   // page. (The autofill white shadow in card-element.css is
   // still real — input:-webkit-autofill gets -webkit-box-shadow
   // 0 0 0 100px #fff inset !important — but the SDK ALSO writes
   // the styled backgroundColor into that autofill shadow, so an
-  // autofilled dark field keeps its dark fill; autofill is no
-  // longer a reason to stay light.)
+  // autofilled field keeps its tint; autofill is no longer a
+  // reason to stay light.)
   function cardFormStyle() {
     return {
-      input: { fontSize: '15.5px', fontFamily: 'Helvetica Neue, Arial, sans-serif', color: '#eef3f1', backgroundColor: '#1d2623' },
-      'input::placeholder': { color: '#8fa39d' },
+      input: { fontSize: '15.5px', fontFamily: 'Helvetica Neue, Arial, sans-serif', color: '#1a1a1a', backgroundColor: '#dcebe7' },
+      'input::placeholder': { color: '#5a6360' },
       '.input-container': { borderColor: '#3d4b47', borderRadius: '4px' },
       '.input-container.is-focus': { borderColor: '#d18a4e' },
       '.input-container.is-error': { borderColor: '#e07a6e' },
