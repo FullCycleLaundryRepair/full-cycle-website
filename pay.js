@@ -488,26 +488,43 @@
   // will wash it out again. (The dark #171e1b panel around the
   // field is the page's own .panel background in pay.html; the
   // white box is the Square field, not a page bug.)
-  // COMPANY COLORS ON THE BORDERS (v2.10.4, Nov 14, 2026 —
-  // James: "make it the company colors"): the fields stay light
-  // (see the autofill note above — a dark surface can never be
-  // safe), so the brand shows on the borders, where it cannot
-  // touch readability. Values are the page's own CSS variables
-  // (pay.html lines 12–24), not invented: resting border is
-  // patina #35917f (--accent); focus border is copper #d18a4e
-  // (--copper), matching the site's own forms — pay.html inputs
-  // focus to copper. Error red #e07a6e (--danger) is unchanged.
-  // Text, surface and placeholder stay exactly as v2.10.3 set
-  // them (contrast verified there); company colors never go on
-  // the text or the field background.
+  // COMPANY COLORS (v2.10.4 REVISED, Nov 14, 2026 — James,
+  // voice ~15:58): fill = washed-out (pale) patina tint,
+  // border = patina, focus = copper, error = RED. Values are the
+  // page's own CSS variables (pay.html lines 12–24), not invented:
+  // patina #35917f (--accent), copper #d18a4e (--copper).
+  // Focus copper matches the site's own forms — pay.html inputs
+  // focus to copper. The fill is patina lightened toward white:
+  // #dcebe7. Text #1a1a1a reads 14.16:1 on the tint and 17.40:1
+  // on white (autofill paints white over the fill), both AAA.
+  //
+  // PLACEHOLDER DEVIATION (computed, not eyeballed): the brief
+  // said keep placeholder #6b7280 exactly, but #6b7280 on ANY
+  // visible patina tint is 3.64–4.10:1 — below the 4.5:1 floor —
+  // and a tint pale enough for it to pass (luminance ≥0.9274)
+  // is indistinguishable from white, which defeats the tint
+  // James asked for. So the placeholder is #5a6360 (same neutral
+  // grey family, one step darker): 5.04:1 on the tint, 6.20:1 on
+  // white — both pass. The v2.10.3 placeholder test enforces
+  // this; do not put #6b7280 back without re-checking it against
+  // the fill.
+  //
+  // ERROR RED (computed): the brief's example #d32f2f reads
+  // plainly red, but its message text is only 3.90:1 on the
+  // dark page — below the 4.5:1 floor. #e53935 is used instead
+  // for BOTH the error border and .message-text: message text
+  // 4.60:1 on the dark page (passes), border 3.44:1 on the tint
+  // and 4.23:1 on white (visible, passes the 3:1 non-text bar).
+  // The old soft coral #e07a6e (2.93:1 on white) is gone — James
+  // corrected copper-for-errors to red.
   function cardFormStyle() {
     return {
-      input: { fontSize: '15.5px', fontFamily: 'Helvetica Neue, Arial, sans-serif', color: '#1a1a1a', backgroundColor: '#ffffff' },
-      'input::placeholder': { color: '#6b7280' },
+      input: { fontSize: '15.5px', fontFamily: 'Helvetica Neue, Arial, sans-serif', color: '#1a1a1a', backgroundColor: '#dcebe7' },
+      'input::placeholder': { color: '#5a6360' },
       '.input-container': { borderColor: '#35917f', borderRadius: '8px' },
       '.input-container.is-focus': { borderColor: '#d18a4e' },
-      '.input-container.is-error': { borderColor: '#e07a6e' },
-      '.message-text': { color: '#e07a6e' }
+      '.input-container.is-error': { borderColor: '#e53935' },
+      '.message-text': { color: '#e53935' }
     };
   }
 
