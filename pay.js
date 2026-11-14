@@ -457,9 +457,19 @@
   // backgroundColor instead — the SDK maps that onto the iframe
   // container — so the dark #171e1b surface lives there. Never put
   // backgroundColor (or anything else) back on `.input-container`.
+  //
+  // FONT-FAMILY ALLOWLIST (same SDK source, Nov 14, 2026 — the
+  // second live failure, same message): the SDK splits `input`'s
+  // fontFamily on ", " and requires EVERY family to be in its fixed
+  // 61-name list. Our old value 'Barlow, system-ui, sans-serif'
+  // failed it — neither Barlow nor system-ui is in the list — so
+  // payments.card() rejected with InvalidStylesError and the form
+  // never rendered, even after the backgroundColor fix. The stack
+  // below uses only allowlisted families (Helvetica Neue, Arial,
+  // sans-serif); never put a custom/web font back in here.
   function cardFormStyle() {
     return {
-      input: { fontSize: '15.5px', fontFamily: 'Barlow, system-ui, sans-serif', color: '#eef3f1', backgroundColor: '#171e1b' },
+      input: { fontSize: '15.5px', fontFamily: 'Helvetica Neue, Arial, sans-serif', color: '#eef3f1', backgroundColor: '#171e1b' },
       '.input-container': { borderColor: '#3d4b47', borderRadius: '8px' },
       '.input-container.is-focus': { borderColor: '#35917f' },
       '.input-container.is-error': { borderColor: '#e07a6e' },
@@ -508,6 +518,11 @@
     try {
       payments = global.Square.payments(status.appId, status.locationId);
     } catch (e) {
+      // Log the real SDK error (console only — the customer still
+      // sees the plain-words fallback). The old silent catch is why
+      // the Nov 14 fontFamily rejection took a live browser test to
+      // find: the page showed only "Card fields could not load".
+      if (typeof console !== 'undefined' && console.error) console.error('Square payments init failed:', e && e.message ? e.message : e);
       enableLinkPay('Card fields could not load — Pay Now opens Square’s secure checkout instead.');
       return;
     }
@@ -522,7 +537,8 @@
       var btn = el('pay-now-btn');
       if (btn) btn.textContent = 'Pay ' + money(amt);
       setSquareState('ready', 'Your card details go straight to Square, never to us.');
-    }).catch(function () {
+    }).catch(function (err) {
+      if (typeof console !== 'undefined' && console.error) console.error('Square card form failed:', err && err.message ? err.message : err);
       enableLinkPay('Card fields could not load — Pay Now opens Square’s secure checkout instead.');
     });
   }
