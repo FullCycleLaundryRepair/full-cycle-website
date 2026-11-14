@@ -193,24 +193,35 @@
     return n.getFullYear() + '-' + m + '-' + d;
   }
 
+  // Tomorrow's date in local time (YYYY-MM-DD). The earliest
+  // bookable day (no same-day appointments, James, Nov 14, 2026) —
+  // the date picker's min and default, so the calendar rolls forward.
+  function tomorrowLocalISO() {
+    var n = new Date();
+    var t = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1);
+    var m = String(t.getMonth() + 1).padStart(2, '0');
+    var d = String(t.getDate()).padStart(2, '0');
+    return t.getFullYear() + '-' + m + '-' + d;
+  }
+
   // DD4 Problems 7/12/13 (Track E) — schedule + phone validation,
   // mirroring the server (woValidateSchedule / woPhoneDigits in Code.gs)
-  // with the same messages. A date in the past is rejected, a 2-hour
-  // block that already started today is rejected, and an empty date or
-  // time is rejected — so a fully busy day can no longer submit with
-  // scheduledTime '' (the time select is cleared by applyTimeOptions
-  // when every block is busy, and validateForm now stops that submit).
+  // with the same messages. A date in the past is rejected, TODAY is
+  // rejected outright (no same-day appointments — earliest bookable
+  // day is tomorrow), and an empty date or time is rejected — so a
+  // fully busy day can no longer submit with scheduledTime '' (the
+  // time select is cleared by applyTimeOptions when every block is
+  // busy, and validateForm now stops that submit).
   function phoneDigits(v) { return trim(v).replace(/[^0-9]/g, ''); }
-  function nowMinutesLocal() { var n = new Date(); return n.getHours() * 60 + n.getMinutes(); }
   function validateSchedule(date, time, dateMsg) {
     var d = trim(date), t = trim(time);
     if (!d) return dateMsg || 'Pick a date.';
     if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return 'Pick a valid date (YYYY-MM-DD).';
-    if (d < todayLocalISO()) return 'That date is in the past — pick today or a later date.';
+    if (d < todayLocalISO()) return 'That date is in the past — pick tomorrow or a later date.';
+    if (d === todayLocalISO()) return 'Same-day appointments are not available — pick tomorrow or a later date.';
     if (!t) return 'Pick a 2-hour time block.';
     var blk = parseTimeBlock(t);
     if (!blk) return 'Pick a valid 2-hour time block.';
-    if (d === todayLocalISO() && blk.start < nowMinutesLocal()) return 'That time block has already started — pick a later time today or another day.';
     return '';
   }
   // True when every 2-hour block that day is busy — the fully-busy day
@@ -954,15 +965,17 @@
     if (dateEl) dateEl.addEventListener('change', refreshDayNote);
     if (timeEl) timeEl.addEventListener('change', refreshDayNote);
 
-    /* Default the date to today, shown washed out until the customer
-     * picks another day — today is whatever day they open the page.
-     * DD4 Problem 7 (Track E): min is set in JS, not in index.html,
-     * because "today" moves every day — a literal min="..." in the
-     * HTML would go stale the next morning. The native picker blocks
-     * past dates; validateForm is the backstop for typed ones. */
-    if (dateEl) dateEl.min = todayLocalISO();
+    /* Default the date to tomorrow, shown washed out until the
+     * customer picks another day — tomorrow is whatever day follows
+     * the day they open the page (no same-day appointments, James,
+     * Nov 14, 2026). DD4 Problem 7 (Track E): min is set in JS, not
+     * in index.html, because "tomorrow" moves every day — a literal
+     * min="..." in the HTML would go stale the next morning. The
+     * native picker blocks today and past dates; validateForm is the
+     * backstop for typed ones. */
+    if (dateEl) dateEl.min = tomorrowLocalISO();
     if (dateEl && !dateEl.value) {
-      dateEl.value = todayLocalISO();
+      dateEl.value = tomorrowLocalISO();
       dateEl.classList.add('date-default');
       refreshDayNote();
     }
@@ -992,7 +1005,7 @@
         var rDate = dateEl ? dateEl.value : '', rTime = timeEl ? timeEl.value : '';
         /* DD4 Problem 7 (Track E): a fully busy day clears the pick and
            must not submit silently — name the day, don't just fail. */
-        if (!trim(rTime) && rDate >= todayLocalISO() && lastDayRes && lastDayRes.ok && allBlocksBusy(computeBusyBlocks(lastDayRes))) {
+        if (!trim(rTime) && rDate >= tomorrowLocalISO() && lastDayRes && lastDayRes.ok && allBlocksBusy(computeBusyBlocks(lastDayRes))) {
           if (errEl) errEl.textContent = 'No times are free on ' + formatApptDate(rDate) + ' — pick another date.';
           return;
         }
@@ -1039,7 +1052,7 @@
       data.platformTermsSignedAt = new Date().toISOString();
       /* DD4 Problem 7 (Track E): fully busy day — same explicit message
          as repair mode, before the generic validateForm backstop. */
-      if (!trim(data.scheduledTime) && data.scheduledDate >= todayLocalISO() && lastDayRes && lastDayRes.ok && allBlocksBusy(computeBusyBlocks(lastDayRes))) {
+      if (!trim(data.scheduledTime) && data.scheduledDate >= tomorrowLocalISO() && lastDayRes && lastDayRes.ok && allBlocksBusy(computeBusyBlocks(lastDayRes))) {
         if (errEl) errEl.textContent = 'No times are free on ' + formatApptDate(data.scheduledDate) + ' — pick another date.';
         return;
       }
@@ -1193,6 +1206,7 @@
     repairDetailsHtml: repairDetailsHtml,
     RIZK_EXAMPLE: RIZK_EXAMPLE,
     loadSaved: loadSaved,
-    todayLocalISO: todayLocalISO
+    todayLocalISO: todayLocalISO,
+    tomorrowLocalISO: tomorrowLocalISO
   };
 })(typeof window !== 'undefined' ? window : globalThis);

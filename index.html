@@ -129,6 +129,10 @@
   .conf-line { margin: 6px 0; font-size: 15.5px; }
   .conf-line .muted { color: var(--dim); font-size: 14px; }
   .conf-number { font-size: 26px; font-weight: 700; letter-spacing: 1px; }
+  /* Footer (Nov 14, 2026 — checker pages S3): returning visitors need a
+     path to track.html; same styling as the track/pay footers. */
+  .foot-links { margin-top: 24px; font-size: 14px; }
+  .foot-links a { color: var(--accent-deep); }
 </style>
 </head>
 <body>
@@ -273,6 +277,8 @@
       <button type="button" class="btn-ghost" id="new-request-btn">Create another work order</button>
     </div>
   </div>
+
+  <p class="foot-links"><a href="track.html">Track your work order →</a></p>
 </main>
 
 <script src="config.js"></script>

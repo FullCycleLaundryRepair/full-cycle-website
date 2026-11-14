@@ -87,6 +87,12 @@
     text-decoration: none; display: inline-block;
   }
   .pay-row { margin-top: 20px; }
+  .card-section { margin-top: 20px; }
+  .card-section h3 {
+    margin: 0 0 8px; font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .card-container { min-height: 100px; }
   .square-note { margin-top: 10px; font-size: 14px; color: var(--dim); }
   .square-note.warn { color: var(--copper); font-weight: 600; }
   details.terms { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 12px; }
@@ -124,9 +130,15 @@
     <p class="amount-big" id="pay-amount">$0.00</p>
 
     <ol class="steps">
-      <li><strong>Pay Now</strong> opens Square's secure checkout — your card details go straight to Square, never to us. We never ask for your card on this page.</li>
+      <li id="step-1"><strong>Pay Now</strong> opens Square's secure checkout — your card details go straight to Square, never to us. We never ask for your card on this page.</li>
       <li><strong>Agree to the payment</strong> below sends a confirmation back to us.</li>
     </ol>
+
+    <div class="card-section" id="card-section" style="display:none">
+      <h3>Pay by card</h3>
+      <div class="card-container" id="card-container"></div>
+      <p class="square-note" id="card-note"></p>
+    </div>
 
     <div class="pay-row">
       <button type="button" class="btn-primary" id="pay-now-btn" disabled>Pay Now with Square</button>

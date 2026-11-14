@@ -26,7 +26,7 @@
   <h1>Eva didn’t open — send the text yourself</h1>
   <p>Tap the button to copy the confirmation text and open Google Voice. It sends from your business number (248) 429-9878 — never from your personal mobile.</p>
   <div class="draft" id="fbDraft"></div>
-  <p style="margin:14px 0 0;"><a class="btn btn-dark" id="fbCopyBtn" href="https://voice.google.com/u/0/messages">Copy text &amp; Open Google Voice</a></p>
+  <p style="margin:14px 0 0;"><a class="btn btn-dark" id="fbCopyBtn" href="https://voice.google.com/messages">Copy text &amp; Open Google Voice</a></p>
   <p class="dim">If the copy does not work, long-press the text above to copy it by hand.</p>
   <p class="dim" id="fbTrack"></p>
 </div>
@@ -34,7 +34,7 @@
 <script>
 (function () {
   var EXEC = 'https://script.google.com/macros/s/AKfycbwwxlXIYS9NGec6nj1B9E2ojknETKj0XSKne0p0Lgh8X7-WDCP-RkpwL6aIaLMQihMt2A/exec';
-  var VOICE_URL = 'https://voice.google.com/u/0/messages';
+  var VOICE_URL = 'https://voice.google.com/messages';
   var q = new URLSearchParams(location.search);
   var confirmUrl = q.get('confirm') || '';
   var pref = (q.get('pref') || 'text').toLowerCase();
@@ -229,38 +229,39 @@
 
   /* The branch below only runs after the beacon verified the backend
    * was reached (attemptConfirm above) — nothing here claims
-   * "confirmed" or "sent" on a failed or missing beacon. */
+   * "confirmed" or "sent" on a failed or missing beacon.
+   * Texts S1 (Nov 14 checker): branch on the LIVE pref from
+   * confirmDetails when it arrives, not the baked `pref` param — a
+   * customer can flip preferredContact after the email was built,
+   * and the backend already acted on the live pref. Baked `pref`
+   * stays the fallback when the live fetch times out, so a pref
+   * flip can no longer double-confirm (text + email) or print a
+   * false "sent" line. One live fetch, 2.5s cap, then branch. */
   function runBranch() {
     try {
-      if (pref === 'email') {
-        show('<h1>Appointment confirmed</h1>' + lineHtml()
-          + '<p>The confirmation email has been sent to ' + esc(email) + '.</p>');
-        /* No navigation to wait on here — refresh the displayed line
-         * with live details if they arrive, so a rescheduled order
-         * shows the current time, not the baked one. */
-        liveDetails(5000, function (d) {
-          if (d && d.ok) {
-            name = d.name || name;
-            when = d.when || when;
-            email = d.email || email;
-            show('<h1>Appointment confirmed</h1>' + lineHtml()
-              + '<p>The confirmation email has been sent to ' + esc(email) + '.</p>');
-          }
-        });
-      } else if (bakedEva) {
-        /* Race the live fetch against a 2.5s cap: fresh details when
-         * they arrive in time, baked params otherwise — the auto-open
-         * fires either way, inside the tap's activation window. */
-        liveDetails(2500, function (d) {
+      liveDetails(2500, function (d) {
+        var livePref = (d && d.ok && d.pref) ? String(d.pref).toLowerCase() : pref;
+        if (d && d.ok) { name = d.name || name; when = d.when || when; email = d.email || email; }
+        if (livePref === 'email') {
+          show('<h1>Appointment confirmed</h1>' + lineHtml()
+            + '<p>The confirmation email has been sent to ' + esc(email) + '.</p>');
+          /* Email branch: no navigation, no pendingDraft — a return
+           * to this tab reveals no fallback. */
+        } else if ((d && d.ok && d.evaUrl) || bakedEva) {
+          /* Fresh eva:// URL + draft when they arrived in time,
+           * baked params otherwise — the auto-open fires either
+           * way, inside the tap's activation window. The live URL
+           * can be the ONLY eva:// source: a baked email link
+           * carries no `eva` param, so a flip to text must still
+           * open Eva from the live details. */
           var evaUrl = (d && d.ok && d.evaUrl) ? d.evaUrl : bakedEva;
           var draft = (d && d.ok && d.draft) ? d.draft : draftFromEva(bakedEva);
-          if (d && d.ok) { name = d.name || name; when = d.when || when; }
           openEva(evaUrl, draft);
-        });
-      } else {
-        show('<h1>Appointment confirmed</h1>' + lineHtml()
-          + '<p>The confirmation is recorded on the work order.</p>');
-      }
+        } else {
+          show('<h1>Appointment confirmed</h1>' + lineHtml()
+            + '<p>The confirmation is recorded on the work order.</p>');
+        }
+      });
     } catch (e) {
       show('<h1>Appointment confirmed</h1>' + lineHtml()
         + '<p>The confirmation is recorded on the work order.</p>');
