@@ -478,64 +478,70 @@
   // site's own input rules (index.html lines 70-75) as closely as
   // the allowlist permits.
   // - Resting border: --field-line #3d4b47 on `.input-container`
-  //   (9.15:1 on white). The site's inputs use border-bottom only;
-  //   the SDK box draws a full 1px border — borderWidth maps to a
-  //   width calc, not border width — so a full field-line border is
-  //   the closest the allowlist permits.
+  //   (1.70:1 on the dark field — subtle, exactly like the site's
+  //   own inputs, which use the same field-line on surface-alt;
+  //   the old 9.15:1 figure was on the white field). The site's
+  //   inputs use border-bottom only; the SDK box draws a full 1px
+  //   border — borderWidth maps to a width calc, not border width
+  //   — so a full field-line border is the closest the allowlist
+  //   permits.
   // - Radius: 4px — the site's resting radius (4px 4px 0 0) as one
   //   validator-safe value.
   // - Focus: border --copper #d18a4e (the site's focus cue; seen
   //   live). Focus background --copper-soft #3a2a1c has NO
   //   allowlisted property (`input` has no focus variant), so the
   //   copper border carries the focus state alone.
-  // - Text: #1c2421 — the site's own dark-on-light text
-  //   (index.html .pt-name: background #eef3f1, color #1c2421),
-  //   15.86:1 on the white field (AAA).
-  // - Placeholder: --faint #8fa39d. NOTE: the site has NO
-  //   ::placeholder rule anywhere (verified by grep in index.html
-  //   + pay.html) — #8fa39d is the site's --faint token, not a
-  //   copied placeholder rule. 2.66:1 on white — faint, like the
-  //   site's own placeholders; entered text stays AAA.
+  // - Text: --text #eef3f1 on the dark field --surface-alt
+  //   #1d2623, 13.83:1 (AAA) — the site's own input pairing
+  //   (index.html lines 70-75). Placeholder: --faint #8fa39d,
+  //   ~5.8:1 on #1d2623 (AA) — faint, like the site's own
+  //   placeholders; entered text stays AAA.
   // - Error: --danger #e07a6e for border AND message text (James:
   //   red on error). Message text 6.64:1 on the dark page
-  //   (passes); border 2.93:1 on white — just under the 3:1
-  //   non-text bar, disclosed here and kept because it IS the
-  //   site's red.
+  //   (passes); error border on the dark field ~5.3:1 (passes the
+  //   3:1 non-text bar — the old 2.93:1 figure was on white).
   //
-  // DARK SURFACE — GENUINELY IMPOSSIBLE IN THIS SDK VERSION
-  // (v2.10.5, Nov 14, 2026 — do not re-attempt): `input`'s
-  // backgroundColor does NOT paint the visible field. The SDK maps
-  // it to the HOST-page container div (#<id> .sq-card-wrapper
-  // .sq-card-iframe-container, square.js selectorPropertyMappings)
-  // and the card iframe inside that container renders opaque white
-  // over it (no allowTransparency anywhere in the SDK; the iframe
-  // document's own inputs are transparent, but its canvas paints
-  // white). Proof, live: backgroundColor #171e1b live ~5h still
-  // rendered (254,254,254); #dcebe7 live still rendered white with
-  // NOTHING entered. The border styles DO apply (patina border +
-  // copper focus seen live), so the custom style element works —
-  // the value reaches the container and is covered by the iframe.
-  // (An independent fill investigation, agent ca2e901f ~16:21,
-  // reached the same conclusion from the same served files.)
-  // input.backgroundColor is therefore #ffffff — the surface the
-  // customer actually sees — and the dark site surface
-  // (--surface-alt #1d2623, whose pairing with --text #eef3f1 is
-  // 13.83:1 and fine on its own) is NOT shipped, because shipping
-  // it would claim a match it cannot deliver: #1d2623 bg +
-  // #eef3f1 text on the white fields the SDK actually renders is
-  // ~1.12:1 — the original washed-out bug again. CORRECTION to
-  // the v2.10.3 note: the autofill white shadow IS real
-  // (card-element.css: input:-webkit-autofill gets
-  // -webkit-box-shadow 0 0 0 100px #fff inset !important), but it
-  // does NOT explain the empty-field white — that is the opaque
-  // iframe above. Autofill only reinforces that the surface must
-  // stay light. Never go back to a dark field surface with light
-  // text. (The dark panel around the field is the page's own
-  // .panel background in pay.html; the white box is the Square
-  // field, not a page bug.)
+  // DARK SURFACE — v2.10.6 (Nov 14, 2026) CORRECTS the v2.10.5
+  // "genuinely impossible" conclusion. The v2.10.5 trace was right
+  // about WHERE the value goes (input.backgroundColor maps to the
+  // host-page container div, #<id> .sq-card-wrapper
+  // .sq-card-iframe-container, and the iframe inside it rendered
+  // opaque white over it) but wrong about WHY: it is not an
+  // opaque-white iframe by nature. The page declares
+  // `color-scheme: dark` in :root (pay.html line 10); the iframe
+  // inherits it, and Chrome paints the iframe an opaque canvas
+  // for its own (light) scheme — white — covering the styled
+  // background. Square Developer Forums thread 9280
+  // ("Customizing colors on square.js card form — Documentation
+  // incorrect") has three independent reports of the identical
+  // symptom — white container + white text despite dark style
+  // values (Apr 2023, Nov 2023, Jun 10 2026) — all fixed by
+  // neutralising the scheme; the Jun 2026 report found the scoped
+  // rule `.sq-card-iframe-container { color-scheme: auto; }`
+  // alone fixed it, and Square's own "Customize the Card Entry
+  // Form" guide documents a dark card (input.backgroundColor
+  // '#2D2D2D' + white text) as working. The scoped rule is in
+  // pay.html <head> CSS, so it is in place BEFORE
+  // payments.card()/attach() runs (the Jun 2026 report notes the
+  // scheme must be set during initialization). With it, the
+  // iframe stays transparent and the styled background shows
+  // through — so input.backgroundColor IS #1d2623 (site
+  // --surface-alt) and input.color IS #eef3f1 (site --text) again.
+  // HARD RULE: never ship the light text without the scheme fix
+  // in the same deploy — #eef3f1 on a white iframe is ~1.12:1,
+  // the original washed-out bug. If the live visual check still
+  // shows white fields, the fallback is the spec-valid
+  // `:root { color-scheme: unset; }` (Nov 2023 fix, same thread)
+  // — not applied pre-emptively because it touches the whole
+  // page. (The autofill white shadow in card-element.css is
+  // still real — input:-webkit-autofill gets -webkit-box-shadow
+  // 0 0 0 100px #fff inset !important — but the SDK ALSO writes
+  // the styled backgroundColor into that autofill shadow, so an
+  // autofilled dark field keeps its dark fill; autofill is no
+  // longer a reason to stay light.)
   function cardFormStyle() {
     return {
-      input: { fontSize: '15.5px', fontFamily: 'Helvetica Neue, Arial, sans-serif', color: '#1c2421', backgroundColor: '#ffffff' },
+      input: { fontSize: '15.5px', fontFamily: 'Helvetica Neue, Arial, sans-serif', color: '#eef3f1', backgroundColor: '#1d2623' },
       'input::placeholder': { color: '#8fa39d' },
       '.input-container': { borderColor: '#3d4b47', borderRadius: '4px' },
       '.input-container.is-focus': { borderColor: '#d18a4e' },

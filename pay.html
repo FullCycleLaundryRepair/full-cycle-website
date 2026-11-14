@@ -93,6 +93,28 @@
     font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
   }
   .card-container { min-height: 100px; }
+  /* COLOR-SCHEME FIX (v2.10.6, Nov 14, 2026) — Square card iframe
+     background. This page declares `color-scheme: dark` in :root
+     (line 10), which the card iframe inherits; Chrome then paints
+     the iframe an opaque canvas for its own (light) scheme, so the
+     iframe covered input.backgroundColor with white no matter what
+     value was set (proven live: #171e1b and #dcebe7 both rendered
+     (254,254,254) with nothing entered). Square Developer Forums,
+     thread 9280 ("Customizing colors on square.js card form —
+     Documentation incorrect"): three independent reports of the
+     IDENTICAL symptom (Apr 2023, Nov 2023, Jun 10 2026), all fixed
+     by neutralising the scheme. The Jun 2026 report (shanek) found
+     this scoped rule alone fixed it — `color-scheme: auto` is not a
+     standard keyword but is reported working in Chromium — and
+     notes it must be in place DURING initialization (changing it
+     after load does not regress, but the iframe is created at
+     attach()). It sits in <head> CSS, so it is present before
+     payments.card()/attach() runs. If the live visual check still
+     shows white, the fallback is the spec-valid `:root {
+     color-scheme: unset; }` (the Nov 2023 fix in the same thread)
+     — but that touches the whole page's form controls/scrollbars,
+     so it is NOT applied pre-emptively. */
+  .sq-card-iframe-container { color-scheme: auto; }
   .square-note { margin-top: 10px; font-size: 14px; color: var(--dim); }
   .square-note.warn { color: var(--copper); font-weight: 600; }
   details.terms { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 12px; }
