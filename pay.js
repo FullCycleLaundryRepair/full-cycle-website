@@ -446,10 +446,21 @@
   // Card-field styling, to match the page (dark #0d0d0d, teal accent).
   // These style the Square iframes from the outside — the fields
   // themselves stay Square-hosted.
+  // SQUARE ALLOWLIST (Web Payments SDK v1.87.2, read from the served
+  // square.js source Nov 14, 2026 — the SDK rejects the WHOLE card
+  // form when one selector carries a property outside its list, and
+  // the page falls back to the payment link): `.input-container`
+  // accepts ONLY borderColor / borderRadius / borderWidth.
+  // `backgroundColor` there made payments.card() reject on the live
+  // page (Nov 14: the form never rendered, "Card fields could not
+  // load"). The card area's background comes from `input`'s
+  // backgroundColor instead — the SDK maps that onto the iframe
+  // container — so the dark #171e1b surface lives there. Never put
+  // backgroundColor (or anything else) back on `.input-container`.
   function cardFormStyle() {
     return {
-      input: { fontSize: '15.5px', fontFamily: 'Barlow, system-ui, sans-serif', color: '#eef3f1', backgroundColor: 'transparent' },
-      '.input-container': { borderColor: '#3d4b47', borderRadius: '8px', backgroundColor: '#171e1b' },
+      input: { fontSize: '15.5px', fontFamily: 'Barlow, system-ui, sans-serif', color: '#eef3f1', backgroundColor: '#171e1b' },
+      '.input-container': { borderColor: '#3d4b47', borderRadius: '8px' },
       '.input-container.is-focus': { borderColor: '#35917f' },
       '.input-container.is-error': { borderColor: '#e07a6e' },
       '.message-text': { color: '#e07a6e' }
@@ -690,6 +701,7 @@
     stageAmountCents: stageAmountCents, stageForOrder: stageForOrder, totalsFor: totalsFor, payLink: payLink,
     billTotals: billTotals,
     squareSdkUrl: squareSdkUrl, isCardNonce: isCardNonce, chargeCardPayload: chargeCardPayload,
+    cardFormStyle: cardFormStyle,
     cardErrorText: cardErrorText, chargeErrorText: chargeErrorText,
     demoWorkOrder: demoWorkOrder, displayNumber: displayNumber, money: money,
     displayAppointmentBlock: displayAppointmentBlock, formatApptDate: formatApptDate,
