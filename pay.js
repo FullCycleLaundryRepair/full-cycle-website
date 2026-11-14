@@ -488,12 +488,24 @@
   // will wash it out again. (The dark #171e1b panel around the
   // field is the page's own .panel background in pay.html; the
   // white box is the Square field, not a page bug.)
+  // COMPANY COLORS ON THE BORDERS (v2.10.4, Nov 14, 2026 —
+  // James: "make it the company colors"): the fields stay light
+  // (see the autofill note above — a dark surface can never be
+  // safe), so the brand shows on the borders, where it cannot
+  // touch readability. Values are the page's own CSS variables
+  // (pay.html lines 12–24), not invented: resting border is
+  // patina #35917f (--accent); focus border is copper #d18a4e
+  // (--copper), matching the site's own forms — pay.html inputs
+  // focus to copper. Error red #e07a6e (--danger) is unchanged.
+  // Text, surface and placeholder stay exactly as v2.10.3 set
+  // them (contrast verified there); company colors never go on
+  // the text or the field background.
   function cardFormStyle() {
     return {
       input: { fontSize: '15.5px', fontFamily: 'Helvetica Neue, Arial, sans-serif', color: '#1a1a1a', backgroundColor: '#ffffff' },
       'input::placeholder': { color: '#6b7280' },
-      '.input-container': { borderColor: '#3d4b47', borderRadius: '8px' },
-      '.input-container.is-focus': { borderColor: '#35917f' },
+      '.input-container': { borderColor: '#35917f', borderRadius: '8px' },
+      '.input-container.is-focus': { borderColor: '#d18a4e' },
       '.input-container.is-error': { borderColor: '#e07a6e' },
       '.message-text': { color: '#e07a6e' }
     };
