@@ -1,1 +1,1 @@
-{"sections":[{"id":"balances","visible":true},{"id":"deliveries","visible":true},{"id":"events","visible":true},{"id":"payday","visible":true},{"id":"paid","visible":true},{"id":"smartthings","visible":true},{"id":"bills","visible":true},{"id":"bluetooth","visible":true}],"version":1}
+{"sections":[{"id":"bills","visible":true},{"id":"balances","visible":true},{"id":"payday","visible":true},{"id":"deliveries","visible":true},{"id":"events","visible":true},{"id":"paid","visible":true},{"id":"smartthings","visible":true},{"id":"bluetooth","visible":true}],"version":1}
