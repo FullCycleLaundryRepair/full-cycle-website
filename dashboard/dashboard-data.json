@@ -1,1 +1,77 @@
-{"balances":[{"amount":1211.12,"label":"James Checking"},{"amount":0.09,"label":"Auto Pay"}],"bills":[{"amount":402.37,"biller":"GEICO","detail":"Cancel Dec 4, 2026 - Policy 6183236709","note":"Past due"},{"amount":38.38,"biller":"Affirm","detail":"","note":"Past due"}],"deliveries":[{"carrier":"USPS","eta":"Nov 18-19","order":"ECigMafia order 9160935","status":"Shipped Nov 16","tracking":"9305510615100000348869","url":"https://tools.usps.com/go/TrackConfirmAction?tLabels=9305510615100000348869"}],"events":[{"allDay":true,"date":"2026-11-19","title":"Anita's birthday"},{"allDay":true,"date":"2026-11-30","title":"Amber Carmack's birthday"},{"allDay":true,"date":"2026-12-01","title":"Choose speedway perk in speedway app"}],"payday":{"date":"2026-11-27","expected":1650.0},"smartthings":{"goodnightDeviceId":"","powerSaverDeviceId":""},"version":1}
+{
+  "balances": [
+    {
+      "amount": 1211.12,
+      "label": "James Checking"
+    },
+    {
+      "amount": 0.09,
+      "label": "Auto Pay"
+    }
+  ],
+  "bills": [
+    {
+      "amount": 402.37,
+      "biller": "GEICO",
+      "detail": "Cancel Dec 4, 2026 - Policy 6183236709",
+      "note": "Past due"
+    },
+    {
+      "amount": 38.38,
+      "biller": "Affirm",
+      "detail": "",
+      "note": "Past due"
+    },
+    {
+      "amount": 39.99,
+      "biller": "Spectrum",
+      "detail": "Due Nov 19",
+      "note": "Autopay"
+    }
+  ],
+  "deliveries": [
+    {
+      "carrier": "USPS",
+      "eta": "Nov 18-19",
+      "order": "ECigMafia order 9160935",
+      "status": "Shipped Nov 16",
+      "tracking": "9305510615100000348869",
+      "url": "https://tools.usps.com/go/TrackConfirmAction?tLabels=9305510615100000348869"
+    }
+  ],
+  "events": [
+    {
+      "date": "2026-11-27",
+      "time": "10:00 AM",
+      "title": "Call dino"
+    },
+    {
+      "allDay": true,
+      "date": "2026-11-30",
+      "title": "Amber Carmack's birthday"
+    },
+    {
+      "allDay": true,
+      "date": "2026-12-01",
+      "title": "Rent due \u2014 $1,751.85"
+    }
+  ],
+  "inboxProjects": [
+    {
+      "line": "Dashboard V5: audit fixes done, login published, noon refresh live \u2014 build awaits your freeze"
+    },
+    {
+      "line": "Eva brain: pouch download stalled twice \u2014 open Eva once to restart it"
+    }
+  ],
+  "payday": {
+    "date": "2026-11-27",
+    "expected": 1650.0
+  },
+  "smartthings": {
+    "goodnightDeviceId": "",
+    "powerSaverDeviceId": ""
+  },
+  "updatedAt": "2026-11-21T15:55:04-05:00",
+  "version": 1
+}
