@@ -17,12 +17,6 @@
       "note": "Past due"
     },
     {
-      "amount": 38.38,
-      "biller": "Affirm",
-      "detail": "",
-      "note": "Past due"
-    },
-    {
       "amount": 39.99,
       "biller": "Spectrum",
       "detail": "Due Nov 19",
@@ -40,6 +34,11 @@
     }
   ],
   "events": [
+    {
+      "allDay": true,
+      "date": "2026-11-23",
+      "title": "Meeting with Dino (time TBD)"
+    },
     {
       "date": "2026-11-27",
       "time": "10:00 AM",
@@ -61,7 +60,7 @@
       "line": "Dashboard V5: audit fixes done, login published, noon refresh live \u2014 build awaits your freeze"
     },
     {
-      "line": "Eva brain: pouch download stalled twice \u2014 open Eva once to restart it"
+      "line": "Eva v77 installed \u2014 brain model on phone, adapter shadow-only until phone re-score"
     }
   ],
   "payday": {
@@ -72,6 +71,6 @@
     "goodnightDeviceId": "",
     "powerSaverDeviceId": ""
   },
-  "updatedAt": "2026-11-21T15:55:04-05:00",
+  "updatedAt": "2026-11-22T11:58:11-05:00",
   "version": 1
 }
