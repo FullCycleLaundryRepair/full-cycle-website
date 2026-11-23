@@ -24,6 +24,7 @@
     "maxShown": 3,
     "paidDwell": "untilNextUnlock",
     "paidDwellMaxLines": 1,
+    "stripAfterDays": 7,
     "timeline": "off"
   },
   "bluetooth": {
@@ -115,6 +116,15 @@
       "headline": 16,
       "strip": 14
     },
+    "shows": {
+      "name": 14,
+      "newMarker": 12,
+      "title": 12
+    },
+    "tasks": {
+      "detail": 12,
+      "title": 13
+    },
     "tileHeader": 13,
     "title": 20
   },
@@ -192,6 +202,8 @@
   },
   "layout": {
     "capDropOrder": [
+      "shows",
+      "tasks",
       "inboxProjects",
       "bluetooth",
       "packages",
@@ -202,7 +214,7 @@
     "capModesCompactsFirst": true,
     "editMode": "longPress",
     "eighthTileMerge": "bluetoothIntoSmartHome",
-    "fill": "stretch",
+    "fill": "off",
     "freezeWhileOpen": true,
     "heroTiles": [
       "bills"
@@ -233,6 +245,8 @@
     "balances",
     "payday",
     "packages",
+    "shows",
+    "tasks",
     "modes",
     "bluetooth"
   ],
@@ -337,7 +351,9 @@
       "inbox": "INBOX & PROJECTS",
       "modes": "MODES",
       "packages": "PACKAGES",
-      "payday": "PAYDAY"
+      "payday": "PAYDAY",
+      "shows": "SHOWS",
+      "tasks": "TASKS"
     },
     "maskedAmount": "$\u2022\u2022\u2022.\u2022\u2022",
     "modes": {
@@ -381,6 +397,9 @@
     "refresh": {
       "failed": "Refresh failed",
       "updated": "Updated {time}"
+    },
+    "shows": {
+      "newMarker": "New"
     },
     "staleWithSource": "{tile} stale \u2014 {source} as of {when}",
     "staleWithoutSource": "{tile} stale \u2014 as of {when}",
@@ -501,9 +520,31 @@
         }
       },
       "visible": false
+    },
+    "shows": {
+      "sizes": {
+        "hero": null,
+        "standard": {
+          "h": 1,
+          "w": 2
+        },
+        "strip": null
+      },
+      "visible": true
+    },
+    "tasks": {
+      "sizes": {
+        "hero": null,
+        "standard": {
+          "h": 1,
+          "w": 2
+        },
+        "strip": null
+      },
+      "visible": true
     }
   },
-  "updatedAt": "2026-11-23T08:39:15-05:00",
+  "updatedAt": "2026-11-23T08:52:43-05:00",
   "urgency": {
     "eveningBoost": true,
     "eventSoonWindowMinutes": 60,
