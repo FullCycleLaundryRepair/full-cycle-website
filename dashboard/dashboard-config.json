@@ -3,18 +3,35 @@
     "dashboardAlerts": false
   },
   "balances": {
-    "hideAmounts": false
+    "accountNames": {
+      "autopay": "Auto Pay",
+      "checking": "Checking",
+      "joint": "Joint"
+    },
+    "accountsLayout": "list",
+    "combineNotices": true,
+    "displayAccounts": [
+      "checking",
+      "joint",
+      "autopay"
+    ],
+    "hideAmounts": false,
+    "stripWhenStale": true
   },
   "bills": {
     "capitalOnePlacement": "bills",
     "geicoSwitchStatus": "show",
+    "maxShown": 3,
     "paidDwell": "untilNextUnlock",
+    "paidDwellMaxLines": 1,
     "timeline": "off"
   },
   "bluetooth": {
     "showWhenEmpty": false
   },
   "colours": {
+    "chipOffBackground": "#2E2E2E",
+    "chipOnText": "#FFFFFF",
     "clusterControl": "#7C3AED",
     "clusterMoney": "#0D9488",
     "clusterTime": "#2563EB",
@@ -26,16 +43,145 @@
       "ok": "#16A34A",
       "outForDelivery": "#2563EB",
       "overdue": "#DC2626"
-    }
+    },
+    "text": "#EDEDED",
+    "tileShadeMax": "#3D3D3D",
+    "tileShadeMin": "#1C1C1C",
+    "trayBorder": "#5A7A7C"
   },
   "events": {
     "count": 3,
     "flagMeetingsByPerson": true,
-    "showSyncLine": false
+    "showSyncLine": false,
+    "upcomingCount": 2
+  },
+  "fonts": {
+    "balances": {
+      "accounts": 12,
+      "asOf": 11,
+      "headline": 18,
+      "move": 13,
+      "stale": 15
+    },
+    "bills": {
+      "headline": 20,
+      "row": 14,
+      "stale": 11,
+      "strip": 15,
+      "sub": 12
+    },
+    "bluetooth": {
+      "empty": 13,
+      "row": 13
+    },
+    "button": 14,
+    "charts": {
+      "burndown": 11,
+      "timeline": 10
+    },
+    "detail": {
+      "head": 15,
+      "line": 14,
+      "small": 12,
+      "sub": 13,
+      "title": 24
+    },
+    "events": {
+      "event": 13,
+      "jobs": 16,
+      "more": 12,
+      "stale": 11,
+      "stripJobs": 12,
+      "stripNext": 13
+    },
+    "inbox": {
+      "line": 13,
+      "more": 12
+    },
+    "modes": {
+      "chip": 13,
+      "line": 12,
+      "status": 13
+    },
+    "packages": {
+      "delivered": 16,
+      "head": 14,
+      "strip": 14,
+      "sub": 12
+    },
+    "payday": {
+      "amount": 13,
+      "covers": 12,
+      "headline": 16,
+      "strip": 14
+    },
+    "tileHeader": 13,
+    "title": 20
   },
   "freshness": {
     "staleHours": 24,
     "staleNamesSource": true
+  },
+  "geometry": {
+    "animation": {
+      "closeFallbackGraceMs": 200,
+      "closeInterpolator": "accelerate",
+      "closeMs": 280,
+      "minScale": 0.02,
+      "openInterpolator": "decelerate",
+      "openMs": 400
+    },
+    "bottomSpacerDp": 32,
+    "burndownHeightDp": 48,
+    "buttonPaddingSideDp": 10,
+    "buttonPaddingTopDp": 4,
+    "chipCornerDp": 12,
+    "chipMarginBottomDp": 4,
+    "chipPaddingSideDp": 8,
+    "chipPaddingTopDp": 10,
+    "containerPaddingBottomDp": 12,
+    "containerPaddingLeftDp": 10,
+    "containerPaddingRightDp": 10,
+    "containerPaddingTopDp": 8,
+    "detail": {
+      "buttonPaddingSideDp": 12,
+      "buttonPaddingTopDp": 6,
+      "closeMarginTopDp": 16,
+      "linePaddingTopDp": 2,
+      "paddingBottomDp": 16,
+      "paddingLeftDp": 16,
+      "paddingRightDp": 16,
+      "paddingTopDp": 12,
+      "titlePaddingBottomDp": 10
+    },
+    "gestures": {
+      "dragAlpha": 0.55,
+      "longPressMs": 500,
+      "moveToleranceDp": 12
+    },
+    "headerDotDp": 10,
+    "headerDotGapDp": 8,
+    "headerDotRadiusDp": 3,
+    "headerPaddingBottomDp": 4,
+    "iconInsetDp": 20,
+    "iconSizeDp": 72,
+    "rowUnitDp": 96,
+    "scrim": "#26000000",
+    "stripDp": 48,
+    "tileCornerDp": 18,
+    "tileMarginDp": 2,
+    "tilePaddingBottomDp": 6,
+    "tilePaddingSideDp": 10,
+    "tilePaddingTopDp": 6,
+    "timelineHeightDp": 36,
+    "titleMarginBottomDp": 8,
+    "titleMarginTopDp": 2,
+    "trayBorderWidthDp": 2,
+    "trayCornerDp": 28,
+    "trayElevationDp": 8,
+    "trayMarginBottomDp": 32,
+    "trayMarginSideDp": 20,
+    "trayMarginTopDp": 28
   },
   "grid": {
     "columns": 4,
@@ -45,9 +191,30 @@
     "view": "freedRow"
   },
   "layout": {
+    "capDropOrder": [
+      "inboxProjects",
+      "bluetooth",
+      "packages",
+      "payday",
+      "balances",
+      "events"
+    ],
+    "capModesCompactsFirst": true,
     "editMode": "longPress",
     "eighthTileMerge": "bluetoothIntoSmartHome",
+    "fill": "stretch",
+    "freezeWhileOpen": true,
+    "heroTiles": [
+      "bills"
+    ],
     "portraitLock": true,
+    "shrinkToContent": true,
+    "timeBands": {
+      "nightEnd": 6,
+      "nightStart": 21,
+      "preworkEnd": 8,
+      "workdayEnd": 16
+    },
     "watchGlance": false
   },
   "modes": {
@@ -57,6 +224,7 @@
     ],
     "faultStyle": "quietAmber",
     "newDeviceNotice": "once",
+    "onForDayHours": 48,
     "showOnFor": true
   },
   "order": [
@@ -72,10 +240,15 @@
     "count": 1,
     "hideWhenEmptyDays": 7,
     "showMoreCount": true,
-    "unconfirmedEscalation": "amber"
+    "unconfirmedEscalation": "amber",
+    "unconfirmedRedAfterDays": 7
   },
   "payday": {
-    "afterPayday": "countdown"
+    "afterPayday": "countdown",
+    "coversMaxNamed": 2,
+    "periodDays": 14,
+    "stripAfterDays": 2,
+    "urgentWithinDays": 2
   },
   "safeToSpend": {
     "display": "number",
@@ -83,6 +256,131 @@
       "checking",
       "autopay"
     ]
+  },
+  "text": {
+    "appTitle": "Dashboard V7.1",
+    "balances": {
+      "accountLine": "{name} {amount}",
+      "combined": "Short {short} before payday \u2014 move {move} to Auto Pay{when}",
+      "fresh": "Plaid {when}",
+      "move": "Move {amount} to Auto Pay{when}",
+      "moveBefore": " before {date}",
+      "safe": "Safe to spend {amount} until {date}",
+      "short": "Short {amount} before payday"
+    },
+    "bills": {
+      "allClear": "All clear \u2713",
+      "billRow": "{biller} {amount}{dueSuffix}",
+      "consequenceCreditRisk": "Credit risk",
+      "dueDaysOverdueMany": "{n} days overdue",
+      "dueDaysOverdueOne": "{n} day overdue",
+      "dueInDays": "Due in {n}d",
+      "duePastDue": "Past due",
+      "dueToday": "Due today",
+      "dueTomorrow": "Due tomorrow",
+      "fresh": "As of {when} \u00b7 calendar",
+      "headlineDueDate": "Due {date}",
+      "headlineDueSoon": "Due soon",
+      "headlineDueToday": "Due today \u00b7 {amount}",
+      "headlineOverdue": "{n} overdue \u00b7 {amount}",
+      "paidDwell": "Paid \u2713 {biller} {amount}"
+    },
+    "bluetooth": {
+      "batterySuffix": "%",
+      "none": "No device",
+      "rowPrefix": "\u25cf "
+    },
+    "buttons": {
+      "close": "Close",
+      "done": "Done",
+      "refresh": "Refresh",
+      "reset": "Reset",
+      "undo": "Undo"
+    },
+    "detail": {
+      "allowCalendar": "Allow calendar access",
+      "amount": "Amount {amount}",
+      "bluetoothSettings": "Bluetooth settings",
+      "calendarOff": "Calendar access off",
+      "daysToGo": "{n} days to go",
+      "expected": "Expected ~{amount}",
+      "fromData": "FROM DASHBOARD DATA",
+      "geicoSwitch": "Switch: State Farm $181.15/mo quoted, not bound",
+      "grantHome": "Grant home access",
+      "homeAccessNotGranted": "Home access not granted.",
+      "noBills": "No bills due",
+      "noDevices": "No devices connected",
+      "nothingNew": "Nothing new",
+      "openBudget": "Open Budget app",
+      "openCalendar": "Open Calendar",
+      "paydayToday": "Payday today",
+      "retry": "Retry",
+      "signInGoogle": "Sign in with Google"
+    },
+    "events": {
+      "capitalOneContext": "Capital One due {date}",
+      "capitalOneDeadline": "Capital One due {date} \u00b7 {amount}",
+      "flagPerson": "Dino",
+      "flagPrefix": "\u25c6 {person} \u2014 ",
+      "jobsTodayMany": "{n} jobs today",
+      "jobsTodayOne": "{n} job today",
+      "next": "Next: {event}",
+      "none": "No upcoming events",
+      "stale": "Events stale",
+      "synced": "Synced {when}"
+    },
+    "headers": {
+      "balances": "BALANCES",
+      "bills": "BILLS",
+      "bluetooth": "BLUETOOTH",
+      "events": "EVENTS",
+      "inbox": "INBOX & PROJECTS",
+      "modes": "MODES",
+      "packages": "PACKAGES",
+      "payday": "PAYDAY"
+    },
+    "maskedAmount": "$\u2022\u2022\u2022.\u2022\u2022",
+    "modes": {
+      "labelGoodNight": "Good Night",
+      "labelPowerSaver": "PowerSaver",
+      "newDevice": "New device found: {name}",
+      "onForDays": " \u00b7 {n}d",
+      "onForHours": " \u00b7 {n}h",
+      "onForUnderHour": " \u00b7 <1h",
+      "signInAgain": "Sign in again",
+      "stateOff": "OFF",
+      "stateOn": "ON",
+      "stateUnknown": "?",
+      "switchNotFound": "Switch not found",
+      "unavailable": "Modes unavailable \u2014 tap to retry"
+    },
+    "more": "+{n} more",
+    "moveMenu": [
+      "Move up",
+      "Move down",
+      "Pin here"
+    ],
+    "packages": {
+      "delivered": "Delivered \u2713",
+      "etaPrefix": "ETA ",
+      "head": "{carrier} \u00b7 {order}",
+      "none": "No deliveries",
+      "outForDelivery": "Out for delivery today",
+      "unconfirmed": "Delivery unconfirmed",
+      "unconfirmedOverdue": " \u00b7 {n}d overdue"
+    },
+    "payday": {
+      "covers": "Covers {list}",
+      "expected": "{date} \u00b7 ~{amount} expected",
+      "filled": "{date} \u00b7 {amount}",
+      "inDaysMany": "Payday in {n} days",
+      "inDaysOne": "Payday in {n} day",
+      "strip": "Payday \u00b7 {date}",
+      "today": "Payday today \u2713"
+    },
+    "staleWithSource": "{tile} stale \u2014 {source} as of {when}",
+    "staleWithoutSource": "{tile} stale \u2014 as of {when}",
+    "unknownWhen": "unknown"
   },
   "tiles": {
     "balances": {
@@ -201,10 +499,13 @@
       "visible": false
     }
   },
-  "updatedAt": "2026-11-23T08:15:37-05:00",
+  "updatedAt": "2026-11-23T08:34:23-05:00",
   "urgency": {
+    "eveningBoost": true,
+    "eventSoonWindowMinutes": 60,
     "scores": {
       "due1to3": 70,
+      "due4to7": 40,
       "dueToday": 90,
       "eventSoon": 85,
       "outForDelivery": 75,
@@ -212,5 +513,24 @@
       "payday": 70
     }
   },
-  "version": 1
+  "version": 1,
+  "widget": {
+    "bitmapPx": 240,
+    "blockGapPx": 2,
+    "blockRadiusPx": 6,
+    "colours": {
+      "amber": "#D97706",
+      "blue": "#3B82F6",
+      "clear": "#0F766E",
+      "mild": "#2DD4BF",
+      "orange": "#EA580C",
+      "red": "#EF4444"
+    },
+    "ramp": {
+      "amber": 70,
+      "blue": 40,
+      "orange": 90,
+      "red": 100
+    }
+  }
 }
