@@ -25,6 +25,22 @@
    "status": "Out for Delivery \u2014 Oxford, MI",
    "tracking": "9305510615100000348869",
    "url": "https://tools.usps.com/go/TrackConfirmAction?tLabels=9305510615100000348869"
+  },
+  {
+   "carrier": "Amazon",
+   "eta": "Tue Nov 24, 5–8 AM",
+   "order": "Amazon order 113-3986759-3091463",
+   "status": "Ordered — arriving overnight 5–8 AM",
+   "tracking": "113-3986759-3091463",
+   "url": "https://www.amazon.com/gp/your-account/order-details?orderID=113-3986759-3091463"
+  },
+  {
+   "carrier": "Amazon",
+   "eta": "Tue Nov 24 / Wed Nov 25",
+   "order": "Amazon order 113-9586147-2481029",
+   "status": "Ordered — 2 items Tue Nov 24, 2 items Wed Nov 25",
+   "tracking": "113-9586147-2481029",
+   "url": "https://www.amazon.com/gp/your-account/order-details?orderID=113-9586147-2481029"
   }
  ],
  "events": [
@@ -65,7 +81,7 @@
   "goodnightDeviceId": "",
   "powerSaverDeviceId": ""
  },
- "updatedAt": "2026-11-23T08:51:00-05:00",
+ "updatedAt": "2026-11-23T09:52:00-05:00",
  "version": 1,
  "shows": [
   {
