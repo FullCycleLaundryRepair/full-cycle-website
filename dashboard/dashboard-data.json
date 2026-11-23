@@ -65,7 +65,7 @@
   "goodnightDeviceId": "",
   "powerSaverDeviceId": ""
  },
- "updatedAt": "2026-11-23T08:42:00-05:00",
+ "updatedAt": "2026-11-23T08:48:00-05:00",
  "version": 1,
  "shows": [
   {
@@ -75,6 +75,17 @@
    "url": "https://www.youtube.com/watch?v=D9ty1QuuAhQ",
    "published": "2026-11-21T04:33:26+00:00",
    "isNew": true
+  }
+ ],
+ "tasks": [
+  {
+   "title": "Get melatonin",
+   "detail": "Stop after work, before getting home"
+  },
+  {
+   "title": "Call Adam Smith",
+   "detail": "Clear declined e-signing, add UMCU and roadside",
+   "phone": "(586) 371-4277"
   }
  ]
 }
