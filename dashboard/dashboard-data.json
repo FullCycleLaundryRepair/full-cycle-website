@@ -15,12 +15,6 @@
       "biller": "GEICO",
       "detail": "Cancel Dec 4, 2026 - Policy 6183236709",
       "note": "Past due"
-    },
-    {
-      "amount": 39.99,
-      "biller": "Spectrum",
-      "detail": "Due Nov 19",
-      "note": "Autopay"
     }
   ],
   "deliveries": [
@@ -52,15 +46,15 @@
     {
       "allDay": true,
       "date": "2026-12-01",
-      "title": "Rent due \u2014 $1,751.85"
+      "title": "Rent due — $1,751.85"
     }
   ],
   "inboxProjects": [
     {
-      "line": "Dashboard V5: audit fixes done, login published, noon refresh live \u2014 build awaits your freeze"
+      "line": "Dashboard V5: audit fixes done, login published, noon refresh live — build awaits your freeze"
     },
     {
-      "line": "Eva v77 installed \u2014 brain model on phone, adapter shadow-only until phone re-score"
+      "line": "Eva v77 installed — brain model on phone, adapter shadow-only until phone re-score"
     }
   ],
   "payday": {
@@ -71,6 +65,6 @@
     "goodnightDeviceId": "",
     "powerSaverDeviceId": ""
   },
-  "updatedAt": "2026-11-22T11:58:11-05:00",
+  "updatedAt": "2026-11-23T08:05:11-05:00",
   "version": 1
 }
