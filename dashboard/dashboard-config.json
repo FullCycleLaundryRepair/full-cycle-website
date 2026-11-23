@@ -378,6 +378,10 @@
       "strip": "Payday \u00b7 {date}",
       "today": "Payday today \u2713"
     },
+    "refresh": {
+      "failed": "Refresh failed",
+      "updated": "Updated {time}"
+    },
     "staleWithSource": "{tile} stale \u2014 {source} as of {when}",
     "staleWithoutSource": "{tile} stale \u2014 as of {when}",
     "unknownWhen": "unknown"
@@ -499,7 +503,7 @@
       "visible": false
     }
   },
-  "updatedAt": "2026-11-23T08:34:23-05:00",
+  "updatedAt": "2026-11-23T08:39:15-05:00",
   "urgency": {
     "eveningBoost": true,
     "eventSoonWindowMinutes": 60,
