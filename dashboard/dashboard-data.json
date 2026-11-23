@@ -28,15 +28,15 @@
    "carrier": "USPS",
    "eta": "Today Nov 23 by 4:20 PM",
    "order": "ECigMafia order 9160935",
-   "status": "Out for Delivery \u2014 Oxford, MI",
+   "status": "Out for Delivery — Oxford, MI",
    "tracking": "9305510615100000348869",
    "url": "https://tools.usps.com/go/TrackConfirmAction?tLabels=9305510615100000348869"
   },
   {
    "carrier": "Amazon",
-   "eta": "Tue Nov 24, 5\u20138 AM",
+   "eta": "Tue Nov 24, 5–8 AM",
    "order": "Amazon order 113-3986759-3091463",
-   "status": "Ordered \u2014 arriving overnight 5\u20138 AM",
+   "status": "Ordered — arriving overnight 5–8 AM",
    "tracking": "113-3986759-3091463",
    "url": "https://www.amazon.com/gp/your-account/order-details?orderID=113-3986759-3091463"
   },
@@ -44,7 +44,7 @@
    "carrier": "Amazon",
    "eta": "Tue Nov 24 / Wed Nov 25",
    "order": "Amazon order 113-9586147-2481029",
-   "status": "Ordered \u2014 2 items Tue Nov 24, 2 items Wed Nov 25",
+   "status": "Ordered — 2 items Tue Nov 24, 2 items Wed Nov 25",
    "tracking": "113-9586147-2481029",
    "url": "https://www.amazon.com/gp/your-account/order-details?orderID=113-9586147-2481029"
   }
@@ -68,15 +68,15 @@
   {
    "allDay": true,
    "date": "2026-12-01",
-   "title": "Rent due \u2014 $1,751.85"
+   "title": "Rent due — $1,751.85"
   }
  ],
  "inboxProjects": [
   {
-   "line": "Dashboard V5: audit fixes done, login published, noon refresh live \u2014 build awaits your freeze"
+   "line": "Dashboard V5: audit fixes done, login published, noon refresh live — build awaits your freeze"
   },
   {
-   "line": "Eva v77 installed \u2014 brain model on phone, adapter shadow-only until phone re-score"
+   "line": "Eva v77 installed — brain model on phone, adapter shadow-only until phone re-score"
   }
  ],
  "payday": {
@@ -87,15 +87,15 @@
   "goodnightDeviceId": "",
   "powerSaverDeviceId": ""
  },
- "updatedAt": "2026-11-23T13:35:00-05:00",
+ "updatedAt": "2026-11-23T18:58:26-05:00",
  "version": 1,
  "shows": [
   {
    "show": "The Dusty Show",
-   "title": "MAGA Melts Down Over GTA 6/Trump Gushes Over Putin In Meeting/Dow Drops 4,000 Points In One Week",
-   "videoId": "D9ty1QuuAhQ",
-   "url": "https://www.youtube.com/watch?v=D9ty1QuuAhQ",
-   "published": "2026-11-21T04:33:26+00:00",
+   "title": "Trump Teases Universal Health Care/Elon Glitches During Interview/Education Dept. Epic GTA 6 Fail",
+   "videoId": "wKn1g8nY-Yk",
+   "url": "https://www.youtube.com/watch?v=wKn1g8nY-Yk",
+   "published": "2026-11-23T22:14:47+00:00",
    "isNew": true
   }
  ],
