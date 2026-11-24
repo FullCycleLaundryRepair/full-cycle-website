@@ -1,48 +1,10 @@
 {
- "payments": [
-  {
-   "amount": 240.0,
-   "biller": "DTE Energy",
-   "confirmation": "29447519",
-   "date": "2026-11-18",
-   "id": "dte-20261118-29447519"
-  },
-  {
-   "amount": 43.98,
-   "biller": "Consumers Energy",
-   "confirmation": "",
-   "date": "2026-11-18",
-   "id": "consumers-20261118"
-  },
-  {
-   "amount": 181.16,
-   "biller": "Huntington",
-   "confirmation": "",
-   "date": "2026-11-18",
-   "id": "huntington-20261118"
-  },
-  {
-   "amount": 38.38,
-   "biller": "Affirm",
-   "confirmation": "",
-   "date": "2026-11-21",
-   "id": "affirm-20261121"
-  },
-  {
-   "amount": 144.0,
-   "biller": "State Farm Auto",
-   "confirmation": "RA94B6EU",
-   "date": "2026-11-24",
-   "id": "statefarm-auto-20261124"
-  },
-  {
-   "amount": 13.38,
-   "biller": "State Farm Renters",
-   "confirmation": "RA94B6EU",
-   "date": "2026-11-24",
-   "id": "statefarm-renters-20261124"
-  }
- ],
+ "accounts": {
+  "autopay": 0.01,
+  "checking": 415.43,
+  "joint": 0,
+  "updatedAt": "2026-11-23T16:58:29-05:00"
+ },
  "bills": [
   {
    "amount": 1650.0,
@@ -72,14 +34,14 @@
    "amount": 478.04,
    "dueDate": "2026-12-18",
    "id": "umcu",
-   "name": "UMCU — Ridgeline loan"
+   "name": "UMCU \u2014 Ridgeline loan"
   },
   {
    "amount": 39.99,
    "autopay": true,
    "dueDate": "2026-11-19",
    "id": "spectrum",
-   "name": "Spectrum — Internet"
+   "name": "Spectrum \u2014 Internet"
   },
   {
    "amount": 38.38,
@@ -91,7 +53,7 @@
    "autopay": false,
    "dueDate": "2026-12-23",
    "id": "statefarm",
-   "name": "State Farm — Auto + Renters",
+   "name": "State Farm \u2014 Auto + Renters",
    "schedule": [
     {
      "amount": 157.38,
@@ -104,7 +66,7 @@
    "autopay": false,
    "dueDate": "2026-12-21",
    "id": "capitalone",
-   "name": "Capital One — settlement",
+   "name": "Capital One \u2014 settlement",
    "schedule": [
     {
      "amount": 767.44,
@@ -155,11 +117,56 @@
    "name": "Amazon Prime"
   }
  ],
- "version": 1,
- "accounts": {
-  "updatedAt": "2026-11-23T16:58:29-05:00",
-  "checking": 415.43,
-  "joint": 0,
-  "autopay": 0.01
- }
+ "payments": [
+  {
+   "amount": 240.0,
+   "biller": "DTE Energy",
+   "confirmation": "29447519",
+   "date": "2026-11-18",
+   "id": "dte-20261118-29447519"
+  },
+  {
+   "amount": 43.98,
+   "biller": "Consumers Energy",
+   "confirmation": "",
+   "date": "2026-11-18",
+   "id": "consumers-20261118"
+  },
+  {
+   "amount": 181.16,
+   "biller": "Huntington",
+   "confirmation": "",
+   "date": "2026-11-18",
+   "id": "huntington-20261118"
+  },
+  {
+   "amount": 38.38,
+   "biller": "Affirm",
+   "confirmation": "",
+   "date": "2026-11-21",
+   "id": "affirm-20261121"
+  },
+  {
+   "amount": 144.0,
+   "biller": "State Farm Auto",
+   "confirmation": "RA94B6EU",
+   "date": "2026-11-24",
+   "id": "statefarm-auto-20261124"
+  },
+  {
+   "amount": 13.38,
+   "biller": "State Farm Renters",
+   "confirmation": "RA94B6EU",
+   "date": "2026-11-24",
+   "id": "statefarm-renters-20261124"
+  },
+  {
+   "amount": 39.99,
+   "biller": "Spectrum",
+   "confirmation": "",
+   "date": "2026-11-23",
+   "id": "spectrum-20261123"
+  }
+ ],
+ "version": 1
 }
