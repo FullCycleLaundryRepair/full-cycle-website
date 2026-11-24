@@ -31,16 +31,16 @@
   {
    "amount": 144.0,
    "biller": "State Farm Auto",
-   "confirmation": "R991G47M",
-   "date": "2026-11-23",
-   "id": "statefarm-auto-20261123"
+   "confirmation": "RA94B6EU",
+   "date": "2026-11-24",
+   "id": "statefarm-auto-20261124"
   },
   {
    "amount": 13.38,
    "biller": "State Farm Renters",
-   "confirmation": "R991G47M",
-   "date": "2026-11-23",
-   "id": "statefarm-renters-20261123"
+   "confirmation": "RA94B6EU",
+   "date": "2026-11-24",
+   "id": "statefarm-renters-20261124"
   }
  ],
  "version": 1,
