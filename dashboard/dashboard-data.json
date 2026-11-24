@@ -11,32 +11,26 @@
  ],
  "bills": [
   {
-   "amount": 144.0,
-   "biller": "State Farm Auto",
-   "detail": "Policy 0864679-SFP-22",
-   "note": "Due Dec 23"
-  },
-  {
-   "amount": 13.38,
-   "biller": "State Farm Renters",
-   "detail": "Policy 82-KM-W322-8",
-   "note": "Due Dec 23"
+   "amount": 1751.85,
+   "biller": "Rent",
+   "detail": "Kingsley Management",
+   "note": "Due Dec 1"
   }
  ],
  "deliveries": [
   {
    "carrier": "USPS",
-   "eta": "Today Nov 23 by 4:20 PM",
+   "eta": "Delivered Nov 23",
    "order": "ECigMafia order 9160935",
-   "status": "Out for Delivery — Oxford, MI",
+   "status": "Delivered Nov 23",
    "tracking": "9305510615100000348869",
    "url": "https://tools.usps.com/go/TrackConfirmAction?tLabels=9305510615100000348869"
   },
   {
    "carrier": "Amazon",
-   "eta": "Tue Nov 24, 5–8 AM",
+   "eta": "Delivered Nov 24",
    "order": "Amazon order 113-3986759-3091463",
-   "status": "Ordered — arriving overnight 5–8 AM",
+   "status": "Delivered Nov 24",
    "tracking": "113-3986759-3091463",
    "url": "https://www.amazon.com/gp/your-account/order-details?orderID=113-3986759-3091463"
   },
@@ -47,14 +41,17 @@
    "status": "Ordered — 2 items Tue Nov 24, 2 items Wed Nov 25",
    "tracking": "113-9586147-2481029",
    "url": "https://www.amazon.com/gp/your-account/order-details?orderID=113-9586147-2481029"
+  },
+  {
+   "carrier": "Amazon",
+   "eta": "Wed Nov 25",
+   "order": "Amazon order 113-0030019-5693809",
+   "status": "Ordered — arriving Wed Nov 25",
+   "tracking": "113-0030019-5693809",
+   "url": "https://www.amazon.com/gp/your-account/order-details?orderID=113-0030019-5693809"
   }
  ],
  "events": [
-  {
-   "allDay": true,
-   "date": "2026-11-23",
-   "title": "Meeting with Dino (time TBD)"
-  },
   {
    "date": "2026-11-27",
    "time": "10:00 AM",
@@ -87,7 +84,7 @@
   "goodnightDeviceId": "",
   "powerSaverDeviceId": ""
  },
- "updatedAt": "2026-11-23T18:58:26-05:00",
+ "updatedAt": "2026-11-24T12:02:44-05:00",
  "version": 1,
  "shows": [
   {
