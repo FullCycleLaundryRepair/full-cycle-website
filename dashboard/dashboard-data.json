@@ -19,26 +19,10 @@
  ],
  "deliveries": [
   {
-   "carrier": "USPS",
-   "eta": "Delivered Nov 23",
-   "order": "ECigMafia order 9160935",
-   "status": "Delivered Nov 23",
-   "tracking": "9305510615100000348869",
-   "url": "https://tools.usps.com/go/TrackConfirmAction?tLabels=9305510615100000348869"
-  },
-  {
    "carrier": "Amazon",
-   "eta": "Delivered Nov 24",
-   "order": "Amazon order 113-3986759-3091463",
-   "status": "Delivered Nov 24",
-   "tracking": "113-3986759-3091463",
-   "url": "https://www.amazon.com/gp/your-account/order-details?orderID=113-3986759-3091463"
-  },
-  {
-   "carrier": "Amazon",
-   "eta": "Tue Nov 24 / Wed Nov 25",
+   "eta": "Wed Nov 25",
    "order": "Amazon order 113-9586147-2481029",
-   "status": "Ordered — 2 items Tue Nov 24, 2 items Wed Nov 25",
+   "status": "Delivered 2 items Nov 24 — 2 items arriving Wed Nov 25",
    "tracking": "113-9586147-2481029",
    "url": "https://www.amazon.com/gp/your-account/order-details?orderID=113-9586147-2481029"
   },
@@ -46,9 +30,25 @@
    "carrier": "Amazon",
    "eta": "Wed Nov 25",
    "order": "Amazon order 113-0030019-5693809",
-   "status": "Ordered — arriving Wed Nov 25",
+   "status": "Shipped — arriving Wed Nov 25",
    "tracking": "113-0030019-5693809",
    "url": "https://www.amazon.com/gp/your-account/order-details?orderID=113-0030019-5693809"
+  },
+  {
+   "carrier": "Amazon",
+   "eta": "Wed Nov 25 / Fri Nov 27",
+   "order": "Amazon order 113-1272962-2496216",
+   "status": "Shipped — Watch Bands arriving Wed Nov 25, Pants arriving Fri Nov 27",
+   "tracking": "113-1272962-2496216",
+   "url": "https://www.amazon.com/gp/your-account/order-details?orderID=113-1272962-2496216"
+  },
+  {
+   "carrier": "Amazon",
+   "eta": "Wed Nov 25",
+   "order": "Amazon order 113-0254734-5166664",
+   "status": "Shipped — 3 items (Pet Supplies, Socks) arriving overnight 3–6 AM",
+   "tracking": "113-0254734-5166664",
+   "url": "https://www.amazon.com/gp/your-account/order-details?orderID=113-0254734-5166664"
   }
  ],
  "events": [
@@ -84,7 +84,7 @@
   "goodnightDeviceId": "",
   "powerSaverDeviceId": ""
  },
- "updatedAt": "2026-11-24T12:02:44-05:00",
+ "updatedAt": "2026-11-25T12:04:04-05:00",
  "version": 1,
  "shows": [
   {
