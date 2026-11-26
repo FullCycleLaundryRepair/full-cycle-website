@@ -22,7 +22,7 @@
    "carrier": "Amazon",
    "eta": "Wed Nov 25",
    "order": "Amazon order 113-9586147-2481029",
-   "status": "Delivered 2 items Nov 24 — 2 items arriving Wed Nov 25",
+   "status": "Delivered Nov 25",
    "tracking": "113-9586147-2481029",
    "url": "https://www.amazon.com/gp/your-account/order-details?orderID=113-9586147-2481029"
   },
@@ -30,7 +30,7 @@
    "carrier": "Amazon",
    "eta": "Wed Nov 25",
    "order": "Amazon order 113-0030019-5693809",
-   "status": "Shipped — arriving Wed Nov 25",
+   "status": "Delivered Nov 25",
    "tracking": "113-0030019-5693809",
    "url": "https://www.amazon.com/gp/your-account/order-details?orderID=113-0030019-5693809"
   },
@@ -38,7 +38,7 @@
    "carrier": "Amazon",
    "eta": "Wed Nov 25 / Fri Nov 27",
    "order": "Amazon order 113-1272962-2496216",
-   "status": "Shipped — Watch Bands arriving Wed Nov 25, Pants arriving Fri Nov 27",
+   "status": "Delivered Watch Bands Nov 25 — Pants arriving Fri Nov 27",
    "tracking": "113-1272962-2496216",
    "url": "https://www.amazon.com/gp/your-account/order-details?orderID=113-1272962-2496216"
   },
@@ -84,7 +84,7 @@
   "goodnightDeviceId": "",
   "powerSaverDeviceId": ""
  },
- "updatedAt": "2026-11-25T18:58:36-05:00",
+ "updatedAt": "2026-11-26T11:58:55-05:00",
  "version": 1,
  "shows": [
   {
