@@ -34,14 +34,14 @@
    "amount": 478.04,
    "dueDate": "2026-12-18",
    "id": "umcu",
-   "name": "UMCU — Ridgeline loan"
+   "name": "UMCU \u2014 Ridgeline loan"
   },
   {
    "amount": 39.99,
    "autopay": true,
    "dueDate": "2026-11-19",
    "id": "spectrum",
-   "name": "Spectrum — Internet"
+   "name": "Spectrum \u2014 Internet"
   },
   {
    "amount": 38.38,
@@ -53,7 +53,7 @@
    "autopay": false,
    "dueDate": "2026-12-23",
    "id": "statefarm",
-   "name": "State Farm — Auto + Renters",
+   "name": "State Farm \u2014 Auto + Renters",
    "schedule": [
     {
      "amount": 157.38,
@@ -66,7 +66,7 @@
    "autopay": false,
    "dueDate": "2026-12-21",
    "id": "capitalone",
-   "name": "Capital One — settlement",
+   "name": "Capital One \u2014 settlement",
    "schedule": [
     {
      "amount": 767.44,
@@ -166,6 +166,13 @@
    "confirmation": "",
    "date": "2026-11-23",
    "id": "spectrum-20261123"
+  },
+  {
+   "amount": 157.38,
+   "biller": "State Farm",
+   "confirmation": "",
+   "date": "2026-11-25",
+   "id": "state-farm-20261125"
   }
  ],
  "version": 1
