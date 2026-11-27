@@ -7,7 +7,7 @@
  },
  "bills": [
   {
-   "amount": 1650.0,
+   "amount": 1717.25,
    "dueDate": "2026-12-01",
    "dueDay": 1,
    "id": "rent",
